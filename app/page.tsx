@@ -6,6 +6,7 @@
 
 import { useState } from 'react'
 import { teams, calculateCombatPower, classicMatchups, Team } from '../data/teams'
+import { useLanguage } from './context/LanguageContext'
 
 export default function HomePage() {
   // 状态管理 / State Management
@@ -15,6 +16,9 @@ export default function HomePage() {
   const [votes, setVotes] = useState({ teamA: 0, teamB: 0 })
   const [aiCommentary, setAiCommentary] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  
+  // 语言上下文 / Language Context
+  const { t } = useLanguage()
 
   // 选择球队处理函数 / Team Selection Handler
   const handleTeamSelection = (team: Team, position: 'A' | 'B') => {
@@ -72,14 +76,13 @@ export default function HomePage() {
         {/* 标题区域 / Header Section */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-white text-shadow mb-4">
-            🏆 2022世界杯八强对决 / 2022 World Cup Quarterfinals
+            🏆 {t('2022 World Cup Quarterfinals', '2022世界杯八强对决')}
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            AI驱动的战斗力分析系统，基于历史数据、球员年龄、伤病情况等多维度评估球队实力
-            <br />
-            <span className="text-fanforce-secondary">
-              AI-powered combat analysis system based on historical data, player age, injury status and more
-            </span>
+            {t(
+              'AI-powered combat analysis system based on historical data, player age, injury status and more',
+              'AI驱动的战斗力分析系统，基于历史数据、球员年龄、伤病情况等多维度评估球队实力'
+            )}
           </p>
         </div>
 
@@ -87,7 +90,7 @@ export default function HomePage() {
         {!showComparison && (
           <div className="mb-12">
             <h2 className="text-2xl font-bold text-white text-center mb-6">
-              🔥 经典对战推荐 / Classic Matchups
+              🔥 {t('Classic Matchups', '经典对战推荐')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {classicMatchups.map((matchup, index) => {
@@ -113,11 +116,11 @@ export default function HomePage() {
                           alt={teamA?.name}
                           className="w-8 h-6"
                         />
-                        <span className="text-white font-medium">{teamA?.nameCn}</span>
-                      </div>
-                      <span className="text-fanforce-gold text-xl">VS</span>
-                      <div className="flex items-center space-x-4">
-                        <span className="text-white font-medium">{teamB?.nameCn}</span>
+                                                  <span className="text-white font-medium">{t(teamA?.nameEn || '', teamA?.nameCn || '')}</span>
+                        </div>
+                        <span className="text-fanforce-gold text-xl">VS</span>
+                        <div className="flex items-center space-x-4">
+                          <span className="text-white font-medium">{t(teamB?.nameEn || '', teamB?.nameCn || '')}</span>
                         <img 
                           src={`https://flagsapi.com/${teamB?.countryCode}/flat/64.png`} 
                           alt={teamB?.name}
@@ -137,7 +140,7 @@ export default function HomePage() {
         {!showComparison && (
           <div>
             <h2 className="text-3xl font-bold text-white text-center mb-8">
-              选择对战球队 / Select Teams to Compare
+              {t('Select Teams to Compare', '选择对战球队')}
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -159,15 +162,15 @@ export default function HomePage() {
                       alt={team.name}
                       className="w-16 h-12 mx-auto mb-3"
                     />
-                    <h3 className="text-white font-bold text-lg">{team.nameCn}</h3>
-                    <p className="text-gray-400 text-sm">{team.nameEn}</p>
+                    <h3 className="text-white font-bold text-lg">{t(team.nameEn, team.nameCn)}</h3>
+                    <p className="text-gray-400 text-sm">{t(team.nameEn, team.nameCn)}</p>
                     <p className="text-fanforce-secondary text-xs mt-2">{team.starPlayer}</p>
                     
                     {/* 基础数据预览 / Basic Data Preview */}
                     <div className="mt-3 text-xs text-gray-300 space-y-1">
-                      <div>胜率: {team.winRate}%</div>
-                      <div>平均年龄: {team.avgAge}岁</div>
-                      <div>FIFA排名: #{team.fifaRanking}</div>
+                      <div>{t('Win Rate', '胜率')}: {team.winRate}%</div>
+                      <div>{t('Avg Age', '平均年龄')}: {team.avgAge}{t('y', '岁')}</div>
+                      <div>{t('FIFA Ranking', 'FIFA排名')}: #{team.fifaRanking}</div>
                     </div>
                   </div>
                 </div>
@@ -183,13 +186,13 @@ export default function HomePage() {
             {/* 对战标题 / Match Title */}
             <div className="text-center">
               <h2 className="text-4xl font-bold text-white mb-4">
-                {selectedTeamA.nameCn} 🆚 {selectedTeamB.nameCn}
+                {t(selectedTeamA.nameEn, selectedTeamA.nameCn)} 🆚 {t(selectedTeamB.nameEn, selectedTeamB.nameCn)}
               </h2>
               <button 
                 onClick={resetSelection}
                 className="btn-secondary text-sm"
               >
-                重新选择 / Reselect Teams
+                {t('Reselect Teams', '重新选择')}
               </button>
             </div>
 
