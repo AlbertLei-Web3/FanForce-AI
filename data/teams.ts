@@ -167,7 +167,7 @@ export const calculateCombatPower = (team: Team): number => {
 export const classicMatchups = [
   { teamA: 'argentina', teamB: 'brazil', title: '南美双雄对决 / South American Rivalry' },
   { teamA: 'france', teamB: 'england', title: '欧洲豪门对话 / European Giants Dialogue' },
-  { teamA: 'portugal', teamB: 'spain', title: '伊比利亚德比 / Iberian Derby' },
+  { teamA: 'portugal', teamB: 'morocco', title: '欧非之战 / Europe vs Africa Battle' },
   { teamA: 'netherlands', teamB: 'croatia', title: '战术大师对决 / Tactical Masters Clash' }
 ];
 

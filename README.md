@@ -133,6 +133,17 @@ const calculateCombatPower = (team: Team): number => {
 - 社区预测趋势展示
 - 个人投票记录追踪
 
+## 🎯 经典对战 / Classic Matchups
+
+系统预设了四场经典对战组合，让球迷快速体验AI预测功能：
+
+The system presets four classic matchup combinations for fans to quickly experience AI prediction features:
+
+- **🇦🇷 阿根廷 vs 🇧🇷 巴西** - 南美双雄对决 / South American Rivalry
+- **🇫🇷 法国 vs 🇬🇧 英格兰** - 欧洲豪门对话 / European Giants Dialogue  
+- **🇵🇹 葡萄牙 vs 🇲🇦 摩洛哥** - 欧非之战 / Europe vs Africa Battle
+- **🇳🇱 荷兰 vs 🇭🇷 克罗地亚** - 战术大师对决 / Tactical Masters Clash
+
 ## 🔌 集成说明 / Integration Guide
 
 ### Chiliz SDK 集成 / Chiliz SDK Integration

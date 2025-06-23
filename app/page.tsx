@@ -116,11 +116,11 @@ export default function HomePage() {
                           alt={teamA?.name}
                           className="w-8 h-6"
                         />
-                                                  <span className="text-white font-medium">{t(teamA?.nameEn || '', teamA?.nameCn || '')}</span>
-                        </div>
-                        <span className="text-fanforce-gold text-xl">VS</span>
-                        <div className="flex items-center space-x-4">
-                          <span className="text-white font-medium">{t(teamB?.nameEn || '', teamB?.nameCn || '')}</span>
+                        <span className="text-white font-medium">{t(teamA?.nameEn || '', teamA?.nameCn || '')}</span>
+                      </div>
+                      <span className="text-fanforce-gold text-xl">VS</span>
+                      <div className="flex items-center space-x-4">
+                        <span className="text-white font-medium">{t(teamB?.nameEn || '', teamB?.nameCn || '')}</span>
                         <img 
                           src={`https://flagsapi.com/${teamB?.countryCode}/flat/64.png`} 
                           alt={teamB?.name}
