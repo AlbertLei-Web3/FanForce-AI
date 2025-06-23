@@ -34,6 +34,12 @@
 │  Tailwind CSS   │    │   Mock Data      │    │  WalletConnect  │
 │  响应式UI        │    │   球队数据        │    │  钱包连接        │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│  i18n Module    │
+│  国际化模块      │
+└─────────────────┘
 ```
 
 ## 🚀 快速开始 / Quick Start
@@ -133,6 +139,27 @@ const calculateCombatPower = (team: Team): number => {
 - 社区预测趋势展示
 - 个人投票记录追踪
 
+## 🌐 国际化系统 / Internationalization System
+
+应用采用独立的国际化模块设计，所有文本统一管理，支持完整的中英文切换：
+
+The application uses an independent internationalization module design with unified text management, supporting complete Chinese-English switching:
+
+### 架构特点 / Architecture Features
+- **独立模块**: 所有翻译文本集中在 `app/utils/i18n.ts` 中管理
+- **类型安全**: 使用TypeScript接口确保翻译完整性
+- **上下文集成**: 通过React Context提供全局语言状态
+- **双重函数**: `t()` 用于标准翻译，`tTeam()` 用于球队名称翻译
+
+### 使用方式 / Usage
+```typescript
+// 标准翻译 / Standard translation
+const title = t('2022 World Cup Quarterfinals')
+
+// 球队名称翻译 / Team name translation  
+const teamName = tTeam(team.nameEn, team.nameCn)
+```
+
 ## 🎯 经典对战 / Classic Matchups
 
 系统预设了四场经典对战组合，让球迷快速体验AI预测功能：
@@ -143,6 +170,11 @@ The system presets four classic matchup combinations for fans to quickly experie
 - **🇫🇷 法国 vs 🇬🇧 英格兰** - 欧洲豪门对话 / European Giants Dialogue  
 - **🇵🇹 葡萄牙 vs 🇲🇦 摩洛哥** - 欧非之战 / Europe vs Africa Battle
 - **🇳🇱 荷兰 vs 🇭🇷 克罗地亚** - 战术大师对决 / Tactical Masters Clash
+
+### 页面导航优化 / Page Navigation Optimization
+- **历史管理**: 使用HTML5 History API管理页面状态
+- **后退优化**: 点击浏览器后退按钮返回到选择页面而非离开应用
+- **状态保持**: 在页面切换时保持应用内部状态
 
 ## 🔌 集成说明 / Integration Guide
 

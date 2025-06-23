@@ -4,7 +4,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { teams, calculateCombatPower, classicMatchups, Team } from '../data/teams'
 import { useLanguage } from './context/LanguageContext'
 
@@ -18,7 +18,28 @@ export default function HomePage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   
   // 语言上下文 / Language Context
-  const { t } = useLanguage()
+  const { t, tTeam } = useLanguage()
+
+  // 页面历史管理 / Page history management
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (showComparison) {
+        // 阻止默认的后退行为，返回到选择页面 / Prevent default back behavior, return to selection page
+        event.preventDefault()
+        resetSelection()
+        // 添加新的历史状态 / Add new history state
+        window.history.pushState({ page: 'selection' }, '', window.location.pathname)
+      }
+    }
+
+    // 当进入对比页面时，添加历史状态 / Add history state when entering comparison page
+    if (showComparison) {
+      window.history.pushState({ page: 'comparison' }, '', window.location.pathname)
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [showComparison])
 
   // 选择球队处理函数 / Team Selection Handler
   const handleTeamSelection = (team: Team, position: 'A' | 'B') => {
@@ -76,13 +97,10 @@ export default function HomePage() {
         {/* 标题区域 / Header Section */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-white text-shadow mb-4">
-            🏆 {t('2022 World Cup Quarterfinals', '2022世界杯八强对决')}
+            🏆 {t('2022 World Cup Quarterfinals')}
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            {t(
-              'AI-powered combat analysis system based on historical data, player age, injury status and more',
-              'AI驱动的战斗力分析系统，基于历史数据、球员年龄、伤病情况等多维度评估球队实力'
-            )}
+            {t('AI-powered combat analysis system based on historical data, player age, injury status and more')}
           </p>
         </div>
 
@@ -90,7 +108,7 @@ export default function HomePage() {
         {!showComparison && (
           <div className="mb-12">
             <h2 className="text-2xl font-bold text-white text-center mb-6">
-              🔥 {t('Classic Matchups', '经典对战推荐')}
+              🔥 {t('Classic Matchups')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {classicMatchups.map((matchup, index) => {
@@ -116,11 +134,11 @@ export default function HomePage() {
                           alt={teamA?.name}
                           className="w-8 h-6"
                         />
-                        <span className="text-white font-medium">{t(teamA?.nameEn || '', teamA?.nameCn || '')}</span>
+                        <span className="text-white font-medium">{tTeam(teamA?.nameEn || '', teamA?.nameCn || '')}</span>
                       </div>
                       <span className="text-fanforce-gold text-xl">VS</span>
                       <div className="flex items-center space-x-4">
-                        <span className="text-white font-medium">{t(teamB?.nameEn || '', teamB?.nameCn || '')}</span>
+                        <span className="text-white font-medium">{tTeam(teamB?.nameEn || '', teamB?.nameCn || '')}</span>
                         <img 
                           src={`https://flagsapi.com/${teamB?.countryCode}/flat/64.png`} 
                           alt={teamB?.name}
@@ -128,7 +146,7 @@ export default function HomePage() {
                         />
                       </div>
                     </div>
-                    <p className="text-gray-400 text-sm mt-2 text-center">{matchup.title}</p>
+                    <p className="text-gray-400 text-sm mt-2 text-center">{t(matchup.titleKey)}</p>
                   </button>
                 )
               })}
@@ -140,7 +158,7 @@ export default function HomePage() {
         {!showComparison && (
           <div>
             <h2 className="text-3xl font-bold text-white text-center mb-8">
-              {t('Select Teams to Compare', '选择对战球队')}
+              {t('Select Teams to Compare')}
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -162,15 +180,15 @@ export default function HomePage() {
                       alt={team.name}
                       className="w-16 h-12 mx-auto mb-3"
                     />
-                    <h3 className="text-white font-bold text-lg">{t(team.nameEn, team.nameCn)}</h3>
-                    <p className="text-gray-400 text-sm">{t(team.nameEn, team.nameCn)}</p>
+                    <h3 className="text-white font-bold text-lg">{tTeam(team.nameEn, team.nameCn)}</h3>
+                    <p className="text-gray-400 text-sm">{tTeam(team.nameEn, team.nameCn)}</p>
                     <p className="text-fanforce-secondary text-xs mt-2">{team.starPlayer}</p>
                     
                     {/* 基础数据预览 / Basic Data Preview */}
                     <div className="mt-3 text-xs text-gray-300 space-y-1">
-                      <div>{t('Win Rate', '胜率')}: {team.winRate}%</div>
-                      <div>{t('Avg Age', '平均年龄')}: {team.avgAge}{t('y', '岁')}</div>
-                      <div>{t('FIFA Ranking', 'FIFA排名')}: #{team.fifaRanking}</div>
+                      <div>{t('Win Rate')}: {team.winRate}%</div>
+                      <div>{t('Avg Age')}: {team.avgAge}{t('y')}</div>
+                      <div>{t('FIFA Ranking')}: #{team.fifaRanking}</div>
                     </div>
                   </div>
                 </div>
@@ -186,13 +204,13 @@ export default function HomePage() {
             {/* 对战标题 / Match Title */}
             <div className="text-center">
               <h2 className="text-4xl font-bold text-white mb-4">
-                {t(selectedTeamA.nameEn, selectedTeamA.nameCn)} 🆚 {t(selectedTeamB.nameEn, selectedTeamB.nameCn)}
+                {tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)} 🆚 {tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}
               </h2>
               <button 
                 onClick={resetSelection}
                 className="btn-secondary text-sm"
               >
-                {t('Reselect Teams', '重新选择')}
+                {t('Reselect Teams')}
               </button>
             </div>
 
@@ -206,15 +224,15 @@ export default function HomePage() {
                   alt={selectedTeamA.name}
                   className="w-20 h-15 mx-auto mb-4"
                 />
-                <h3 className="text-2xl font-bold text-white mb-2">{selectedTeamA.nameCn}</h3>
+                <h3 className="text-2xl font-bold text-white mb-2">{tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)}</h3>
                 <div className="combat-score mb-4">
                   {calculateCombatPower(selectedTeamA)}
                 </div>
                 <div className="space-y-2 text-sm text-gray-300">
-                  <div>历史胜率: {selectedTeamA.winRate}%</div>
-                  <div>平均年龄: {selectedTeamA.avgAge}岁</div>
-                  <div>伤病数量: {selectedTeamA.injuryCount}人</div>
-                  <div>核心球员: {selectedTeamA.starPlayer}</div>
+                  <div>{t('Historical Win Rate')}: {selectedTeamA.winRate}%</div>
+                  <div>{t('Average Age')}: {selectedTeamA.avgAge}{t('years old')}</div>
+                  <div>{t('Injury Count')}: {selectedTeamA.injuryCount}{t('people')}</div>
+                  <div>{t('Core Player')}: {selectedTeamA.starPlayer}</div>
                 </div>
               </div>
 
@@ -223,7 +241,7 @@ export default function HomePage() {
                 <div className="text-6xl font-bold text-fanforce-gold animate-pulse-slow">
                   VS
                 </div>
-                <p className="text-white mt-4">战斗力评分 / Combat Power</p>
+                <p className="text-white mt-4">{t('Combat Power')}</p>
               </div>
 
               {/* 队伍B评分 / Team B Score */}
@@ -233,15 +251,15 @@ export default function HomePage() {
                   alt={selectedTeamB.name}
                   className="w-20 h-15 mx-auto mb-4"
                 />
-                <h3 className="text-2xl font-bold text-white mb-2">{selectedTeamB.nameCn}</h3>
+                <h3 className="text-2xl font-bold text-white mb-2">{tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}</h3>
                 <div className="combat-score mb-4">
                   {calculateCombatPower(selectedTeamB)}
                 </div>
                 <div className="space-y-2 text-sm text-gray-300">
-                  <div>历史胜率: {selectedTeamB.winRate}%</div>
-                  <div>平均年龄: {selectedTeamB.avgAge}岁</div>
-                  <div>伤病数量: {selectedTeamB.injuryCount}人</div>
-                  <div>核心球员: {selectedTeamB.starPlayer}</div>
+                  <div>{t('Historical Win Rate')}: {selectedTeamB.winRate}%</div>
+                  <div>{t('Average Age')}: {selectedTeamB.avgAge}{t('years old')}</div>
+                  <div>{t('Injury Count')}: {selectedTeamB.injuryCount}{t('people')}</div>
+                  <div>{t('Core Player')}: {selectedTeamB.starPlayer}</div>
                 </div>
               </div>
             </div>
@@ -249,12 +267,12 @@ export default function HomePage() {
             {/* AI解说区域 / AI Commentary Section */}
             <div className="team-card">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                🤖 AI战术分析师解说 / AI Tactical Analyst Commentary
+                🤖 {t('AI Tactical Analyst Commentary')}
               </h3>
               {isAnalyzing ? (
                 <div className="flex items-center space-x-2 text-fanforce-secondary">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-fanforce-secondary"></div>
-                  <span>AI正在分析比赛数据... / AI is analyzing match data...</span>
+                  <span>{t('AI is analyzing match data...')}</span>
                 </div>
               ) : (
                 <p className="text-gray-300 leading-relaxed">{aiCommentary}</p>
@@ -264,7 +282,7 @@ export default function HomePage() {
             {/* 投票区域 / Voting Section */}
             <div className="team-card">
               <h3 className="text-xl font-bold text-white mb-6 text-center">
-                🗳️ 粉丝预测投票 / Fan Prediction Vote
+                🗳️ {t('Fan Prediction Vote')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
@@ -272,7 +290,7 @@ export default function HomePage() {
                   onClick={() => handleVote('A')}
                   className="btn-primary text-lg py-4"
                 >
-                  支持 {selectedTeamA.nameCn} 获胜
+                  {t('Support')} {tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)} 获胜
                   <br />
                   <span className="text-sm">Support {selectedTeamA.nameEn}</span>
                 </button>
@@ -281,7 +299,7 @@ export default function HomePage() {
                   onClick={() => handleVote('B')}
                   className="btn-secondary text-lg py-4"
                 >
-                  支持 {selectedTeamB.nameCn} 获胜
+                  {t('Support')} {tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)} 获胜
                   <br />
                   <span className="text-sm">Support {selectedTeamB.nameEn}</span>
                 </button>
@@ -291,11 +309,11 @@ export default function HomePage() {
               {(votes.teamA > 0 || votes.teamB > 0) && (
                 <div className="mt-6">
                   <h4 className="text-white font-medium mb-3 text-center">
-                    实时投票结果 / Live Voting Results
+                    {t('Live Voting Results')}
                   </h4>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-white">{selectedTeamA.nameCn}</span>
+                      <span className="text-white">{tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)}</span>
                       <div className="flex-1 mx-4 bg-gray-700 rounded-full h-3">
                         <div 
                           className="bg-fanforce-primary h-3 rounded-full transition-all duration-500"
@@ -304,11 +322,11 @@ export default function HomePage() {
                           }}
                         ></div>
                       </div>
-                      <span className="text-fanforce-primary font-bold">{votes.teamA}票</span>
+                      <span className="text-fanforce-primary font-bold">{votes.teamA}{t('votes')}</span>
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <span className="text-white">{selectedTeamB.nameCn}</span>
+                      <span className="text-white">{tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}</span>
                       <div className="flex-1 mx-4 bg-gray-700 rounded-full h-3">
                         <div 
                           className="bg-fanforce-secondary h-3 rounded-full transition-all duration-500"
@@ -317,7 +335,7 @@ export default function HomePage() {
                           }}
                         ></div>
                       </div>
-                      <span className="text-fanforce-secondary font-bold">{votes.teamB}票</span>
+                      <span className="text-fanforce-secondary font-bold">{votes.teamB}{t('votes')}</span>
                     </div>
                   </div>
                 </div>

@@ -5,15 +5,14 @@
 'use client'
 
 import React, { createContext, useContext, useState, ReactNode } from 'react'
-
-// 语言类型定义 / Language type definition
-type Language = 'en' | 'zh'
+import { translate, Language, TranslationKeys } from '../utils/i18n'
 
 // 上下文接口定义 / Context interface definition
 interface LanguageContextType {
   language: Language
   toggleLanguage: () => void
-  t: (en: string, zh: string) => string // 翻译函数 / Translation function
+  t: (key: keyof TranslationKeys) => string // 使用翻译键的翻译函数 / Translation function using translation keys
+  tTeam: (en: string, zh: string) => string // 球队名称翻译函数 / Team name translation function
 }
 
 // 创建语言上下文 / Create language context
@@ -28,13 +27,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLanguage(prev => prev === 'en' ? 'zh' : 'en')
   }
   
-  // 翻译函数 / Translation function
-  const t = (en: string, zh: string) => {
+  // 标准翻译函数 / Standard translation function
+  const t = (key: keyof TranslationKeys) => {
+    return translate(key, language)
+  }
+  
+  // 球队名称翻译函数（保持兼容性）/ Team name translation function (maintain compatibility)
+  const tTeam = (en: string, zh: string) => {
     return language === 'en' ? en : zh
   }
   
   return (
-    <LanguageContext.Provider value={{ language, toggleLanguage, t }}>
+    <LanguageContext.Provider value={{ language, toggleLanguage, t, tTeam }}>
       {children}
     </LanguageContext.Provider>
   )

@@ -165,10 +165,10 @@ export const calculateCombatPower = (team: Team): number => {
 
 // 预设的经典对战组合 / Preset classic match combinations
 export const classicMatchups = [
-  { teamA: 'argentina', teamB: 'brazil', title: '南美双雄对决 / South American Rivalry' },
-  { teamA: 'france', teamB: 'england', title: '欧洲豪门对话 / European Giants Dialogue' },
-  { teamA: 'portugal', teamB: 'morocco', title: '欧非之战 / Europe vs Africa Battle' },
-  { teamA: 'netherlands', teamB: 'croatia', title: '战术大师对决 / Tactical Masters Clash' }
+  { teamA: 'argentina', teamB: 'brazil', titleKey: 'South American Rivalry' as const },
+  { teamA: 'france', teamB: 'england', titleKey: 'European Giants Dialogue' as const },
+  { teamA: 'portugal', teamB: 'morocco', titleKey: 'Europe vs Africa Battle' as const },
+  { teamA: 'netherlands', teamB: 'croatia', titleKey: 'Tactical Masters Clash' as const }
 ];
 
 export default teams; 
