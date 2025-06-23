@@ -1,0 +1,159 @@
+# FanForce AI - Git忽略文件配置
+# Git ignore file configuration for FanForce AI project
+# 此文件用于指定哪些文件和目录不应该被Git追踪
+# This file specifies which files and directories should not be tracked by Git
+
+# 依赖包目录 / Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+
+# Next.js构建文件 / Next.js build files
+.next/
+out/
+build/
+dist/
+
+# 生产环境构建 / Production builds
+.vercel/
+.netlify/
+
+# 环境变量文件 / Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 日志文件 / Log files
+*.log
+logs/
+
+# 运行时数据 / Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# 覆盖率报告目录 / Coverage directory
+coverage/
+*.lcov
+
+# nyc测试覆盖率 / nyc test coverage
+.nyc_output/
+
+# Grunt中间存储 / Grunt intermediate storage
+.grunt/
+
+# Bower依赖目录 / Bower dependency directory
+bower_components/
+
+# node-waf配置 / node-waf configuration
+.lock-wscript
+
+# 编译的二进制插件 / Compiled binary addons
+build/Release
+
+# TypeScript缓存 / TypeScript cache
+*.tsbuildinfo
+.tscache/
+
+# 可选的npm缓存目录 / Optional npm cache directory
+.npm/
+
+# 可选的REPL历史 / Optional REPL history
+.node_repl_history
+
+# yarn v2缓存 / Yarn v2 cache
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# IDEs和编辑器 / IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS生成的文件 / OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows系统文件 / Windows system files
+*.lnk
+
+# 临时文件 / Temporary files
+*.tmp
+*.temp
+
+# 备份文件 / Backup files
+*.bak
+*.backup
+
+# 测试输出 / Test output
+test-results/
+playwright-report/
+test-output/
+
+# Storybook构建输出 / Storybook build outputs
+storybook-static/
+
+# Next.js sitemap / Next.js sitemap
+sitemap.xml
+sitemap-*.xml
+
+# 钱包和密钥文件 / Wallet and key files
+*.pem
+*.key
+private-keys/
+wallets/
+
+# 数据库文件 / Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# 缓存文件 / Cache files
+.cache/
+.parcel-cache/
+
+# Microbundle缓存 / Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# 可选的ESLint缓存 / Optional eslint cache
+.eslintcache
+
+# Stylelint缓存 / Stylelint cache
+.stylelintcache
+
+# Prisma生成的文件 / Prisma generated files
+prisma/generated/
+
+# Sentry配置文件 / Sentry config file
+.sentryclirc
+
+# API密钥和敏感配置 / API keys and sensitive configs
+config/secrets.json
+.env.secrets
+
+# 项目特定的忽略文件 / Project specific ignores
+public/uploads/
+public/temp/
+
+# Lock文件（根据包管理器选择保留一个）/ Lock files
+# package-lock.json  # 如果使用yarn，取消注释这行
+# yarn.lock         # 如果使用npm，取消注释这行 

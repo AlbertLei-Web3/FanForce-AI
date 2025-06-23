@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* FanForce AI 全局样式 / Global Styles */
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  /* 自定义按钮样式 / Custom Button Styles */
+  .btn-primary {
+    @apply bg-fanforce-primary hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105;
+  }
+  
+  .btn-secondary {
+    @apply bg-fanforce-secondary hover:bg-amber-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105;
+  }
+  
+  /* 卡片样式 / Card Styles */
+  .team-card {
+    @apply bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 hover:bg-white/15 transition-all duration-300 hover:scale-105;
+  }
+  
+  /* 评分显示样式 / Score Display Styles */
+  .combat-score {
+    @apply text-6xl font-bold bg-gradient-to-r from-fanforce-gold to-fanforce-secondary bg-clip-text text-transparent;
+  }
+  
+  /* 动画效果 / Animation Effects */
+  .glow-effect {
+    @apply shadow-2xl shadow-fanforce-primary/50;
+  }
+}
+
+@layer utilities {
+  /* 自定义工具类 / Custom Utilities */
+  .text-shadow {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+  
+  .backdrop-blur-strong {
+    backdrop-filter: blur(20px);
+  }
+} 
