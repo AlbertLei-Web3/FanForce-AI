@@ -43,6 +43,12 @@ export interface TranslationKeys {
   'European Giants Dialogue': string
   'Europe vs Africa Battle': string
   'Tactical Masters Clash': string
+  
+  // Web3钱包相关 / Web3 wallet related
+  'Connect Wallet': string
+  'Connecting': string
+  'Switch to Chiliz': string
+  'Disconnect Wallet': string
 }
 
 // 英文翻译 / English translations
@@ -78,6 +84,11 @@ const enTranslations: TranslationKeys = {
   'European Giants Dialogue': 'European Giants Dialogue',
   'Europe vs Africa Battle': 'Europe vs Africa Battle',
   'Tactical Masters Clash': 'Tactical Masters Clash',
+  
+  'Connect Wallet': 'Connect Wallet',
+  'Connecting': 'Connecting',
+  'Switch to Chiliz': 'Switch to Chiliz',
+  'Disconnect Wallet': 'Disconnect Wallet',
 }
 
 // 中文翻译 / Chinese translations
@@ -113,6 +124,11 @@ const zhTranslations: TranslationKeys = {
   'European Giants Dialogue': '欧洲豪门对话',
   'Europe vs Africa Battle': '欧非之战',
   'Tactical Masters Clash': '战术大师对决',
+  
+  'Connect Wallet': '连接钱包',
+  'Connecting': '连接中',
+  'Switch to Chiliz': '切换到Chiliz',
+  'Disconnect Wallet': '断开钱包',
 }
 
 // 翻译函数 / Translation function
