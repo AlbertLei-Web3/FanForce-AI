@@ -264,6 +264,39 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 - 邮箱: your.email@example.com
 - Twitter: [@YourTwitter]
 
+## ⚡ 智能合约与链上交互 / Smart Contract & On-Chain Interaction
+
+**FanForcePredictionDemo.sol**
+- 管理员地址写死，便于演示和权限管理
+- 支持多场比赛的创建、下注、奖励池注入、结算、领奖、重置和紧急提取
+- 事件日志、状态变量、nonReentrant防护，适配Chiliz链
+- 前端通过ethers.js/viem等库与合约交互，所有核心操作均有对应合约函数
+
+**FanForcePredictionDemo.sol**
+- Admin address is hardcoded for demo and permission control
+- Supports creation, betting, reward pool injection, settlement, claiming, reset, and emergency withdrawal for multiple matches
+- Event logs, state variables, and nonReentrant protection, fully compatible with Chiliz chain
+- Frontend interacts with the contract via ethers.js/viem, all core actions have corresponding contract functions
+
+### 示例前端调用 / Example Frontend Call
+
+```typescript
+// 下注示例 / Example: Place a bet
+await contract.placeBet(matchId, team, amount);
+
+// 结算比赛 / Settle match
+await contract.settleMatch(matchId, result);
+
+// 领取奖励 / Claim reward
+await contract.claimReward(matchId);
+```
+
+### 合约部署与配置 / Contract Deployment & Configuration
+
+- 推荐用Hardhat/Remix在Chiliz测试网部署
+- 构造函数需传入CHZ代币合约地址
+- 前端需配置合约ABI和部署地址
+
 ---
 
 <p align="center">
