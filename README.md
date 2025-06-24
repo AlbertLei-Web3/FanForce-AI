@@ -272,12 +272,6 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 - 事件日志、状态变量、nonReentrant防护，适配Chiliz链
 - 前端通过ethers.js/viem等库与合约交互，所有核心操作均有对应合约函数
 
-**FanForcePredictionDemo.sol**
-- Admin address is hardcoded for demo and permission control
-- Supports creation, betting, reward pool injection, settlement, claiming, reset, and emergency withdrawal for multiple matches
-- Event logs, state variables, and nonReentrant protection, fully compatible with Chiliz chain
-- Frontend interacts with the contract via ethers.js/viem, all core actions have corresponding contract functions
-
 ### 示例前端调用 / Example Frontend Call
 
 ```typescript
@@ -296,6 +290,32 @@ await contract.claimReward(matchId);
 - 推荐用Hardhat/Remix在Chiliz测试网部署
 - 构造函数需传入CHZ代币合约地址
 - 前端需配置合约ABI和部署地址
+
+### 平台手续费机制 / Platform Fee Mechanism
+
+**平台手续费逻辑：**
+用户领取奖励时，合约会自动从其总奖励中抽取5%作为平台手续费，转入平台管理员（0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5），用户实际到账为剩余的95%。该机制保障平台收入，由智能合约强制执行。
+
+**Platform Fee Logic:**
+When a user claims their reward, 5% of the total reward is automatically transferred to the platform admin (0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5) as a protocol fee. The user receives the remaining 95%. This mechanism ensures sustainable platform revenue and is enforced at the smart contract level.
+
+#### 代码片段 / Code Snippet
+```solidity
+// 计算并转账平台手续费 / Calculate and transfer platform fee
+uint256 platformFee = (totalReward * PLATFORM_FEE_PERCENT) / RATIO_BASE;
+uint256 userReward = totalReward - platformFee;
+require(CHZ.transfer(ADMIN, platformFee), "Fee transfer failed");
+require(CHZ.transfer(msg.sender, userReward), "Reward transfer failed");
+```
+
+#### Mermaid 流程图 / Mermaid Flowchart
+```mermaid
+flowchart TD
+  U[用户 claimReward] --> C{计算总奖励}
+  C --> F[计算5%平台手续费]
+  F --> A[转账5%给Admin]
+  F --> U2[转账95%给用户]
+```
 
 ---
 

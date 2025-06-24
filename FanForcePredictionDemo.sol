@@ -22,6 +22,7 @@ contract FanForcePredictionDemo is ReentrancyGuard {
     uint256 public constant LOSER_RATIO = 30;  // 败方奖励比例 / Loser reward ratio (30%)
     uint256 public constant RATIO_BASE = 100;  // 比例基数 / Ratio base
     uint256 public constant MIN_BET = 1e18;    // 最小下注额（1 CHZ）/ Min bet (1 CHZ)
+    uint256 public constant PLATFORM_FEE_PERCENT = 5; // 平台手续费 / Platform fee (5%)
 
     // ========== 数据结构 / Data Structures ==========
     struct Bet {
@@ -131,22 +132,39 @@ contract FanForcePredictionDemo is ReentrancyGuard {
         Bet storage b = m.bets[msg.sender];
         require(b.amount > 0, "No bet");
         require(!b.claimed, "Already claimed");
-        // 计算奖励 / Calculate reward
-        uint256 reward = b.amount;
+        b.claimed = true;
+
+        // 计算总奖励 / Calculate total reward
+        uint256 totalReward = b.amount;
         if (b.team == m.result) {
             // 胜方 / Winner
             uint256 winShare = (m.rewardPool * WINNER_RATIO) / RATIO_BASE;
             uint256 totalWin = m.result == 1 ? m.totalA : m.totalB;
-            reward += (winShare * b.amount) / totalWin;
+            if (totalWin > 0) { // 避免除以零 / Avoid division by zero
+                totalReward += (winShare * b.amount) / totalWin;
+            }
         } else {
             // 败方 / Loser
             uint256 loseShare = (m.rewardPool * LOSER_RATIO) / RATIO_BASE;
             uint256 totalLose = m.result == 1 ? m.totalB : m.totalA;
-            reward += (loseShare * b.amount) / totalLose;
+            if (totalLose > 0) { // 避免除以零 / Avoid division by zero
+                totalReward += (loseShare * b.amount) / totalLose;
+            }
         }
-        b.claimed = true;
-        require(CHZ.transfer(msg.sender, reward), "Transfer failed");
-        emit RewardClaimed(matchId, msg.sender, reward);
+
+        // 计算并转账平台手续费 / Calculate and transfer platform fee
+        uint256 platformFee = (totalReward * PLATFORM_FEE_PERCENT) / RATIO_BASE;
+        uint256 userReward = totalReward - platformFee;
+
+        // 转账手续费给平台 / Transfer fee to platform (ADMIN)
+        if (platformFee > 0) {
+            require(CHZ.transfer(ADMIN, platformFee), "Fee transfer failed");
+        }
+
+        // 转账净奖励给用户 / Transfer net reward to user
+        require(CHZ.transfer(msg.sender, userReward), "Reward transfer failed");
+        
+        emit RewardClaimed(matchId, msg.sender, userReward);
     }
 
     // 管理员重置比赛 / Reset match
