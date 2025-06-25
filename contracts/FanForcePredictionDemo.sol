@@ -46,10 +46,11 @@ contract FanForcePredictionDemo is ReentrancyGuard {
 
     // ========== 事件日志 / Events ==========
     event MatchCreated(uint256 indexed matchId);
-    event BetPlaced(uint256 indexed matchId, address indexed user, uint8 team, uint256 amount);
+    event MatchDeleted(uint256 indexed matchId);
+    event BetPlaced(uint256 indexed matchId, address indexed user, uint8 team, uint256 netAmount, uint256 fee);
     event RewardInjected(uint256 indexed matchId, uint256 amount);
     event MatchSettled(uint256 indexed matchId, uint8 result);
-    event RewardClaimed(uint256 indexed matchId, address indexed user, uint256 amount);
+    event RewardClaimed(uint256 indexed matchId, address indexed user, uint256 principal, uint256 rewardShare, uint256 fee, uint256 finalAmount);
     event MatchReset(uint256 indexed matchId);
     event EmergencyWithdraw(address indexed admin, uint256 amount);
 
@@ -75,6 +76,26 @@ contract FanForcePredictionDemo is ReentrancyGuard {
         emit MatchCreated(matchId);
     }
 
+    // 删除比赛 / Delete a match
+    function deleteMatch(uint256 matchId) external onlyAdmin {
+        Match storage m = matches[matchId];
+        require(m.matchId != 0, "Match not exist");
+        require(m.totalA == 0 && m.totalB == 0, "Match has bets"); // 只能删除没有下注的比赛 / Can only delete matches without bets
+        require(!m.settled, "Match already settled"); // 不能删除已结算的比赛 / Cannot delete settled matches
+        
+        // 从数组中移除 / Remove from array
+        for (uint i = 0; i < matchIds.length; i++) {
+            if (matchIds[i] == matchId) {
+                matchIds[i] = matchIds[matchIds.length - 1];
+                matchIds.pop();
+                break;
+            }
+        }
+        
+        delete matches[matchId];
+        emit MatchDeleted(matchId);
+    }
+
     // 用户下注 / Place a bet
     function placeBet(uint256 matchId, uint8 team, uint256 amount) external payable nonReentrant {
         require(team == 1 || team == 2, "Invalid team");
@@ -85,16 +106,29 @@ contract FanForcePredictionDemo is ReentrancyGuard {
         require(!m.settled, "Match settled");
         Bet storage b = m.bets[msg.sender];
         require(b.amount == 0, "Already bet");
-        // 记录下注 / Record bet
-        b.team = team;
-        b.amount = amount;
-        b.claimed = false;
-        if (team == 1) {
-            m.totalA += amount;
-        } else {
-            m.totalB += amount;
+        
+        // 计算下注手续费 / Calculate betting fee
+        uint256 betFee = (amount * PLATFORM_FEE_PERCENT) / 100;
+        uint256 netAmount = amount - betFee;
+        
+        // 立即转账手续费给Admin / Immediately transfer fee to Admin
+        if (betFee > 0) {
+            (bool feeSuccess, ) = payable(ADMIN).call{value: betFee}("");
+            require(feeSuccess, "Fee transfer failed");
         }
-        emit BetPlaced(matchId, msg.sender, team, amount);
+        
+        // 记录净下注额 / Record net bet amount
+        b.team = team;
+        b.amount = netAmount; // 存储净下注额，不包含手续费 / Store net amount, excluding fee
+        b.claimed = false;
+        
+        if (team == 1) {
+            m.totalA += netAmount; // 统计净下注额 / Count net bet amount
+        } else {
+            m.totalB += netAmount;
+        }
+        
+        emit BetPlaced(matchId, msg.sender, team, netAmount, betFee);
     }
 
     // 平台注入奖励池 / Inject platform reward pool
@@ -132,39 +166,45 @@ contract FanForcePredictionDemo is ReentrancyGuard {
         require(!b.claimed, "Already claimed");
         b.claimed = true;
 
-        // 计算总奖励 / Calculate total reward
-        uint256 totalReward = b.amount;
+        // 本金全额退还 / Principal fully returned
+        uint256 principal = b.amount;
+        uint256 rewardShare = 0;
+
+        // 计算奖励池分配 / Calculate reward pool distribution
         if (b.team == m.result) {
-            // 胜方 / Winner
+            // 胜方分配70%奖励池 / Winner gets 70% of reward pool
             uint256 winShare = (m.rewardPool * WINNER_RATIO) / RATIO_BASE;
             uint256 totalWin = m.result == 1 ? m.totalA : m.totalB;
             if (totalWin > 0) { // 避免除以零 / Avoid division by zero
-                totalReward += (winShare * b.amount) / totalWin;
+                rewardShare = (winShare * b.amount) / totalWin;
             }
         } else {
-            // 败方 / Loser
+            // 败方分配30%奖励池 / Loser gets 30% of reward pool
             uint256 loseShare = (m.rewardPool * LOSER_RATIO) / RATIO_BASE;
             uint256 totalLose = m.result == 1 ? m.totalB : m.totalA;
             if (totalLose > 0) { // 避免除以零 / Avoid division by zero
-                totalReward += (loseShare * b.amount) / totalLose;
+                rewardShare = (loseShare * b.amount) / totalLose;
             }
         }
 
-        // 计算并转账平台手续费 / Calculate and transfer platform fee
-        uint256 platformFee = (totalReward * PLATFORM_FEE_PERCENT) / RATIO_BASE;
-        uint256 userReward = totalReward - platformFee;
+        // 计算领取前总额 / Calculate total before claiming fee
+        uint256 totalBeforeFee = principal + rewardShare;
+        
+        // 计算领取手续费 / Calculate claiming fee
+        uint256 claimFee = (totalBeforeFee * PLATFORM_FEE_PERCENT) / 100;
+        uint256 finalAmount = totalBeforeFee - claimFee;
 
-        // 转账手续费给平台 / Transfer fee to platform (ADMIN)
-        if (platformFee > 0) {
-            (bool feeSuccess, ) = payable(ADMIN).call{value: platformFee}("");
+        // 转账手续费给Admin / Transfer fee to Admin
+        if (claimFee > 0) {
+            (bool feeSuccess, ) = payable(ADMIN).call{value: claimFee}("");
             require(feeSuccess, "Fee transfer failed");
         }
 
-        // 转账净奖励给用户 / Transfer net reward to user
-        (bool rewardSuccess, ) = payable(msg.sender).call{value: userReward}("");
+        // 转账最终金额给用户 / Transfer final amount to user
+        (bool rewardSuccess, ) = payable(msg.sender).call{value: finalAmount}("");
         require(rewardSuccess, "Reward transfer failed");
         
-        emit RewardClaimed(matchId, msg.sender, userReward);
+        emit RewardClaimed(matchId, msg.sender, principal, rewardShare, claimFee, finalAmount);
     }
 
     // 管理员重置比赛 / Reset match

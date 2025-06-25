@@ -1,7 +1,7 @@
 {
-  "contractAddress": "0x90C9D004cB071064Ba9B9f091Dc96D76b09E8aBC",
+  "contractAddress": "0x0Aa8861bd3691F8dd92291Dd639d43ACb17aB5f5",
   "adminAddress": "0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5",
   "paymentMethod": "Native CHZ",
   "network": "chilizSpicy",
-  "deploymentTime": "2025-06-25T06:40:54.650Z"
+  "deploymentTime": "2025-06-25T08:41:09.945Z"
 }

@@ -30,6 +30,16 @@ export interface TranslationKeys {
   'Live Voting Results': string
   'votes': string
   
+  // 下注相关 / Betting related
+  'Place Your Bet': string
+  'Bet on': string
+  'Match Statistics': string
+  'Team A Bets': string
+  'Team B Bets': string
+  'Reward Pool': string
+  'Your Bet': string
+  'Claimed': string
+  
   // 球队数据显示 / Team data display
   'Historical Win Rate': string
   'Average Age': string
@@ -90,6 +100,15 @@ const enTranslations: TranslationKeys = {
   'Live Voting Results': 'Live Voting Results',
   'votes': 'votes',
   
+  'Place Your Bet': 'Place Your Bet',
+  'Bet on': 'Bet on',
+  'Match Statistics': 'Match Statistics',
+  'Team A Bets': 'Team A Bets',
+  'Team B Bets': 'Team B Bets',
+  'Reward Pool': 'Reward Pool',
+  'Your Bet': 'Your Bet',
+  'Claimed': 'Claimed',
+  
   'Historical Win Rate': 'Historical Win Rate',
   'Average Age': 'Average Age',
   'Injury Count': 'Injury Count',
@@ -146,6 +165,15 @@ const zhTranslations: TranslationKeys = {
   'Support': '支持',
   'Live Voting Results': '实时投票结果',
   'votes': '票',
+  
+  'Place Your Bet': '下注预测',
+  'Bet on': '下注支持',
+  'Match Statistics': '比赛统计',
+  'Team A Bets': '球队A下注',
+  'Team B Bets': '球队B下注',
+  'Reward Pool': '奖励池',
+  'Your Bet': '您的下注',
+  'Claimed': '已领取',
   
   'Historical Win Rate': '历史胜率',
   'Average Age': '平均年龄',

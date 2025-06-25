@@ -1,12 +1,13 @@
 // FanForce AI - 客户端布局组件
-// Client Layout Component - 客户端渲染的布局组件，包含语言上下文和导航栏
-// Client-side rendered layout component with language context and navbar
+// Client Layout Component - 客户端渲染的布局组件，包含语言上下文、Web3上下文和合约上下文
+// Client-side rendered layout component with language context, Web3 context and contract context
 
 'use client'
 
 import { ReactNode } from 'react'
 import { LanguageProvider } from '../context/LanguageContext'
 import { Web3Provider } from '../context/Web3Context'
+import { ContractProvider } from '../context/ContractContext'
 import Navbar from './Navbar'
 
 interface ClientLayoutProps {
@@ -17,7 +18,8 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   return (
     <LanguageProvider>
       <Web3Provider>
-      <div className="min-h-screen">
+        <ContractProvider>
+          <div className="min-h-screen">
         {/* 顶部导航栏 / Top Navigation Bar */}
         <Navbar />
         
@@ -35,7 +37,8 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
             </div>
           </div>
         </footer>
-      </div>
+          </div>
+        </ContractProvider>
       </Web3Provider>
     </LanguageProvider>
   )

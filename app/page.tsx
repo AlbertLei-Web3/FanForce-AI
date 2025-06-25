@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react'
 import { teams, calculateCombatPower, getClassicMatchups, deleteClassicMatchup, Team } from '../data/teams'
 import { useLanguage } from './context/LanguageContext'
+import { useContract } from './context/ContractContext'
 import AdminControls from './components/AdminControls'
 import AdminPanel from './components/AdminPanel'
 
@@ -20,8 +21,24 @@ export default function HomePage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [matchups, setMatchups] = useState(getClassicMatchups())
   
-  // 语言上下文 / Language Context
+  // 下注相关状态 / Betting Related State
+  const [betAmount, setBetAmount] = useState('1')
+  const [showBetModal, setShowBetModal] = useState(false)
+  const [selectedBetTeam, setSelectedBetTeam] = useState<'A' | 'B' | null>(null)
+  
+  // 上下文 / Contexts
   const { t, tTeam } = useLanguage()
+  const { 
+    createMatch, 
+    placeBet, 
+    currentMatchId, 
+    matchInfo, 
+    userBet, 
+    loading, 
+    error,
+    refreshMatchInfo,
+    refreshUserBet
+  } = useContract()
 
   // 页面历史管理 / Page history management
   useEffect(() => {
@@ -53,17 +70,30 @@ export default function HomePage() {
   }, [showComparison])
 
   // 选择球队处理函数 / Team Selection Handler
-  const handleTeamSelection = (team: Team, position: 'A' | 'B') => {
+  const handleTeamSelection = async (team: Team, position: 'A' | 'B') => {
     if (position === 'A') {
       setSelectedTeamA(team)
     } else {
       setSelectedTeamB(team)
     }
     
-    // 如果两支球队都已选择，显示对比 / Show comparison if both teams are selected
+    // 如果两支球队都已选择，显示对比并创建合约匹配 / Show comparison and create contract match if both teams are selected
     if ((position === 'A' && selectedTeamB) || (position === 'B' && selectedTeamA)) {
+      const teamA = position === 'A' ? team : selectedTeamA!
+      const teamB = position === 'B' ? team : selectedTeamB!
+      
       setShowComparison(true)
       generateAICommentary()
+      
+      // 创建合约匹配 / Create contract match
+      const matchId = await createMatch(
+        `${teamA.nameEn}|${teamA.nameCn}`,
+        `${teamB.nameEn}|${teamB.nameCn}`
+      )
+      
+      if (matchId) {
+        console.log('Match created with ID:', matchId)
+      }
     }
   }
 
@@ -83,13 +113,35 @@ export default function HomePage() {
     }, 2000)
   }
 
-  // 投票处理函数 / Voting Handler
+  // 下注处理函数 / Betting Handler
   const handleVote = (team: 'A' | 'B') => {
-    if (team === 'A') {
-      setVotes(prev => ({ ...prev, teamA: prev.teamA + 1 }))
-    } else {
-      setVotes(prev => ({ ...prev, teamB: prev.teamB + 1 }))
+    setSelectedBetTeam(team)
+    setShowBetModal(true)
+  }
+
+  // 确认下注 / Confirm Bet
+  const handleConfirmBet = async () => {
+    if (!selectedBetTeam || !currentMatchId) return
+    
+    const teamNumber = selectedBetTeam === 'A' ? 1 : 2
+    const success = await placeBet(currentMatchId, teamNumber as 1 | 2, betAmount)
+    
+    if (success) {
+      // 更新投票计数以显示 / Update vote count for display
+      if (selectedBetTeam === 'A') {
+        setVotes(prev => ({ ...prev, teamA: prev.teamA + 1 }))
+      } else {
+        setVotes(prev => ({ ...prev, teamB: prev.teamB + 1 }))
+      }
+      setShowBetModal(false)
+      setSelectedBetTeam(null)
     }
+  }
+
+  // 取消下注 / Cancel Bet
+  const handleCancelBet = () => {
+    setShowBetModal(false)
+    setSelectedBetTeam(null)
   }
 
   // 重置选择 / Reset Selection
@@ -293,34 +345,75 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* 投票区域 / Voting Section */}
+            {/* 合约信息显示 / Contract Info Display */}
+            {matchInfo && (
+              <div className="team-card">
+                <h3 className="text-xl font-bold text-white mb-4 text-center">
+                  📊 {t('Match Statistics')}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <p className="text-gray-400 text-sm">{t('Team A Bets')}</p>
+                    <p className="text-fanforce-primary text-2xl font-bold">{matchInfo.totalTeamA} CHZ</p>
+                  </div>
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <p className="text-gray-400 text-sm">{t('Reward Pool')}</p>
+                    <p className="text-fanforce-gold text-2xl font-bold">{matchInfo.rewardPool} CHZ</p>
+                  </div>
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <p className="text-gray-400 text-sm">{t('Team B Bets')}</p>
+                    <p className="text-fanforce-secondary text-2xl font-bold">{matchInfo.totalTeamB} CHZ</p>
+                  </div>
+                </div>
+                
+                {userBet && parseFloat(userBet.amount) > 0 && (
+                  <div className="mt-4 p-4 bg-green-900/30 border border-green-600 rounded-lg">
+                    <p className="text-green-400 text-center">
+                      {t('Your Bet')}: {userBet.amount} CHZ on {userBet.team === 1 ? tTeam(selectedTeamA?.nameEn || '', selectedTeamA?.nameCn || '') : tTeam(selectedTeamB?.nameEn || '', selectedTeamB?.nameCn || '')}
+                      {userBet.claimed && <span className="ml-2">✅ {t('Claimed')}</span>}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 下注区域 / Betting Section */}
             <div className="team-card">
               <h3 className="text-xl font-bold text-white mb-6 text-center">
-                🗳️ {t('Fan Prediction Vote')}
+                🎯 {t('Place Your Bet')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 <button
                   onClick={() => handleVote('A')}
-                  className="btn-primary text-lg py-4"
+                  className="btn-primary text-lg py-4 disabled:opacity-50"
+                  disabled={loading || !currentMatchId}
                 >
-                  {t('Support')} {tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)} 获胜
+                  {t('Bet on')} {tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)}
                   <br />
-                  <span className="text-sm">Support {selectedTeamA.nameEn}</span>
+                  <span className="text-sm">Bet on {selectedTeamA.nameEn}</span>
                 </button>
                 
                 <button
                   onClick={() => handleVote('B')}
-                  className="btn-secondary text-lg py-4"
+                  className="btn-secondary text-lg py-4 disabled:opacity-50"
+                  disabled={loading || !currentMatchId}
                 >
-                  {t('Support')} {tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)} 获胜
+                  {t('Bet on')} {tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}
                   <br />
-                  <span className="text-sm">Support {selectedTeamB.nameEn}</span>
+                  <span className="text-sm">Bet on {selectedTeamB.nameEn}</span>
                 </button>
               </div>
 
+              {/* 错误显示 / Error Display */}
+              {error && (
+                <div className="mt-4 p-4 bg-red-900/30 border border-red-600 rounded-lg">
+                  <p className="text-red-400 text-center">{error}</p>
+                </div>
+              )}
+
               {/* Add AdminControls component */}
-              <AdminControls matchId={1} />
+              <AdminControls matchId={currentMatchId || 1} />
 
               {/* 投票结果显示 / Voting Results Display */}
               {(votes.teamA > 0 || votes.teamB > 0) && (
@@ -361,6 +454,61 @@ export default function HomePage() {
           </div>
         )}
       </div>
+
+      {/* 下注模态框 / Betting Modal */}
+      {showBetModal && selectedBetTeam && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-white mb-4 text-center">
+              {t('Place Your Bet')}
+            </h3>
+            
+            <div className="mb-4">
+              <p className="text-gray-300 text-center mb-2">
+                {t('Bet on')} {selectedBetTeam === 'A' 
+                  ? tTeam(selectedTeamA?.nameEn || '', selectedTeamA?.nameCn || '')
+                  : tTeam(selectedTeamB?.nameEn || '', selectedTeamB?.nameCn || '')
+                }
+              </p>
+              
+              <div className="space-y-2">
+                <label className="block text-gray-400 text-sm">
+                  Amount (CHZ) - Minimum 1 CHZ
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="0.1"
+                  value={betAmount}
+                  onChange={(e) => setBetAmount(e.target.value)}
+                  className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:outline-none"
+                  placeholder="Enter bet amount"
+                />
+                <p className="text-xs text-gray-500">
+                  Note: 5% fee will be deducted (Net bet: {(parseFloat(betAmount) * 0.95).toFixed(2)} CHZ)
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={handleCancelBet}
+                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmBet}
+                className="flex-1 px-4 py-2 bg-fanforce-primary text-white rounded-lg hover:bg-fanforce-primary/80 transition-colors disabled:opacity-50"
+                disabled={loading || parseFloat(betAmount) < 1}
+              >
+                {loading ? 'Processing...' : `Bet ${betAmount} CHZ`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 
