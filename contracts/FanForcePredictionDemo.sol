@@ -17,7 +17,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract FanForcePredictionDemo is ReentrancyGuard {
     // ========== 配置参数 / Config Parameters ==========
     address public constant ADMIN = 0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5; // 管理员地址 / Admin address
-    IERC20 public immutable CHZ; // CHZ代币合约地址 / CHZ token contract
     uint256 public constant WINNER_RATIO = 70; // 胜方奖励比例 / Winner reward ratio (70%)
     uint256 public constant LOSER_RATIO = 30;  // 败方奖励比例 / Loser reward ratio (30%)
     uint256 public constant RATIO_BASE = 100;  // 比例基数 / Ratio base
@@ -55,8 +54,8 @@ contract FanForcePredictionDemo is ReentrancyGuard {
     event EmergencyWithdraw(address indexed admin, uint256 amount);
 
     // ========== 构造函数 / Constructor ==========
-    constructor(address chzToken) {
-        CHZ = IERC20(chzToken);
+    constructor() {
+        // 使用原生CHZ，无需代币地址参数 / Using native CHZ, no token address parameter needed
     }
 
     // ========== 修饰符 / Modifiers ==========
@@ -77,16 +76,15 @@ contract FanForcePredictionDemo is ReentrancyGuard {
     }
 
     // 用户下注 / Place a bet
-    function placeBet(uint256 matchId, uint8 team, uint256 amount) external nonReentrant {
+    function placeBet(uint256 matchId, uint8 team, uint256 amount) external payable nonReentrant {
         require(team == 1 || team == 2, "Invalid team");
         require(amount >= MIN_BET, "Bet too small");
+        require(msg.value == amount, "Value mismatch"); // 确保发送的原生CHZ与amount匹配 / Ensure sent native CHZ matches amount
         Match storage m = matches[matchId];
         require(m.matchId != 0, "Match not exist");
         require(!m.settled, "Match settled");
         Bet storage b = m.bets[msg.sender];
         require(b.amount == 0, "Already bet");
-        // 转账 / Transfer CHZ
-        require(CHZ.transferFrom(msg.sender, address(this), amount), "Transfer failed");
         // 记录下注 / Record bet
         b.team = team;
         b.amount = amount;
@@ -100,13 +98,13 @@ contract FanForcePredictionDemo is ReentrancyGuard {
     }
 
     // 平台注入奖励池 / Inject platform reward pool
-    function injectReward(uint256 matchId, uint256 amount) external onlyAdmin nonReentrant {
+    function injectReward(uint256 matchId, uint256 amount) external payable onlyAdmin nonReentrant {
         Match storage m = matches[matchId];
         require(m.matchId != 0, "Match not exist");
         require(!m.rewardInjected, "Already injected");
         require(!m.settled, "Match settled");
         require(amount > 0, "Zero amount");
-        require(CHZ.transferFrom(msg.sender, address(this), amount), "Transfer failed");
+        require(msg.value == amount, "Value mismatch"); // 确保发送的原生CHZ与amount匹配 / Ensure sent native CHZ matches amount
         m.rewardPool = amount;
         m.rewardInjected = true;
         emit RewardInjected(matchId, amount);
@@ -158,11 +156,13 @@ contract FanForcePredictionDemo is ReentrancyGuard {
 
         // 转账手续费给平台 / Transfer fee to platform (ADMIN)
         if (platformFee > 0) {
-            require(CHZ.transfer(ADMIN, platformFee), "Fee transfer failed");
+            (bool feeSuccess, ) = payable(ADMIN).call{value: platformFee}("");
+            require(feeSuccess, "Fee transfer failed");
         }
 
         // 转账净奖励给用户 / Transfer net reward to user
-        require(CHZ.transfer(msg.sender, userReward), "Reward transfer failed");
+        (bool rewardSuccess, ) = payable(msg.sender).call{value: userReward}("");
+        require(rewardSuccess, "Reward transfer failed");
         
         emit RewardClaimed(matchId, msg.sender, userReward);
     }
@@ -185,9 +185,10 @@ contract FanForcePredictionDemo is ReentrancyGuard {
 
     // 紧急提取合约残余资金 / Emergency withdraw
     function emergencyWithdraw() external onlyAdmin nonReentrant {
-        uint256 bal = CHZ.balanceOf(address(this));
+        uint256 bal = address(this).balance;
         require(bal > 0, "No funds");
-        require(CHZ.transfer(ADMIN, bal), "Transfer failed");
+        (bool success, ) = payable(ADMIN).call{value: bal}("");
+        require(success, "Transfer failed");
         emit EmergencyWithdraw(ADMIN, bal);
     }
 

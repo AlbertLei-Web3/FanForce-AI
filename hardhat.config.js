@@ -3,8 +3,8 @@ require("dotenv").config();
 
 // 从.env文件获取私钥
 const ADMIN_PRIVATE_KEY = process.env.PRIVATE_KEY;
-const USER_A_PRIVATE_KEY = process.env["PRIVATE_KEY A"];
-const USER_B_PRIVATE_KEY = process.env["PRIVATE_KEY B"];
+const USER_A_PRIVATE_KEY = process.env.PRIVATE_KEY_A;
+const USER_B_PRIVATE_KEY = process.env.PRIVATE_KEY_B;
 
 module.exports = {
   solidity: "0.8.20",

@@ -13,7 +13,7 @@ describe("FanForcePredictionDemo on Chiliz Spicy Testnet", function () {
   let predictionContract;
   
   // Contract addresses
-  const PREDICTION_CONTRACT = "0x95A10134D621b7ad01310381AF42fd80910e1221";
+  const PREDICTION_CONTRACT = "0x90C9D004cB071064Ba9B9f091Dc96D76b09E8aBC"; // Updated to use native CHZ contract / 更新为使用原生CHZ的合约
   
   // Account addresses from .env
   const ADMIN_ADDRESS = process.env.ADMIN_ADDRESS || "0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5";
@@ -29,8 +29,8 @@ describe("FanForcePredictionDemo on Chiliz Spicy Testnet", function () {
   ];
   const TEAM_A = 1;    // 每场比赛的第一支队伍
   const TEAM_B = 2;    // 每场比赛的第二支队伍
-  const BET_AMOUNT = ethers.parseEther("0.05");  // 0.05 CHZ for each bet
-  const REWARD_POOL = ethers.parseEther("0.1"); // 0.1 CHZ reward pool
+  const BET_AMOUNT = ethers.parseEther("1.0");  // 1 CHZ (合约最小下注额要求) / 1 CHZ (contract minimum bet requirement)
+  const REWARD_POOL = ethers.parseEther("1.0"); // 1 CHZ 奖池 / 1 CHZ reward pool
 
   before(async function () {
     try {
@@ -68,24 +68,68 @@ describe("FanForcePredictionDemo on Chiliz Spicy Testnet", function () {
       console.log("User A:", userA.address);
       console.log("User B:", userB.address);
 
-      // Get native CHZ balances first
+      // Check network connection first
+      console.log("\nChecking network connection...");
+      const network = await ethers.provider.getNetwork();
+      console.log("Connected to network:", network.name, "Chain ID:", network.chainId.toString());
+      
+      if (network.chainId !== 88882n) {
+        throw new Error(`Wrong network! Expected Chiliz Spicy testnet (88882), got ${network.chainId}`);
+      }
+
+      // Get native CHZ balances with retry mechanism
       console.log("\nChecking native CHZ balances:");
-      const adminBalance = await ethers.provider.getBalance(admin.address);
-      const userABalance = await ethers.provider.getBalance(userA.address);
-      const userBBalance = await ethers.provider.getBalance(userB.address);
-      console.log("Admin native CHZ:", ethers.formatEther(adminBalance));
-      console.log("User A native CHZ:", ethers.formatEther(userABalance));
-      console.log("User B native CHZ:", ethers.formatEther(userBBalance));
+      let adminBalance, userABalance, userBBalance;
+      
+      try {
+        adminBalance = await ethers.provider.getBalance(admin.address);
+        userABalance = await ethers.provider.getBalance(userA.address);
+        userBBalance = await ethers.provider.getBalance(userB.address);
+        
+        console.log("Admin native CHZ:", ethers.formatEther(adminBalance));
+        console.log("User A native CHZ:", ethers.formatEther(userABalance));
+        console.log("User B native CHZ:", ethers.formatEther(userBBalance));
+        
+        // Verify balances are not zero
+        if (adminBalance === 0n && userABalance === 0n && userBBalance === 0n) {
+          console.log("\nWarning: All balances are showing as 0, this might be a network connectivity issue.");
+          console.log("Please check:");
+          console.log("1. Internet connection");
+          console.log("2. Chiliz Spicy RPC endpoint: https://spicy-rpc.chiliz.com");
+          console.log("3. Wallet addresses are correct");
+        }
+      } catch (error) {
+        console.error("Error fetching balances:", error.message);
+        throw new Error("Failed to fetch CHZ balances. Please check network connection and RPC endpoint.");
+      }
 
       // Get prediction contract instance
       predictionContract = await ethers.getContractAt("FanForcePredictionDemo", PREDICTION_CONTRACT);
       console.log("\nPrediction contract connected at:", PREDICTION_CONTRACT);
 
-      // Check if accounts have enough CHZ for testing
-      const minRequired = ethers.parseEther("0.5"); // 至少需要0.5 CHZ用于测试和gas
-      if (adminBalance < minRequired || userABalance < minRequired || userBBalance < minRequired) {
-        throw new Error("Insufficient CHZ balance. Please make sure all accounts have at least 0.5 CHZ for testing.");
+      // Check if accounts have enough CHZ for testing (adjusted for actual requirements)
+      const minRequiredAdmin = ethers.parseEther("2.5"); // Admin需要2.5 CHZ用于奖池注入和gas费用 / Admin needs 2.5 CHZ for reward pool and gas
+      const minRequiredUser = ethers.parseEther("1.5");  // 用户需要1.5 CHZ用于下注和gas费用 / Users need 1.5 CHZ for betting and gas
+      
+      console.log("\nBalance requirements check:");
+      console.log("余额要求检查:");
+      console.log(`Admin required: ${ethers.formatEther(minRequiredAdmin)} CHZ, current: ${ethers.formatEther(adminBalance)} CHZ`);
+      console.log(`User A required: ${ethers.formatEther(minRequiredUser)} CHZ, current: ${ethers.formatEther(userABalance)} CHZ`);
+      console.log(`User B required: ${ethers.formatEther(minRequiredUser)} CHZ, current: ${ethers.formatEther(userBBalance)} CHZ`);
+      
+      if (adminBalance < minRequiredAdmin) {
+        console.log("❌ Admin account insufficient CHZ balance.");
+        throw new Error("Admin account insufficient CHZ balance.");
       }
+      
+      if (userABalance < minRequiredUser || userBBalance < minRequiredUser) {
+        console.log("❌ User accounts insufficient CHZ balance.");
+        console.log("Please get more test CHZ from Tatum faucet: https://tatum.io/faucets/chiliz");
+        throw new Error("User accounts insufficient CHZ balance.");
+      }
+      
+      console.log("✅ All accounts have sufficient CHZ for testing");
+      console.log("✅ 所有账户都有足够的CHZ进行测试");
 
       // 检查所有比赛的状态
       console.log("\nChecking all matches status:");
