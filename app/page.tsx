@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react'
 import { teams, calculateCombatPower, classicMatchups, Team } from '../data/teams'
 import { useLanguage } from './context/LanguageContext'
+import AdminControls from './components/AdminControls'
 
 export default function HomePage() {
   // 状态管理 / State Management
@@ -304,6 +305,9 @@ export default function HomePage() {
                   <span className="text-sm">Support {selectedTeamB.nameEn}</span>
                 </button>
               </div>
+
+              {/* Add AdminControls component */}
+              <AdminControls matchId={1} />
 
               {/* 投票结果显示 / Voting Results Display */}
               {(votes.teamA > 0 || votes.teamB > 0) && (

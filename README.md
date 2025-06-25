@@ -134,7 +134,13 @@ const calculateCombatPower = (team: Team): number => {
 - 验证Fan Token持有情况
 - 参与预测投票并查看实时结果
 
-### 4. 结果统计 / Results Statistics
+### 4. 管理员功能 / Admin Features
+- 管理员钱包地址验证 (0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5)
+- 注入比赛奖励池 (Add Reward Pool)
+- 公布比赛结果 (Announce Result)
+- 重置比赛状态 (Reset Match)
+
+### 5. 结果统计 / Results Statistics
 - 实时投票结果可视化
 - 社区预测趋势展示
 - 个人投票记录追踪
@@ -265,47 +271,6 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 - Twitter: [@YourTwitter]
 
 ## ⚡ 智能合约与链上交互 / Smart Contract & On-Chain Interaction
-
-### 🔧 OpenZeppelin v5.x 兼容性修复 / OpenZeppelin v5.x Compatibility Fix
-
-**问题解决 / Issue Resolution**: 在OpenZeppelin v5.x版本中，`ReentrancyGuard`合约从`security`目录迁移到`utils`目录。项目已更新导入路径以确保兼容性。
-
-**Issue Resolution**: In OpenZeppelin v5.x, the `ReentrancyGuard` contract has been moved from the `security` directory to the `utils` directory. The project has been updated with the correct import path for compatibility.
-
-```solidity
-// 旧版本 / Old version (v4.x)
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
-// 新版本 / New version (v5.x) ✅
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-```
-
-### 📦 Hardhat配置优化 / Hardhat Configuration Optimization
-
-项目采用`@nomicfoundation/hardhat-toolbox`现代化工具链，确保与ethers v6.x完美兼容：
-
-The project uses the modern `@nomicfoundation/hardhat-toolbox` for perfect compatibility with ethers v6.x:
-
-```javascript
-// hardhat.config.js
-require('@nomicfoundation/hardhat-toolbox');
-
-module.exports = {
-  solidity: {
-    version: "0.8.20",
-    settings: {
-      optimizer: { enabled: true, runs: 200 }
-    }
-  },
-  networks: {
-    chilizTestnet: {
-      url: "https://rpc.testnet.chiliz.com",
-      chainId: 88882,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
-    }
-  }
-};
-```
 
 **FanForcePredictionDemo.sol**
 - 管理员地址写死，便于演示和权限管理
