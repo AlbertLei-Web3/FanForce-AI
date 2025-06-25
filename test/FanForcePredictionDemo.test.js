@@ -133,19 +133,24 @@ describe("FanForcePredictionDemo on Chiliz Spicy Testnet", function () {
 
       // 检查所有比赛的状态
       console.log("\nChecking all matches status:");
+      console.log("检查所有比赛状态:");
       for (const match of MATCHES) {
         try {
           const matchInfo = await predictionContract.getMatch(match.id);
-          console.log(`\nMatch ${match.id} (${match.name}):`);
-          console.log("- Is Settled:", matchInfo[5]);
-          console.log("- Winner:", matchInfo[4].toString());
-          console.log("- Reward Pool:", ethers.formatEther(matchInfo[3]));
-        } catch (error) {
-          if (error.message.includes("Match not found")) {
-            console.log(`\nMatch ${match.id} (${match.name}): Not created yet`);
+          if (matchInfo[0] === 0n) {
+            console.log(`\n❌ Match ${match.id} (${match.name}): Not created yet`);
+            console.log(`❌ 比赛 ${match.id} (${match.name}): 尚未创建`);
           } else {
-            console.error(`Error checking match ${match.id}:`, error);
+            console.log(`\n✅ Match ${match.id} (${match.name}):`);
+            console.log("- Is Settled / 是否已结算:", matchInfo[5]);
+            console.log("- Winner / 获胜方:", matchInfo[4].toString());
+            console.log("- Reward Pool / 奖励池:", ethers.formatEther(matchInfo[3]), "CHZ");
+            console.log("- Total A / A队总下注:", ethers.formatEther(matchInfo[1]), "CHZ");
+            console.log("- Total B / B队总下注:", ethers.formatEther(matchInfo[2]), "CHZ");
           }
+        } catch (error) {
+          console.error(`❌ Error checking match ${match.id}:`, error.message);
+          console.error(`❌ 检查比赛 ${match.id} 时出错:`, error.message);
         }
       }
 
@@ -161,15 +166,24 @@ describe("FanForcePredictionDemo on Chiliz Spicy Testnet", function () {
       
       // 1. 创建比赛（如果不存在）
       try {
-        await predictionContract.getMatch(matchId);
-        console.log("\n比赛已存在，继续测试");
-      } catch (error) {
-        if (error.message.includes("Match not found")) {
-          console.log("\n创建新比赛...");
-          const tx = await predictionContract.connect(admin).createMatch(matchId);
-          await tx.wait();
-          console.log("比赛创建成功");
+        const matchInfo = await predictionContract.getMatch(matchId);
+        if (matchInfo[0] === 0n) {
+          // 比赛ID为0表示比赛不存在 / Match ID 0 means match doesn't exist
+          throw new Error("Match not found");
         }
+        console.log("\n✅ 比赛已存在，继续测试");
+        console.log("✅ Match exists, continuing test");
+      } catch (error) {
+        console.log("\n🔄 创建新比赛...");
+        console.log("🔄 Creating new match...");
+        const tx = await predictionContract.connect(admin).createMatch(matchId);
+        await tx.wait();
+        console.log("✅ 比赛创建成功");
+        console.log("✅ Match created successfully");
+        
+        // 验证比赛创建成功 / Verify match creation
+        const newMatchInfo = await predictionContract.getMatch(matchId);
+        console.log(`Match ${matchId} created with ID: ${newMatchInfo[0]}`);
       }
 
       // 2. 用户下注

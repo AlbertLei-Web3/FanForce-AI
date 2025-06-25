@@ -275,64 +275,71 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 - 邮箱: your.email@example.com
 - Twitter: [@YourTwitter]
 
-## ⚡ 智能合约与链上交互 / Smart Contract & On-Chain Interaction
+## 🔗 智能合约 / Smart Contract
 
-**FanForcePredictionDemo.sol**
-- 管理员地址写死，便于演示和权限管理
-- 支持多场比赛的创建、下注、奖励池注入、结算、领奖、重置和紧急提取
-- 事件日志、状态变量、nonReentrant防护，适配Chiliz链
-- 前端通过ethers.js/viem等库与合约交互，所有核心操作均有对应合约函数
+### 合约地址 / Contract Address
 
-### 示例前端调用 / Example Frontend Call
+- **测试网 / Testnet (Chiliz Spicy)**: `0x90C9D004cB071064Ba9B9f091Dc96D76b09E8aBC`
+- **主网 / Mainnet**: 即将部署 / Coming soon
 
+### 合约功能 / Contract Features
+
+| 功能 / Feature | 说明 / Description | Gas消耗 / Gas Usage |
+|---------------|-------------------|-------------------|
+| 创建比赛 / Create Match | 管理员创建新比赛 / Admin creates new match | ~89,507 gas |
+| 下注 / Place Bet | 用户使用原生CHZ下注 / Users bet with native CHZ | ~100,651 gas |
+| 注入奖励 / Inject Reward | 管理员注入奖励池 / Admin injects reward pool | ~73,017 gas |
+| 结算比赛 / Settle Match | 管理员公布结果 / Admin announces result | ~31,644 gas |
+| 领取奖励 / Claim Reward | 用户领取奖励 / Users claim rewards | ~80,456 gas |
+| 重置比赛 / Reset Match | 管理员重置比赛状态 / Admin resets match state | ~36,877 gas |
+
+### 奖励分配 / Reward Distribution
+
+- **胜方奖励 / Winner Reward**: 70% 奖励池 / 70% of reward pool
+- **败方奖励 / Loser Reward**: 30% 奖励池 / 30% of reward pool
+- **平台费用 / Platform Fee**: 5% 总奖励 / 5% of total rewards
+
+### 使用方法 / Usage
+
+1. **下注 / Place Bet**
 ```typescript
-// 下注示例 / Example: Place a bet
-await contract.placeBet(matchId, team, amount);
+// 使用原生CHZ下注 / Bet with native CHZ
+const BET_AMOUNT = ethers.parseEther("1.0"); // 1 CHZ
+await contract.placeBet(matchId, teamId, BET_AMOUNT, { 
+  value: BET_AMOUNT 
+});
+```
 
-// 结算比赛 / Settle match
-await contract.settleMatch(matchId, result);
-
-// 领取奖励 / Claim reward
+2. **领取奖励 / Claim Reward**
+```typescript
+// 比赛结束后领取奖励 / Claim reward after match settlement
 await contract.claimReward(matchId);
 ```
 
-### 合约部署与配置 / Contract Deployment & Configuration
+3. **管理员功能 / Admin Functions**
+```typescript
+// 创建比赛 / Create match
+await contract.createMatch(matchId);
 
-- 推荐用Hardhat/Remix在Chiliz测试网部署
-- 构造函数需传入CHZ代币合约地址
-- 前端需配置合约ABI和部署地址
+// 注入奖励池 / Inject reward pool
+const REWARD = ethers.parseEther("2.0"); // 2 CHZ
+await contract.injectReward(matchId, REWARD, { value: REWARD });
 
-### 平台手续费机制 / Platform Fee Mechanism
-
-**平台手续费逻辑：**
-用户领取奖励时，合约会自动从其总奖励中抽取5%作为平台手续费，转入平台管理员（0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5），用户实际到账为剩余的95%。该机制保障平台收入，由智能合约强制执行。
-
-**Platform Fee Logic:**
-When a user claims their reward, 5% of the total reward is automatically transferred to the platform admin (0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5) as a protocol fee. The user receives the remaining 95%. This mechanism ensures sustainable platform revenue and is enforced at the smart contract level.
-
-#### 代码片段 / Code Snippet
-```solidity
-// 计算并转账平台手续费 / Calculate and transfer platform fee
-uint256 platformFee = (totalReward * PLATFORM_FEE_PERCENT) / RATIO_BASE;
-uint256 userReward = totalReward - platformFee;
-require(CHZ.transfer(ADMIN, platformFee), "Fee transfer failed");
-require(CHZ.transfer(msg.sender, userReward), "Reward transfer failed");
+// 结算比赛 / Settle match
+await contract.settleMatch(matchId, winningTeamId);
 ```
 
-#### Mermaid 流程图 / Mermaid Flowchart
-```mermaid
-flowchart TD
-  U[用户 claimReward] --> C{计算总奖励}
-  C --> F[计算5%平台手续费]
-  F --> A[转账5%给Admin]
-  F --> U2[转账95%给用户]
-```
+### 测试网水龙头 / Testnet Faucets
 
----
+1. **🥇 Tatum Faucet**
+   - URL: https://tatum.io/faucets/chiliz
+   - 每天10 CHZ / 10 CHZ per day
+   - 需要注册 / Registration required
 
-<p align="center">
-  <strong>🚀 Built for the future of sports prediction with AI & Blockchain 🚀</strong>
-</p>
+2. **🥈 Chiliz Official Faucet**
+   - URL: https://faucet.chiliz.com
+   - 每次5 CHZ / 5 CHZ per request
+   - 24小时冷却 / 24h cooldown
 
 ## Testing Setup / 测试设置
 
