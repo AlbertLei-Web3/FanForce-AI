@@ -27,7 +27,7 @@ const CONTRACT_ABI = [
   "function settleMatch(uint256 matchId, uint8 result) external",
   "function claimReward(uint256 matchId) external",
   "function resetMatch(uint256 matchId) external",
-  "function getMatch(uint256 matchId) external view returns (uint256, uint256, uint256, uint256, uint8, bool)",
+  "function getMatch(uint256 matchId) external view returns (uint256, uint256, uint256, uint256, uint8, bool, bool)",
   "function ADMIN() external view returns (address)"
 ]
 
@@ -39,6 +39,7 @@ interface MatchInfo {
   rewardPool: string
   result: number
   settled: boolean
+  rewardInjected: boolean
 }
 
 interface ContractContextType {
@@ -230,7 +231,8 @@ export function ContractProvider({ children }: { children: ReactNode }) {
         totalTeamB: ethers.formatEther(info[2]),
         rewardPool: ethers.formatEther(info[3]),
         result: Number(info[4]),
-        settled: info[5]
+        settled: info[5],
+        rewardInjected: info[6]
       })
     } catch (err) {
       console.error('Failed to refresh match info:', err)

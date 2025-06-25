@@ -60,6 +60,7 @@ async function main() {
           console.log(`  - Reward Pool: ${ethers.formatEther(matchInfo[3])} CHZ`);
           console.log(`  - Result: ${matchInfo[4]} (0=pending, 1=Team A, 2=Team B)`);
           console.log(`  - Settled: ${matchInfo[5]}`);
+          console.log(`  - Reward Injected: ${matchInfo[6]}`);
         }
       } catch (error) {
         // Match doesn't exist, continue
@@ -137,7 +138,10 @@ async function main() {
             console.log(`  - Team A Total: ${ethers.formatEther(finalMatch[1])} CHZ`);
             console.log(`  - Team B Total: ${ethers.formatEther(finalMatch[2])} CHZ`);
             console.log(`  - Reward Pool: ${ethers.formatEther(finalMatch[3])} CHZ`);
-            console.log(`  - Ready for betting: ${finalMatch[3] > 0 ? '✅' : '❌'}`);
+            console.log(`  - Result: ${finalMatch[4]} (0=pending, 1=Team A, 2=Team B)`);
+            console.log(`  - Settled: ${finalMatch[5]}`);
+            console.log(`  - Reward Injected: ${finalMatch[6]}`);
+            console.log(`  - Ready for betting: ${finalMatch[3] > 0 && finalMatch[6] ? '✅' : '❌'}`);
             
           } catch (error) {
             console.log(`❌ Reward injection failed: ${error.message}`);
