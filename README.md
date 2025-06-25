@@ -147,17 +147,27 @@ const calculateCombatPower = (team: Team): number => {
 - **奖励分配**: 获胜方70%奖励池，失败方30%奖励池
 
 ### 5. 管理员功能 / Admin Features
-- 管理员钱包地址验证 (0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5)
-- 比赛管理功能 (Match Management)
-  - 创建新比赛 (Create New Match)
-  - 删除现有比赛 (Delete Existing Match)
-  - 比赛列表管理 (Match List Management)
-  - 智能合约匹配创建 (Smart Contract Match Creation)
-- 智能合约管理 (Smart Contract Management)
-  - 注入比赛奖励池 (Add Reward Pool)
-  - 公布比赛结果 (Announce Result)
-  - 重置比赛状态 (Reset Match)
-  - 实时数据同步 (Real-time Data Sync)
+- **管理员钱包验证** / Admin Wallet Verification
+  - 管理员地址: `0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5`
+  - 权限控制和身份验证 / Permission control and authentication
+
+- **8支队伍灵活管理** / 8 Teams Flexible Management
+  - 🇧🇷 巴西 Brazil | 🇫🇷 法国 France | 🇦🇷 阿根廷 Argentina | 🇳🇱 荷兰 Netherlands
+  - 🇵🇹 葡萄牙 Portugal | 🇬🇧 英格兰 England | 🇭🇷 克罗地亚 Croatia | 🇲🇦 摩洛哥 Morocco
+  - 任意队伍组合对战 / Any team combination matchups
+  - 动态matchId生成 / Dynamic matchId generation
+
+- **比赛管理功能** / Match Management Functions
+  - 创建新比赛 (Create New Match) - 自动检测可用ID
+  - 删除现有比赛 (Delete Existing Match) - 仅限无下注比赛
+  - 比赛列表查看 (View Match List) - 实时状态监控
+  - 智能合约集成 (Smart Contract Integration) - 无缝对接
+
+- **智能合约管理** / Smart Contract Management
+  - 注入比赛奖励池 (Inject Reward Pool) - 支持任意金额
+  - 公布比赛结果 (Settle Match) - 队伍1或队伍2获胜
+  - 重置比赛状态 (Reset Match) - 清空所有数据
+  - 实时数据同步 (Real-time Data Sync) - 自动刷新状态
 
 ### 6. 结果统计 / Results Statistics
 - 实时下注数据可视化
