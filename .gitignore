@@ -10,6 +10,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .pnpm-debug.log*
+.artifacts
 
 # Next.js构建文件 / Next.js build files
 .next/
