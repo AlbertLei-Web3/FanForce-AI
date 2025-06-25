@@ -164,11 +164,59 @@ export const calculateCombatPower = (team: Team): number => {
 };
 
 // 预设的经典对战组合 / Preset classic match combinations
-export const classicMatchups = [
+const defaultClassicMatchups = [
   { teamA: 'argentina', teamB: 'brazil', titleKey: 'South American Rivalry' as const },
   { teamA: 'france', teamB: 'england', titleKey: 'European Giants Dialogue' as const },
   { teamA: 'portugal', teamB: 'morocco', titleKey: 'Europe vs Africa Battle' as const },
   { teamA: 'netherlands', teamB: 'croatia', titleKey: 'Tactical Masters Clash' as const }
 ];
+
+// 从localStorage获取经典对战或使用默认值 / Get classic matchups from localStorage or use defaults
+export const getClassicMatchups = () => {
+  if (typeof window === 'undefined') return defaultClassicMatchups;
+  const stored = localStorage.getItem('classicMatchups');
+  return stored ? JSON.parse(stored) : defaultClassicMatchups;
+};
+
+// 保存经典对战到localStorage / Save classic matchups to localStorage
+export const saveClassicMatchups = (matchups: typeof defaultClassicMatchups) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('classicMatchups', JSON.stringify(matchups));
+  }
+};
+
+// 添加新的经典对战 / Add new classic matchup
+export const addClassicMatchup = (teamAId: string, teamBId: string, titleKey: string = 'Custom Match') => {
+  const currentMatchups = getClassicMatchups();
+  
+  // 检查是否已存在相同的对战 / Check if the same matchup already exists
+  const exists = currentMatchups.some(matchup => 
+    (matchup.teamA === teamAId && matchup.teamB === teamBId) ||
+    (matchup.teamA === teamBId && matchup.teamB === teamAId)
+  );
+  
+  if (exists) {
+    return { success: false, message: 'Match already exists' };
+  }
+  
+  const newMatchup = {
+    teamA: teamAId,
+    teamB: teamBId,
+    titleKey: titleKey
+  };
+  
+  const newMatchups = [...currentMatchups, newMatchup];
+  saveClassicMatchups(newMatchups);
+  
+  return { success: true, matchups: newMatchups };
+};
+
+// 删除经典对战 / Delete classic matchup
+export const deleteClassicMatchup = (index: number) => {
+  const currentMatchups = getClassicMatchups();
+  const newMatchups = currentMatchups.filter((_, i) => i !== index);
+  saveClassicMatchups(newMatchups);
+  return newMatchups;
+};
 
 export default teams; 

@@ -49,6 +49,23 @@ export interface TranslationKeys {
   'Connecting': string
   'Switch to Chiliz': string
   'Disconnect Wallet': string
+
+  // 管理员面板相关 / Admin panel related
+  'Admin': string
+  'Match Management': string
+  'Create New Match': string
+  'Team A': string
+  'Team B': string
+  'Select Team A': string
+  'Select Team B': string
+  'Create Match': string
+  'Existing Matches': string
+  'Please select both teams': string
+  'Delete Match': string
+  'Custom Match': string
+  'Match already exists': string
+  'Match created successfully': string
+  'Please select different teams': string
 }
 
 // 英文翻译 / English translations
@@ -89,6 +106,23 @@ const enTranslations: TranslationKeys = {
   'Connecting': 'Connecting',
   'Switch to Chiliz': 'Switch to Chiliz',
   'Disconnect Wallet': 'Disconnect Wallet',
+
+  // Admin panel translations
+  'Admin': 'Admin',
+  'Match Management': 'Match Management',
+  'Create New Match': 'Create New Match',
+  'Team A': 'Team A',
+  'Team B': 'Team B',
+  'Select Team A': 'Select Team A',
+  'Select Team B': 'Select Team B',
+  'Create Match': 'Create Match',
+  'Existing Matches': 'Existing Matches',
+  'Please select both teams': 'Please select both teams',
+  'Delete Match': 'Delete Match',
+  'Custom Match': 'Custom Match',
+  'Match already exists': 'Match already exists',
+  'Match created successfully': 'Match created successfully',
+  'Please select different teams': 'Please select different teams'
 }
 
 // 中文翻译 / Chinese translations
@@ -129,6 +163,23 @@ const zhTranslations: TranslationKeys = {
   'Connecting': '连接中',
   'Switch to Chiliz': '切换到Chiliz',
   'Disconnect Wallet': '断开钱包',
+
+  // Admin panel translations
+  'Admin': '管理员',
+  'Match Management': '比赛管理',
+  'Create New Match': '创建新比赛',
+  'Team A': '球队A',
+  'Team B': '球队B',
+  'Select Team A': '选择球队A',
+  'Select Team B': '选择球队B',
+  'Create Match': '创建比赛',
+  'Existing Matches': '现有比赛',
+  'Please select both teams': '请选择两支球队',
+  'Delete Match': '删除比赛',
+  'Custom Match': '自定义比赛',
+  'Match already exists': '比赛已存在',
+  'Match created successfully': '比赛创建成功',
+  'Please select different teams': '请选择不同的球队'
 }
 
 // 翻译函数 / Translation function

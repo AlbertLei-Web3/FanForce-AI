@@ -2,22 +2,53 @@
 // 部署FanForcePredictionDemo合约脚本 / Deployment script for FanForcePredictionDemo
 // 需先在.env中配置PRIVATE_KEY
 
+const { ethers } = require("hardhat");
+
 async function main() {
-  const hre = require("hardhat");
-  const [deployer] = await hre.ethers.getSigners();
-  console.log("Deploying contract with account:", deployer.address);
+  const ADMIN_ADDRESS = "0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5";
+  const CHZ_TOKEN_ADDRESS = "0x4bf7078d36f779df3e98c24f51482c1002c2e23c";
 
-  // CHZ测试网合约地址（如有变动请查阅官方文档）
-  const chzToken = "0x3506424F91fC5e3eAfD2C7b5d7D31c564D5687c2";
+  console.log("Deploying contracts with the account:", ADMIN_ADDRESS);
 
-  const Factory = await hre.ethers.getContractFactory("FanForcePredictionDemo");
-  const contract = await Factory.deploy(chzToken);
+  // Deploy the contract
+  const FanForcePrediction = await ethers.getContractFactory("FanForcePredictionDemo");
+  const prediction = await FanForcePrediction.deploy(CHZ_TOKEN_ADDRESS);
+  await prediction.waitForDeployment();
 
-  await contract.deployed();
-  console.log("FanForcePredictionDemo deployed to:", contract.address);
+  const contractAddress = await prediction.getAddress();
+  console.log("Contract deployed to:", contractAddress);
+
+  // Verify deployment
+  const deployedContract = await ethers.getContractAt("FanForcePredictionDemo", contractAddress);
+  
+  // Log important information
+  console.log("\nDeployment Information:");
+  console.log("------------------------");
+  console.log("Contract Address:", contractAddress);
+  console.log("Admin Address:", ADMIN_ADDRESS);
+  console.log("CHZ Token Address:", CHZ_TOKEN_ADDRESS);
+
+  // Save deployment info to a file
+  const fs = require("fs");
+  const deploymentInfo = {
+    contractAddress,
+    adminAddress: ADMIN_ADDRESS,
+    chzTokenAddress: CHZ_TOKEN_ADDRESS,
+    network: network.name,
+    chainId: network.chainId,
+    deploymentTime: new Date().toISOString()
+  };
+
+  fs.writeFileSync(
+    "deployment-info.json",
+    JSON.stringify(deploymentInfo, null, 2)
+  );
+  console.log("\nDeployment info saved to deployment-info.json");
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-}); 
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  }); 

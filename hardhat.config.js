@@ -1,15 +1,20 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
+// 从.env文件获取私钥
+const ADMIN_PRIVATE_KEY = process.env.PRIVATE_KEY;
+const USER_A_PRIVATE_KEY = process.env["PRIVATE_KEY A"];
+const USER_B_PRIVATE_KEY = process.env["PRIVATE_KEY B"];
 
 module.exports = {
   solidity: "0.8.20",
   networks: {
-    chilizTestnet: {
-      url: "https://rpc.testnet.chiliz.com",
+    chilizSpicy: {
+      url: "https://spicy-rpc.chiliz.com",
       chainId: 88882,
-      accounts: [PRIVATE_KEY]
+      accounts: [ADMIN_PRIVATE_KEY, USER_A_PRIVATE_KEY, USER_B_PRIVATE_KEY].filter(Boolean),
+      timeout: 60000,
+      gasPrice: 'auto'
     }
   },
   mocha: {

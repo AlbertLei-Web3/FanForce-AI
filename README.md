@@ -136,6 +136,11 @@ const calculateCombatPower = (team: Team): number => {
 
 ### 4. 管理员功能 / Admin Features
 - 管理员钱包地址验证 (0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5)
+- 比赛管理功能 (Match Management)
+  - 创建新比赛 (Create New Match)
+  - 删除现有比赛 (Delete Existing Match)
+  - 比赛列表管理 (Match List Management)
+  - 本地数据持久化 (Local Data Persistence)
 - 注入比赛奖励池 (Add Reward Pool)
 - 公布比赛结果 (Announce Result)
 - 重置比赛状态 (Reset Match)

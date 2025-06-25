@@ -5,9 +5,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { teams, calculateCombatPower, classicMatchups, Team } from '../data/teams'
+import { teams, calculateCombatPower, getClassicMatchups, deleteClassicMatchup, Team } from '../data/teams'
 import { useLanguage } from './context/LanguageContext'
 import AdminControls from './components/AdminControls'
+import AdminPanel from './components/AdminPanel'
 
 export default function HomePage() {
   // 状态管理 / State Management
@@ -17,6 +18,7 @@ export default function HomePage() {
   const [votes, setVotes] = useState({ teamA: 0, teamB: 0 })
   const [aiCommentary, setAiCommentary] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [matchups, setMatchups] = useState(getClassicMatchups())
   
   // 语言上下文 / Language Context
   const { t, tTeam } = useLanguage()
@@ -40,6 +42,14 @@ export default function HomePage() {
 
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
+  }, [showComparison])
+
+  // 每次显示主页面时更新比赛列表
+  // Update matchups list every time main page is shown
+  useEffect(() => {
+    if (!showComparison) {
+      setMatchups(getClassicMatchups())
+    }
   }, [showComparison])
 
   // 选择球队处理函数 / Team Selection Handler
@@ -105,6 +115,9 @@ export default function HomePage() {
           </p>
         </div>
 
+        {/* 管理员面板 / Admin Panel */}
+        <AdminPanel />
+
         {/* 经典对战推荐 / Classic Matchup Recommendations */}
         {!showComparison && (
           <div className="mb-12">
@@ -112,7 +125,7 @@ export default function HomePage() {
               🔥 {t('Classic Matchups')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {classicMatchups.map((matchup, index) => {
+              {matchups.map((matchup, index) => {
                 const teamA = teams.find(t => t.id === matchup.teamA)
                 const teamB = teams.find(t => t.id === matchup.teamB)
                 return (
