@@ -327,4 +327,51 @@ flowchart TD
 
 <p align="center">
   <strong>🚀 Built for the future of sports prediction with AI & Blockchain 🚀</strong>
-</p> 
+</p>
+
+## Testing Setup / 测试设置
+
+### Environment Setup / 环境设置
+
+1. Create a `.env` file in the root directory / 在根目录创建 `.env` 文件
+2. Add your private key / 添加你的私钥:
+```
+PRIVATE_KEY=your_private_key_here
+```
+
+### Test Accounts / 测试账户
+
+The following accounts are used in the tests / 测试中使用以下账户:
+
+- Admin: `0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5`
+- Team A Bettor: `0x0f583daF67db8B3287094F1871AD736A91B4A98a`
+- Team B Bettor: `0xaeD5E239ACBBE496aAD809941C29444214Eb3e57`
+
+### Running Tests / 运行测试
+
+```bash
+npx hardhat test
+```
+
+The test suite includes the following scenarios / 测试套件包含以下场景:
+
+1. Contract Deployment / 合约部署
+2. Match Creation / 创建比赛
+3. Betting (Team A) / 投注（A队）
+4. Reward Pool Injection / 注入奖励池
+5. Match Settlement / 结算比赛
+6. Reward Claims / 领取奖励
+7. Match Reset / 重置比赛
+
+### Test Matches / 测试比赛
+
+World Cup 2022 Quarterfinals / 2022世界杯四分之一决赛:
+
+1. Croatia vs Brazil (Match ID: 1)
+2. Netherlands vs Argentina (Match ID: 2)
+3. Morocco vs Portugal (Match ID: 3)
+4. England vs France (Match ID: 4)
+
+## Contract Addresses / 合约地址
+
+- CHZ Token (Testnet): `0x4Bf7078D36F779Df3E98c24F51482C1002C2E23C` 

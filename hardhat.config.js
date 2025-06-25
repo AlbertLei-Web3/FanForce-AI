@@ -1,4 +1,7 @@
-require('dotenv').config();
+require("@nomicfoundation/hardhat-toolbox");
+require("dotenv").config();
+
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
 module.exports = {
   solidity: "0.8.20",
@@ -6,7 +9,10 @@ module.exports = {
     chilizTestnet: {
       url: "https://rpc.testnet.chiliz.com",
       chainId: 88882,
-      accounts: [process.env.PRIVATE_KEY]
+      accounts: [PRIVATE_KEY]
     }
+  },
+  mocha: {
+    timeout: 100000
   }
 }; 
