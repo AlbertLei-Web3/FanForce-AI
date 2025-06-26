@@ -2,6 +2,7 @@
 // Simplified Smart Contract Interaction Context
 // 提供基本的合约交互功能，与现有Web3Context兼容
 // Provides basic contract interaction functionality, compatible with existing Web3Context
+// 关联文件: Web3Context.tsx (钱包连接), AdminPanel.tsx (管理员功能), page.tsx (主界面)
 
 'use client'
 
@@ -28,6 +29,7 @@ const CONTRACT_ABI = [
   "function claimReward(uint256 matchId) external",
   "function resetMatch(uint256 matchId) external",
   "function getMatch(uint256 matchId) external view returns (uint256, uint256, uint256, uint256, uint8, bool, bool)",
+  "function getUserBet(uint256 matchId, address user) external view returns (uint8, uint256, bool)",
   "function ADMIN() external view returns (address)"
 ]
 
@@ -42,11 +44,19 @@ interface MatchInfo {
   rewardInjected: boolean
 }
 
+// 用户下注信息接口 / User Bet Info Interface
+interface UserBet {
+  team: number // 1 or 2, 0 means no bet
+  amount: string // formatted ETH amount
+  claimed: boolean
+}
+
 interface ContractContextType {
   loading: boolean
   error: string | null
   currentMatchId: number | null
   matchInfo: MatchInfo | null
+  userBet: UserBet | null // 添加用户下注信息 / Add user bet info
   
   createMatch: (teamA: string, teamB: string) => Promise<number | null>
   placeBet: (matchId: number, team: 1 | 2, amount: string) => Promise<boolean>
@@ -55,6 +65,7 @@ interface ContractContextType {
   claimReward: (matchId: number) => Promise<boolean>
   resetMatch: (matchId: number) => Promise<boolean>
   refreshMatchInfo: (matchId: number) => Promise<void>
+  refreshUserBet: (matchId: number) => Promise<void> // 添加刷新用户下注信息函数 / Add refresh user bet function
 }
 
 const ContractContext = createContext<ContractContextType | undefined>(undefined)
@@ -66,6 +77,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [currentMatchId, setCurrentMatchId] = useState<number | null>(null)
   const [matchInfo, setMatchInfo] = useState<MatchInfo | null>(null)
+  const [userBet, setUserBet] = useState<UserBet | null>(null) // 添加用户下注状态 / Add user bet state
 
   // 获取合约实例
   const getContract = async () => {
@@ -94,6 +106,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       
       setCurrentMatchId(matchId)
       await refreshMatchInfo(matchId)
+      await refreshUserBet(matchId) // 刷新用户下注信息 / Refresh user bet info
       return matchId
       
     } catch (err: any) {
@@ -117,6 +130,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       await tx.wait()
       
       await refreshMatchInfo(matchId)
+      await refreshUserBet(matchId) // 刷新用户下注信息 / Refresh user bet info
       return true
       
     } catch (err: any) {
@@ -162,6 +176,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       await tx.wait()
       
       await refreshMatchInfo(matchId)
+      await refreshUserBet(matchId) // 刷新用户下注信息 / Refresh user bet info
       return true
       
     } catch (err: any) {
@@ -183,6 +198,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       const tx = await contract.claimReward(matchId)
       await tx.wait()
       
+      await refreshUserBet(matchId) // 刷新用户下注信息 / Refresh user bet info
       return true
       
     } catch (err: any) {
@@ -205,6 +221,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       await tx.wait()
       
       await refreshMatchInfo(matchId)
+      await refreshUserBet(matchId) // 刷新用户下注信息 / Refresh user bet info
       return true
       
     } catch (err: any) {
@@ -239,18 +256,43 @@ export function ContractProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // 刷新用户下注信息 / Refresh User Bet Info
+  const refreshUserBet = async (matchId: number): Promise<void> => {
+    try {
+      if (!isConnected || !window.ethereum || !address) {
+        setUserBet(null)
+        return
+      }
+      
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+      
+      const betInfo = await contract.getUserBet(matchId, address)
+      setUserBet({
+        team: Number(betInfo[0]),
+        amount: ethers.formatEther(betInfo[1]),
+        claimed: betInfo[2]
+      })
+    } catch (err) {
+      console.error('Failed to refresh user bet:', err)
+      setUserBet(null)
+    }
+  }
+
   const contextValue: ContractContextType = {
     loading,
     error,
     currentMatchId,
     matchInfo,
+    userBet, // 添加到context值 / Add to context value
     createMatch,
     placeBet,
     injectReward,
     settleMatch,
     claimReward,
     resetMatch,
-    refreshMatchInfo
+    refreshMatchInfo,
+    refreshUserBet // 添加到context值 / Add to context value
   }
 
   return (

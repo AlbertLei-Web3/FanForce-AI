@@ -76,6 +76,13 @@ export interface TranslationKeys {
   'Match already exists': string
   'Match created successfully': string
   'Please select different teams': string
+
+  // 下注状态相关 / Betting status related
+  'Processing...': string
+  'Creating match...': string
+  'Loading match info...': string
+  'Match is already settled': string
+  'You have already bet on this match': string
 }
 
 // 英文翻译 / English translations
@@ -141,7 +148,14 @@ const enTranslations: TranslationKeys = {
   'Custom Match': 'Custom Match',
   'Match already exists': 'Match already exists',
   'Match created successfully': 'Match created successfully',
-  'Please select different teams': 'Please select different teams'
+  'Please select different teams': 'Please select different teams',
+
+  // Betting status translations
+  'Processing...': 'Processing...',
+  'Creating match...': 'Creating match...',
+  'Loading match info...': 'Loading match info...',
+  'Match is already settled': 'Match is already settled',
+  'You have already bet on this match': 'You have already bet on this match'
 }
 
 // 中文翻译 / Chinese translations
@@ -207,7 +221,14 @@ const zhTranslations: TranslationKeys = {
   'Custom Match': '自定义比赛',
   'Match already exists': '比赛已存在',
   'Match created successfully': '比赛创建成功',
-  'Please select different teams': '请选择不同的球队'
+  'Please select different teams': '请选择不同的球队',
+
+  // Betting status translations
+  'Processing...': '处理中...',
+  'Creating match...': '创建比赛中...',
+  'Loading match info...': '加载比赛信息中...',
+  'Match is already settled': '比赛已结算',
+  'You have already bet on this match': '您已经在此比赛中下注了'
 }
 
 // 翻译函数 / Translation function

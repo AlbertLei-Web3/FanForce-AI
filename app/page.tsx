@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react'
 import { teams, calculateCombatPower, getClassicMatchups, deleteClassicMatchup, Team } from '../data/teams'
 import { useLanguage } from './context/LanguageContext'
 import { useContract } from './context/ContractContext'
+import { useWeb3 } from './context/Web3Context'
 import AdminControls from './components/AdminControls'
 import AdminPanel from './components/AdminPanel'
 
@@ -28,6 +29,7 @@ export default function HomePage() {
   
   // 上下文 / Contexts
   const { t, tTeam } = useLanguage()
+  const { address } = useWeb3()
   const { 
     createMatch, 
     placeBet, 
@@ -39,6 +41,10 @@ export default function HomePage() {
     refreshMatchInfo,
     refreshUserBet
   } = useContract()
+
+  // 管理员地址检查 / Admin address check
+  const ADMIN_ADDRESS = '0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5'
+  const isAdmin = address?.toLowerCase() === ADMIN_ADDRESS.toLowerCase()
 
   // 页面历史管理 / Page history management
   useEffect(() => {
@@ -93,6 +99,8 @@ export default function HomePage() {
       
       if (matchId) {
         console.log('Match created with ID:', matchId)
+        // 刷新用户下注信息 / Refresh user bet info
+        await refreshUserBet(matchId)
       }
     }
   }
@@ -136,6 +144,26 @@ export default function HomePage() {
       setShowBetModal(false)
       setSelectedBetTeam(null)
     }
+  }
+
+  // 检查下注按钮是否应该禁用 / Check if bet button should be disabled
+  const isBetDisabled = () => {
+    if (loading) return true // 加载中 / Loading
+    if (!currentMatchId) return true // 没有匹配ID / No match ID
+    if (!matchInfo) return true // 没有匹配信息 / No match info
+    if (matchInfo.settled) return true // 比赛已结算 / Match settled
+    if (userBet && parseFloat(userBet.amount) > 0) return true // 用户已下注 / User already bet
+    return false
+  }
+
+  // 获取下注按钮禁用原因 / Get bet button disabled reason
+  const getBetDisabledReason = () => {
+    if (loading) return t('Processing...')
+    if (!currentMatchId) return t('Creating match...')
+    if (!matchInfo) return t('Loading match info...')
+    if (matchInfo.settled) return t('Match is already settled')
+    if (userBet && parseFloat(userBet.amount) > 0) return t('You have already bet on this match')
+    return ''
   }
 
   // 取消下注 / Cancel Bet
@@ -272,12 +300,15 @@ export default function HomePage() {
               <h2 className="text-4xl font-bold text-white mb-4">
                 {tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)} 🆚 {tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}
               </h2>
-              <button 
-                onClick={resetSelection}
-                className="btn-secondary text-sm"
-              >
-                {t('Reselect Teams')}
-              </button>
+              {/* 只有管理员才能看到重新选择按钮 / Only admin can see reselect button */}
+              {isAdmin && (
+                <button 
+                  onClick={resetSelection}
+                  className="btn-secondary text-sm"
+                >
+                  {t('Reselect Teams')}
+                </button>
+              )}
             </div>
 
             {/* 战斗力评分对比 / Combat Power Score Comparison */}
@@ -387,21 +418,27 @@ export default function HomePage() {
                 <button
                   onClick={() => handleVote('A')}
                   className="btn-primary text-lg py-4 disabled:opacity-50"
-                  disabled={loading || !currentMatchId}
+                  disabled={isBetDisabled()}
+                  title={getBetDisabledReason()}
                 >
-                  {t('Bet on')} {tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)}
+                  {isBetDisabled() ? getBetDisabledReason() : t('Bet on')}
                   <br />
-                  <span className="text-sm">Bet on {selectedTeamA.nameEn}</span>
+                  <span className="text-sm">
+                    {!isBetDisabled() && `${t('Bet on')} ${tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)}`}
+                  </span>
                 </button>
                 
                 <button
                   onClick={() => handleVote('B')}
                   className="btn-secondary text-lg py-4 disabled:opacity-50"
-                  disabled={loading || !currentMatchId}
+                  disabled={isBetDisabled()}
+                  title={getBetDisabledReason()}
                 >
-                  {t('Bet on')} {tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}
+                  {isBetDisabled() ? getBetDisabledReason() : t('Bet on')}
                   <br />
-                  <span className="text-sm">Bet on {selectedTeamB.nameEn}</span>
+                  <span className="text-sm">
+                    {!isBetDisabled() && `${t('Bet on')} ${tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}`}
+                  </span>
                 </button>
               </div>
 
