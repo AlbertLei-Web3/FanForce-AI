@@ -204,26 +204,10 @@ export default function HomePage() {
     }
   }
 
-  // 创建新比赛（强制生成唯一ID）/ Create new match (force generate unique ID)
-  const handleCreateNewMatch = async () => {
-    if (!selectedTeamA || !selectedTeamB) return
-    
-    try {
-      console.log('Creating new match with unique ID...')
-      // 直接使用 createMatch 而不是 connectToMatch，确保创建新比赛
-      // Use createMatch directly instead of connectToMatch to ensure new match creation
-      const matchId = await createMatch(
-        `${selectedTeamA.nameEn}|${selectedTeamA.nameCn}`,
-        `${selectedTeamB.nameEn}|${selectedTeamB.nameCn}`
-      )
-      
-      if (matchId) {
-        console.log('New match created with ID:', matchId)
-      }
-      
-    } catch (error) {
-      console.error('Error creating new match:', error)
-    }
+  // 提示用户联系管理员 / Prompt user to contact admin
+  const handleContactAdmin = () => {
+    // 显示联系管理员的提示信息
+    alert(t('Please contact the administrator to create a new match for these teams.') + ' / 请联系管理员为这些队伍创建新的比赛。')
   }
 
   // 取消下注 / Cancel Bet
@@ -642,14 +626,14 @@ export default function HomePage() {
               {error && (
                 <div className="mt-4 p-4 bg-red-900/30 border border-red-600 rounded-lg">
                   <p className="text-red-400 text-center">{error}</p>
-                  {/* 如果是"Already bet"错误，显示创建新比赛按钮 / Show create new match button for "Already bet" error */}
+                  {/* 如果是"Already bet"错误，显示联系管理员按钮 / Show contact admin button for "Already bet" error */}
                   {(error.includes('Already bet') || error.includes('已经在此比赛中下过注')) && (
                     <button
-                      onClick={handleCreateNewMatch}
-                      className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                      onClick={handleContactAdmin}
+                      className="mt-3 w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
                       disabled={loading}
                     >
-                      🆕 {t('Create New Match')} / 创建新比赛
+                      📞 {t('Please contact the administrator to create a new match for these teams.')}
                     </button>
                   )}
                 </div>

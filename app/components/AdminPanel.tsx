@@ -22,7 +22,7 @@ interface Message {
 
 export default function AdminPanel() {
   const { address } = useWeb3()
-  const { connectToMatch, loading } = useContract()
+  const { connectToMatch, createMatch, loading } = useContract()
   const { t, tTeam } = useLanguage()
   const [isAdmin, setIsAdmin] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -75,40 +75,72 @@ export default function AdminPanel() {
     setIsCreating(true)
     
     try {
-      // 首先添加到前端数据 / First add to frontend data
-      const result = addClassicMatchup(selectedTeamA, selectedTeamB, 'Custom Match')
-      
-      if (!result.success) {
-        showMessage('warning', t('Match already exists'))
-        return
-      }
-
       // 获取队伍信息 / Get team information
       const teamA = teams.find(t => t.id === selectedTeamA)
       const teamB = teams.find(t => t.id === selectedTeamB)
       
       if (teamA && teamB) {
-        // 创建智能合约比赛 / Create smart contract match
-        const contractMatchId = await connectToMatch(
+        // 管理员直接使用 createMatch 创建新比赛，避免连接到已有比赛
+        // Admin directly uses createMatch to create new match, avoiding connection to existing match
+        const contractMatchId = await createMatch(
           `${teamA.nameEn}|${teamA.nameCn}`,
           `${teamB.nameEn}|${teamB.nameCn}`
         )
         
         if (contractMatchId) {
-          console.log(`Contract match created with ID: ${contractMatchId} for ${teamA.nameEn} vs ${teamB.nameEn}`)
-          setMatchups(result.matchups)
+          console.log(`New contract match created with ID: ${contractMatchId} for ${teamA.nameEn} vs ${teamB.nameEn}`)
+          
+          // 添加到前端数据 / Add to frontend data
+          const result = addClassicMatchup(selectedTeamA, selectedTeamB, 'Custom Match')
+          if (result.success) {
+            setMatchups(result.matchups)
+          }
+          
           setSelectedTeamA('')
           setSelectedTeamB('')
-          showMessage('success', t('Match created successfully'))
+          showMessage('success', t('Match created successfully') + ` (ID: ${contractMatchId})`)
         } else {
-          // 如果合约创建失败，从前端数据中移除 / If contract creation fails, remove from frontend data
           console.error('Contract match creation failed')
           showMessage('error', 'Failed to create contract match')
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating match:', error)
-      showMessage('error', 'Error creating match')
+      
+      // 特殊处理重复比赛错误 / Special handling for duplicate match error
+      if (error.message && error.message.includes('Match exists')) {
+        showMessage('warning', 'Match with this ID already exists. Creating with unique ID...')
+        
+                 // 管理员可以强制创建唯一ID的比赛 / Admin can force create match with unique ID
+         try {
+           // 重新获取队伍信息 / Re-get team information
+           const teamA = teams.find(t => t.id === selectedTeamA)
+           const teamB = teams.find(t => t.id === selectedTeamB)
+           
+                       if (teamA && teamB) {
+              const uniqueMatchId = await createMatch(
+                `${teamA.nameEn}|${teamA.nameCn}`,
+                `${teamB.nameEn}|${teamB.nameCn}`
+              )
+           
+              if (uniqueMatchId) {
+                const result = addClassicMatchup(selectedTeamA, selectedTeamB, 'Custom Match')
+                if (result.success) {
+                  setMatchups(result.matchups)
+                }
+                
+                setSelectedTeamA('')
+                setSelectedTeamB('')
+                showMessage('success', `Unique match created successfully (ID: ${uniqueMatchId})`)
+              }
+            }
+         } catch (retryError) {
+           console.error('Retry match creation failed:', retryError)
+           showMessage('error', 'Failed to create unique match')
+         }
+      } else {
+        showMessage('error', 'Error creating match: ' + (error.message || 'Unknown error'))
+      }
     } finally {
       setIsCreating(false)
     }

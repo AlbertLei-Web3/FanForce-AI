@@ -183,37 +183,47 @@ const calculateCombatPower = (team: Team): number => {
 When users recreate matches with the same teams after resetting and deleting, they may encounter "Already bet" errors because user betting mappings in the smart contract are not cleared.
 
 #### 前端解决方案 / Frontend Solution
-我们实现了智能的前端解决方案，无需修改智能合约：
+我们实现了智能的前端解决方案，通过权限分离来解决问题：
 
-We implemented an intelligent frontend solution without modifying the smart contract:
+We implemented an intelligent frontend solution through permission separation:
 
 **🔧 核心机制 / Core Mechanism:**
-- **智能ID生成**: 结合确定性哈希和唯一时间戳
-- **用户状态检查**: 实时检查用户在特定比赛中的下注状态
-- **自动创建新比赛**: 当检测到用户已下注时，自动生成新的唯一比赛ID
-- **错误处理优化**: 提供友好的错误提示和一键解决方案
+- **权限分离**: 用户无法创建比赛，只能由管理员创建
+- **管理员智能创建**: 管理员可以强制创建唯一ID的比赛
+- **用户友好提示**: 当用户遇到重复下注错误时，提示联系管理员
+- **自动重试机制**: 管理员创建失败时自动尝试唯一ID
 
 **🛠️ 技术实现 / Technical Implementation:**
+
+*用户端 / User Side:*
 ```typescript
-// 智能连接到比赛 / Smart connect to match
-const connectToMatch = async (teamA: string, teamB: string) => {
-  const matchId = generateMatchId(teamA, teamB)
-  const userAlreadyBet = await checkUserAlreadyBet(matchId, userAddress)
-  
-  if (userAlreadyBet) {
-    // 生成唯一ID创建新比赛 / Generate unique ID for new match
-    const uniqueId = generateUniqueMatchId(teamA, teamB)
-    return await createMatch(teamA, teamB, uniqueId)
+// 用户遇到Already bet错误时的处理 / Handle Already bet error for users
+const handleContactAdmin = () => {
+  alert('Please contact the administrator to create a new match for these teams.')
+}
+```
+
+*管理员端 / Admin Side:*
+```typescript
+// 管理员智能创建比赛 / Admin smart match creation
+const handleCreateMatch = async () => {
+  try {
+    // 直接创建新比赛，避免连接现有比赛
+    const contractMatchId = await createMatch(teamA, teamB)
+  } catch (error) {
+    if (error.message.includes('Match exists')) {
+      // 自动重试创建唯一ID比赛
+      const uniqueMatchId = await createMatch(teamA, teamB)
+    }
   }
-  // 正常连接现有比赛 / Connect to existing match normally
 }
 ```
 
 **✨ 用户体验优化 / UX Optimization:**
-- 自动检测和处理重复下注问题
-- 提供"创建新比赛"按钮快速解决
-- 双语错误提示和解决方案指引
-- 无缝的用户体验，无需手动干预
+- 用户遇到错误时提供清晰的解决指引
+- 管理员获得更强大的比赛管理工具
+- 双语错误提示和操作指导
+- 权限分离确保系统安全性
 
 ## 🌐 国际化系统 / Internationalization System
 

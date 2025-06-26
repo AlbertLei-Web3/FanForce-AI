@@ -104,6 +104,7 @@ export interface TranslationKeys {
   'Claim Fee': string
   'Final Reward': string
   'Waiting for match result': string
+  'Please contact the administrator to create a new match for these teams.': string
 }
 
 // 英文翻译 / English translations
@@ -197,7 +198,8 @@ const enTranslations: TranslationKeys = {
   'Total Before Fee': 'Total Before Fee',
   'Claim Fee': 'Claim Fee',
   'Final Reward': 'Final Reward',
-  'Waiting for match result': 'Waiting for match result'
+  'Waiting for match result': 'Waiting for match result',
+  'Please contact the administrator to create a new match for these teams.': 'Please contact the administrator to create a new match for these teams.'
 }
 
 // 中文翻译 / Chinese translations
@@ -291,7 +293,8 @@ const zhTranslations: TranslationKeys = {
   'Total Before Fee': '扣费前总额',
   'Claim Fee': '领取手续费',
   'Final Reward': '最终奖励',
-  'Waiting for match result': '等待比赛结果'
+  'Waiting for match result': '等待比赛结果',
+  'Please contact the administrator to create a new match for these teams.': '请联系管理员为这些队伍创建新的比赛。'
 }
 
 // 翻译函数 / Translation function
