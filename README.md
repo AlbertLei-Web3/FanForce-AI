@@ -366,6 +366,71 @@ await contract.settleMatch(matchId, winningTeamId);
    - 每次5 CHZ / 5 CHZ per request
    - 24小时冷却 / 24h cooldown
 
+## ✅ 流程验证系统 / Complete Flow Validation System
+
+### 🔧 自动化测试 / Automated Testing
+
+我们提供了完整的自动化测试脚本来验证所有功能：
+
+We provide complete automated testing scripts to validate all functionality:
+
+```bash
+# 完整流程测试 / Complete flow testing
+npx hardhat run scripts/complete-flow-test.js --network chilizSpicy
+
+# 余额检查 / Balance check
+npx hardhat run scripts/check-balance.js --network chilizSpicy
+
+# 奖励池查看 / Reward pool check
+npx hardhat run scripts/check-reward-pool.js --network chilizSpicy
+```
+
+### 📋 手动验证指南 / Manual Validation Guide
+
+详细的手动测试指南请参考：**[TESTING_GUIDE.md](./TESTING_GUIDE.md)**
+
+For detailed manual testing guide, please refer to: **[TESTING_GUIDE.md](./TESTING_GUIDE.md)**
+
+### 🧪 验证流程 / Validation Flow
+
+#### 管理员流程 / Admin Flow
+1. **创建比赛** / Create Match → 智能合约创建新比赛
+2. **注入奖励** / Inject Reward → 向奖励池注入CHZ
+3. **公布结果** / Settle Match → 宣布获胜队伍
+4. **重置比赛** / Reset Match → 清空比赛数据
+
+#### 用户流程 / User Flow
+1. **连接钱包** / Connect Wallet → MetaMask钱包连接
+2. **选择队伍** / Select Teams → 选择对战组合
+3. **下注操作** / Place Bet → 使用CHZ下注
+4. **领取奖励** / Claim Reward → 比赛结束后领取奖励
+
+### 📊 测试覆盖范围 / Test Coverage
+
+- ✅ **权限控制** / Permission Control：管理员权限验证
+- ✅ **智能合约交互** / Smart Contract Interaction：创建、下注、结算、领取
+- ✅ **状态管理** / State Management：按钮状态、用户数据同步
+- ✅ **错误处理** / Error Handling：网络错误、余额不足、重复操作
+- ✅ **UI/UX验证** / UI/UX Validation：响应式设计、通知系统、国际化
+
+### 🎯 验证重点 / Key Validation Points
+
+1. **按钮状态准确性** / Button State Accuracy
+   - 未连接钱包：显示 "Connect Wallet"
+   - 已连接未下注：显示 "Bet on [Team]"
+   - 已下注未结算：显示 "Bet Placed" / "Already Bet"
+   - 已结算可领取：显示 "Claim Reward"
+   - 已领取奖励：显示 "Reward Claimed"
+
+2. **跨页面状态持久化** / Cross-page State Persistence
+   - 首次点击比赛：触发MetaMask创建交易
+   - 再次点击相同比赛：直接连接，无需交易
+   - 刷新页面后状态保持
+
+3. **权限控制正确性** / Permission Control Accuracy
+   - 管理员：可见"重新选择队伍"按钮和管理面板
+   - 普通用户：隐藏管理员专用功能
+
 ## Testing Setup / 测试设置
 
 ### Environment Setup / 环境设置
