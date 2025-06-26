@@ -196,7 +196,8 @@ const enTranslations: TranslationKeys = {
   'Reward Pool Share': 'Reward Pool Share',
   'Total Before Fee': 'Total Before Fee',
   'Claim Fee': 'Claim Fee',
-  'Final Reward': 'Final Reward'
+  'Final Reward': 'Final Reward',
+  'Waiting for match result': 'Waiting for match result'
 }
 
 // 中文翻译 / Chinese translations
@@ -289,7 +290,8 @@ const zhTranslations: TranslationKeys = {
   'Reward Pool Share': '奖励池分成',
   'Total Before Fee': '扣费前总额',
   'Claim Fee': '领取手续费',
-  'Final Reward': '最终奖励'
+  'Final Reward': '最终奖励',
+  'Waiting for match result': '等待比赛结果'
 }
 
 // 翻译函数 / Translation function

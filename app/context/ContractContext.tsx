@@ -101,6 +101,34 @@ export function ContractProvider({ children }: { children: ReactNode }) {
     return Math.abs(hash) % 900000 + 100000 // 100000-999999 range
   }
 
+  // 生成唯一比赛ID（避免用户重复下注问题）/ Generate unique match ID (avoid user duplicate betting issue)
+  const generateUniqueMatchId = (teamA: string, teamB: string): number => {
+    // 使用时间戳和随机数生成唯一ID / Use timestamp and random number for unique ID
+    const timestamp = Date.now()
+    const random = Math.floor(Math.random() * 1000)
+    const baseId = generateMatchId(teamA, teamB)
+    
+    // 组合生成唯一ID / Combine to generate unique ID
+    return (baseId + timestamp + random) % 900000 + 100000
+  }
+
+  // 检查用户是否已在指定比赛中下注 / Check if user has already bet in specified match
+  const checkUserAlreadyBet = async (matchId: number, userAddress: string): Promise<boolean> => {
+    try {
+      if (!isConnected || !window.ethereum) return false
+      
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+      
+      const userBet = await contract.getUserBet(matchId, userAddress)
+      // 如果amount > 0，说明用户已下注 / If amount > 0, user has already bet
+      return Number(userBet[1]) > 0
+    } catch (error) {
+      console.error('Error checking user bet status:', error)
+      return false
+    }
+  }
+
   // 检查比赛是否存在 / Check if match exists
   const checkMatchExists = async (matchId: number): Promise<boolean> => {
     try {
@@ -135,20 +163,36 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       setLoading(true)
       setError(null)
       
+      // 获取当前用户地址 / Get current user address
+      const provider = new ethers.BrowserProvider(window.ethereum!)
+      const signer = await provider.getSigner()
+      const userAddress = await signer.getAddress()
+      
       // 生成确定性比赛ID / Generate deterministic match ID
-      const matchId = generateMatchId(teamA, teamB)
+      let matchId = generateMatchId(teamA, teamB)
       console.log(`Generated match ID ${matchId} for ${teamA} vs ${teamB}`)
       
       // 检查比赛是否已存在 / Check if match already exists
       const exists = await checkMatchExists(matchId)
       
       if (exists) {
-        // 比赛已存在，直接连接 / Match exists, connect directly
-        console.log(`Match ${matchId} already exists, connecting directly`)
-        setCurrentMatchId(matchId)
-        await refreshMatchInfo(matchId, teamA, teamB) // 传递队伍名称 / Pass team names
-        await refreshUserBet(matchId)
-        return matchId
+        // 比赛已存在，检查用户是否已下注 / Match exists, check if user already bet
+        const userAlreadyBet = await checkUserAlreadyBet(matchId, userAddress)
+        
+        if (userAlreadyBet) {
+          // 用户已下注，生成新的唯一ID创建新比赛 / User already bet, generate new unique ID for new match
+          console.log(`User already bet on match ${matchId}, generating unique ID for new match`)
+          matchId = generateUniqueMatchId(teamA, teamB)
+          console.log(`Generated unique match ID ${matchId} for ${teamA} vs ${teamB}`)
+          return await createMatch(teamA, teamB, matchId)
+        } else {
+          // 用户未下注，直接连接现有比赛 / User hasn't bet, connect to existing match
+          console.log(`Match ${matchId} already exists, user hasn't bet yet, connecting directly`)
+          setCurrentMatchId(matchId)
+          await refreshMatchInfo(matchId, teamA, teamB) // 传递队伍名称 / Pass team names
+          await refreshUserBet(matchId)
+          return matchId
+        }
       } else {
         // 比赛不存在，创建新比赛 / Match doesn't exist, create new one
         console.log(`Match ${matchId} doesn't exist, creating new match`)
@@ -197,6 +241,16 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       setLoading(true)
       setError(null)
       
+      // 下注前检查用户是否已下注 / Check if user already bet before placing bet
+      const provider = new ethers.BrowserProvider(window.ethereum!)
+      const signer = await provider.getSigner()
+      const userAddress = await signer.getAddress()
+      
+      const userAlreadyBet = await checkUserAlreadyBet(matchId, userAddress)
+      if (userAlreadyBet) {
+        throw new Error('You have already placed a bet on this match / 您已经在此比赛中下过注了')
+      }
+      
       const contract = await getContract()
       const betAmount = ethers.parseEther(amount)
       const tx = await contract.placeBet(matchId, team, betAmount, { value: betAmount })
@@ -208,7 +262,13 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       
     } catch (err: any) {
       console.error('Place bet failed:', err)
-      setError(err.message || 'Failed to place bet')
+      
+      // 特殊处理"Already bet"错误 / Special handling for "Already bet" error
+      if (err.message && err.message.includes('Already bet')) {
+        setError('You have already placed a bet on this match. Please refresh the page to create a new match. / 您已经在此比赛中下过注了，请刷新页面创建新比赛。')
+      } else {
+        setError(err.message || 'Failed to place bet')
+      }
       return false
     } finally {
       setLoading(false)

@@ -175,6 +175,46 @@ const calculateCombatPower = (team: Team): number => {
 - 个人下注记录追踪
 - 奖励领取状态监控
 
+### 7. 智能重复下注解决方案 / Smart Duplicate Betting Solution
+
+#### 问题背景 / Problem Background
+当用户在重置和删除比赛后重新创建相同队伍的比赛时，可能遇到"Already bet"错误，这是因为智能合约中的用户下注映射没有被清空。
+
+When users recreate matches with the same teams after resetting and deleting, they may encounter "Already bet" errors because user betting mappings in the smart contract are not cleared.
+
+#### 前端解决方案 / Frontend Solution
+我们实现了智能的前端解决方案，无需修改智能合约：
+
+We implemented an intelligent frontend solution without modifying the smart contract:
+
+**🔧 核心机制 / Core Mechanism:**
+- **智能ID生成**: 结合确定性哈希和唯一时间戳
+- **用户状态检查**: 实时检查用户在特定比赛中的下注状态
+- **自动创建新比赛**: 当检测到用户已下注时，自动生成新的唯一比赛ID
+- **错误处理优化**: 提供友好的错误提示和一键解决方案
+
+**🛠️ 技术实现 / Technical Implementation:**
+```typescript
+// 智能连接到比赛 / Smart connect to match
+const connectToMatch = async (teamA: string, teamB: string) => {
+  const matchId = generateMatchId(teamA, teamB)
+  const userAlreadyBet = await checkUserAlreadyBet(matchId, userAddress)
+  
+  if (userAlreadyBet) {
+    // 生成唯一ID创建新比赛 / Generate unique ID for new match
+    const uniqueId = generateUniqueMatchId(teamA, teamB)
+    return await createMatch(teamA, teamB, uniqueId)
+  }
+  // 正常连接现有比赛 / Connect to existing match normally
+}
+```
+
+**✨ 用户体验优化 / UX Optimization:**
+- 自动检测和处理重复下注问题
+- 提供"创建新比赛"按钮快速解决
+- 双语错误提示和解决方案指引
+- 无缝的用户体验，无需手动干预
+
 ## 🌐 国际化系统 / Internationalization System
 
 应用采用独立的国际化模块设计，所有文本统一管理，支持完整的中英文切换：
