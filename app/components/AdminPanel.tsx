@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from 'react'
 import { useWeb3 } from '../context/Web3Context'
+import { useContract } from '../context/ContractContext'
 import { teams, deleteClassicMatchup, getClassicMatchups, addClassicMatchup } from '../../data/teams'
 import { useLanguage } from '../context/LanguageContext'
 
@@ -15,12 +16,14 @@ const ADMIN_ADDRESS = '0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5'
 
 export default function AdminPanel() {
   const { address } = useWeb3()
+  const { createMatch, loading } = useContract()
   const { t, tTeam } = useLanguage()
   const [isAdmin, setIsAdmin] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [selectedTeamA, setSelectedTeamA] = useState<string>('')
   const [selectedTeamB, setSelectedTeamB] = useState<string>('')
   const [matchups, setMatchups] = useState(getClassicMatchups())
+  const [isCreating, setIsCreating] = useState(false)
 
   useEffect(() => {
     setIsAdmin(address?.toLowerCase() === ADMIN_ADDRESS.toLowerCase())
@@ -36,7 +39,7 @@ export default function AdminPanel() {
 
   if (!isAdmin) return null
 
-  const handleCreateMatch = () => {
+  const handleCreateMatch = async () => {
     if (!selectedTeamA || !selectedTeamB) {
       alert(t('Please select both teams'))
       return
@@ -47,15 +50,45 @@ export default function AdminPanel() {
       return
     }
 
-    const result = addClassicMatchup(selectedTeamA, selectedTeamB, 'Custom Match')
+    setIsCreating(true)
     
-    if (result.success) {
-      setMatchups(result.matchups)
-      setSelectedTeamA('')
-      setSelectedTeamB('')
-      alert(t('Match created successfully'))
-    } else {
-      alert(t('Match already exists'))
+    try {
+      // 首先添加到前端数据 / First add to frontend data
+      const result = addClassicMatchup(selectedTeamA, selectedTeamB, 'Custom Match')
+      
+      if (!result.success) {
+        alert(t('Match already exists'))
+        return
+      }
+
+      // 获取队伍信息 / Get team information
+      const teamA = teams.find(t => t.id === selectedTeamA)
+      const teamB = teams.find(t => t.id === selectedTeamB)
+      
+      if (teamA && teamB) {
+        // 创建智能合约比赛 / Create smart contract match
+        const contractMatchId = await createMatch(
+          `${teamA.nameEn}|${teamA.nameCn}`,
+          `${teamB.nameEn}|${teamB.nameCn}`
+        )
+        
+        if (contractMatchId) {
+          console.log(`Contract match created with ID: ${contractMatchId} for ${teamA.nameEn} vs ${teamB.nameEn}`)
+          setMatchups(result.matchups)
+          setSelectedTeamA('')
+          setSelectedTeamB('')
+          alert(t('Match created successfully'))
+        } else {
+          // 如果合约创建失败，从前端数据中移除 / If contract creation fails, remove from frontend data
+          console.error('Contract match creation failed')
+          alert('Failed to create contract match')
+        }
+      }
+    } catch (error) {
+      console.error('Error creating match:', error)
+      alert('Error creating match')
+    } finally {
+      setIsCreating(false)
     }
   }
 
@@ -136,9 +169,10 @@ export default function AdminPanel() {
               {/* 创建按钮 */}
               <button
                 onClick={handleCreateMatch}
-                className="w-full bg-fanforce-primary text-white py-2 rounded hover:bg-fanforce-secondary transition-colors"
+                disabled={isCreating || loading}
+                className="w-full bg-fanforce-primary text-white py-2 rounded hover:bg-fanforce-secondary transition-colors disabled:opacity-50"
               >
-                {t('Create Match')}
+                {isCreating || loading ? t('Creating match...') : t('Create Match')}
               </button>
             </div>
 

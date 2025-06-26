@@ -75,6 +75,28 @@ export default function HomePage() {
     }
   }, [showComparison])
 
+  // 处理比赛创建或连接 / Handle match creation or connection
+  const handleMatchCreation = async (teamA: Team, teamB: Team) => {
+    try {
+      console.log(`Attempting to create/connect match for ${teamA.nameEn} vs ${teamB.nameEn}`)
+      
+      // 尝试创建比赛，如果已存在合约会处理 / Try to create match, contract will handle if exists
+      const createdMatchId = await createMatch(
+        `${teamA.nameEn}|${teamA.nameCn}`,
+        `${teamB.nameEn}|${teamB.nameCn}`
+      )
+      
+      if (createdMatchId) {
+        console.log('Match created/connected with ID:', createdMatchId)
+        // 刷新用户下注信息 / Refresh user bet info
+        await refreshUserBet(createdMatchId)
+      }
+      
+    } catch (error) {
+      console.error('Error handling match creation:', error)
+    }
+  }
+
   // 选择球队处理函数 / Team Selection Handler
   const handleTeamSelection = async (team: Team, position: 'A' | 'B') => {
     if (position === 'A') {
@@ -91,17 +113,8 @@ export default function HomePage() {
       setShowComparison(true)
       generateAICommentary()
       
-      // 创建合约匹配 / Create contract match
-      const matchId = await createMatch(
-        `${teamA.nameEn}|${teamA.nameCn}`,
-        `${teamB.nameEn}|${teamB.nameCn}`
-      )
-      
-      if (matchId) {
-        console.log('Match created with ID:', matchId)
-        // 刷新用户下注信息 / Refresh user bet info
-        await refreshUserBet(matchId)
-      }
+      // 处理比赛创建或连接 / Handle match creation or connection
+      await handleMatchCreation(teamA, teamB)
     }
   }
 
@@ -211,12 +224,15 @@ export default function HomePage() {
                 return (
                   <button
                     key={index}
-                    onClick={() => {
+                    onClick={async () => {
                       if (teamA && teamB) {
                         setSelectedTeamA(teamA)
                         setSelectedTeamB(teamB)
                         setShowComparison(true)
                         generateAICommentary()
+                        
+                        // 尝试连接或创建合约比赛 / Try to connect or create contract match
+                        await handleMatchCreation(teamA, teamB)
                       }
                     }}
                     className="team-card hover:glow-effect text-left"
