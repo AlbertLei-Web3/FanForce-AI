@@ -287,6 +287,68 @@ useEffect(() => {
 **Detailed Error Messages**: Specific solutions for different error types  
 **One-click Refresh**: Quick page state reset
 
+### 9. Next.js 水合错误修复 / Next.js Hydration Error Fix
+
+#### 问题描述 / Problem Description
+在开发过程中遇到 React 水合错误，表现为服务器端渲染的 HTML 与客户端渲染的 HTML 不匹配。
+
+During development, encountered React hydration errors where server-side rendered HTML doesn't match client-side rendered HTML.
+
+**🔍 错误表现 / Error Symptoms:**
+```
+Warning: Expected server HTML to contain a matching <button> in <div>.
+Error: Hydration failed because the initial UI does not match what was rendered on the server.
+```
+
+**🎯 根本原因 / Root Causes:**
+- **localStorage 依赖**: `getClassicMatchups()` 在服务器端返回默认值，客户端从 localStorage 读取
+- **条件渲染**: 基于钱包连接状态的管理员权限检查
+- **浏览器 API**: 服务器端无法访问 `window`、`localStorage` 等浏览器 API
+
+**Root Causes:**
+- **localStorage dependency**: `getClassicMatchups()` returns defaults on server, reads from localStorage on client
+- **Conditional rendering**: Admin permission checks based on wallet connection state
+- **Browser APIs**: Server-side cannot access `window`, `localStorage`, etc.
+
+#### 解决方案 / Solutions
+
+**🛠️ 技术修复 / Technical Fixes:**
+```typescript
+// 1. 延迟加载客户端数据 / Delayed loading of client data
+const [isMounted, setIsMounted] = useState(false)
+const [matchups, setMatchups] = useState<any[]>([])
+const [matchupsLoaded, setMatchupsLoaded] = useState(false)
+
+useEffect(() => {
+  setIsMounted(true)
+  setMatchups(getClassicMatchups()) // 只在客户端加载 / Load only on client
+  setMatchupsLoaded(true)
+}, [])
+
+// 2. 条件渲染防护 / Conditional rendering protection
+{isMounted && isAdmin && (
+  <button>Admin Button</button>
+)}
+
+// 3. 数据加载完成后渲染 / Render after data loading
+{matchupsLoaded && (
+  <div>Classic Matchups Content</div>
+)}
+```
+
+**📋 修复清单 / Fix Checklist:**
+- ✅ 管理员状态延迟初始化 / Delayed admin state initialization
+- ✅ 对战数据客户端加载 / Client-side matchups loading  
+- ✅ 条件渲染增加挂载检查 / Added mount check to conditional rendering
+- ✅ localStorage 访问保护 / Protected localStorage access
+- ✅ 调试信息延迟显示 / Delayed debug info display
+
+**🎯 效果 / Results:**
+- 消除所有水合错误 / Eliminated all hydration errors
+- 保持服务器端渲染性能 / Maintained SSR performance  
+- 确保客户端状态一致性 / Ensured client state consistency
+- 改善开发体验 / Improved development experience
+
 ## 🌐 国际化系统 / Internationalization System
 
 应用采用独立的国际化模块设计，所有文本统一管理，支持完整的中英文切换：

@@ -23,11 +23,13 @@ export default function AdminControls({ matchId, teamAName, teamBName }: AdminCo
   const { address } = useWeb3()
   const { injectReward, settleMatch, resetMatch, loading, error, matchInfo } = useContract()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
   const [rewardAmount, setRewardAmount] = useState('5')
   const [showRewardModal, setShowRewardModal] = useState(false)
   const [showResultModal, setShowResultModal] = useState(false)
 
   useEffect(() => {
+    setIsMounted(true)
     setIsAdmin(address?.toLowerCase() === ADMIN_ADDRESS.toLowerCase())
   }, [address])
 
@@ -55,7 +57,7 @@ export default function AdminControls({ matchId, teamAName, teamBName }: AdminCo
     }
   }
 
-  if (!isAdmin) return null
+  if (!isMounted || !isAdmin) return null
 
   return (
     <>

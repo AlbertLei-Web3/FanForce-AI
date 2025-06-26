@@ -25,10 +25,11 @@ export default function AdminPanel() {
   const { connectToMatch, createMatch, loading } = useContract()
   const { t, tTeam } = useLanguage()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [selectedTeamA, setSelectedTeamA] = useState<string>('')
   const [selectedTeamB, setSelectedTeamB] = useState<string>('')
-  const [matchups, setMatchups] = useState(getClassicMatchups())
+  const [matchups, setMatchups] = useState<any[]>([])
   const [isCreating, setIsCreating] = useState(false)
   const [message, setMessage] = useState<Message | null>(null) // 添加消息状态 / Add message state
   
@@ -43,16 +44,19 @@ export default function AdminPanel() {
   })
 
   useEffect(() => {
+    setIsMounted(true)
     setIsAdmin(address?.toLowerCase() === ADMIN_ADDRESS.toLowerCase())
+    // 客户端挂载后加载对战数据 / Load matchups after client mount
+    setMatchups(getClassicMatchups())
   }, [address])
 
   useEffect(() => {
     // 每次打开面板时更新比赛列表
     // Update matchups list every time panel opens
-    if (isOpen) {
+    if (isOpen && isMounted) {
       setMatchups(getClassicMatchups())
     }
-  }, [isOpen])
+  }, [isOpen, isMounted])
 
   // 自动清除消息 / Auto clear message
   useEffect(() => {
@@ -64,7 +68,7 @@ export default function AdminPanel() {
     }
   }, [message])
 
-  if (!isAdmin) return null
+  if (!isMounted || !isAdmin) return null
 
   // 显示消息函数 / Show message function
   const showMessage = (type: 'success' | 'error' | 'warning', content: string) => {

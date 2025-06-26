@@ -20,7 +20,8 @@ export default function HomePage() {
   const [votes, setVotes] = useState({ teamA: 0, teamB: 0 })
   const [aiCommentary, setAiCommentary] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [matchups, setMatchups] = useState(getClassicMatchups())
+  const [matchups, setMatchups] = useState<any[]>([])
+  const [matchupsLoaded, setMatchupsLoaded] = useState(false)
   
   // 下注相关状态 / Betting Related State
   const [betAmount, setBetAmount] = useState('1')
@@ -46,7 +47,17 @@ export default function HomePage() {
 
   // 管理员地址检查 / Admin address check
   const ADMIN_ADDRESS = '0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5'
-  const isAdmin = address?.toLowerCase() === ADMIN_ADDRESS.toLowerCase()
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
+
+  // 客户端挂载后设置管理员状态和加载对战数据 / Set admin state and load matchups after client mount
+  useEffect(() => {
+    setIsMounted(true)
+    setIsAdmin(address?.toLowerCase() === ADMIN_ADDRESS.toLowerCase())
+    // 客户端挂载后加载对战数据 / Load matchups after client mount
+    setMatchups(getClassicMatchups())
+    setMatchupsLoaded(true)
+  }, [address])
 
   // 页面历史管理 / Page history management
   useEffect(() => {
@@ -72,10 +83,10 @@ export default function HomePage() {
   // 每次显示主页面时更新比赛列表
   // Update matchups list every time main page is shown
   useEffect(() => {
-    if (!showComparison) {
+    if (!showComparison && isMounted) {
       setMatchups(getClassicMatchups())
     }
-  }, [showComparison])
+  }, [showComparison, isMounted])
 
   // 处理比赛创建或连接 / Handle match creation or connection
   const handleMatchCreation = async (teamA: Team, teamB: Team) => {
@@ -242,7 +253,7 @@ export default function HomePage() {
         <AdminPanel />
 
         {/* 经典对战推荐 / Classic Matchup Recommendations */}
-        {!showComparison && (
+        {!showComparison && matchupsLoaded && (
           <div className="mb-12">
             <h2 className="text-2xl font-bold text-white text-center mb-6">
               🔥 {t('Classic Matchups')}
@@ -367,7 +378,7 @@ export default function HomePage() {
                 {isCustomTeam(selectedTeamA.id) ? selectedTeamA.name : tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)} 🆚 {isCustomTeam(selectedTeamB.id) ? selectedTeamB.name : tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}
               </h2>
               {/* 只有管理员才能看到重新选择按钮 / Only admin can see reselect button */}
-              {isAdmin && (
+              {isMounted && isAdmin && (
                 <button 
                   onClick={resetSelection}
                   className="btn-secondary text-sm"
@@ -664,7 +675,7 @@ export default function HomePage() {
               )}
 
               {/* 调试信息显示（仅在开发环境） / Debug info display (dev only) */}
-              {process.env.NODE_ENV === 'development' && (
+              {isMounted && process.env.NODE_ENV === 'development' && (
                 <div className="mt-4 p-3 bg-gray-800 border border-gray-600 rounded-lg text-xs">
                   <h5 className="text-gray-400 font-bold mb-2">Debug Info / 调试信息:</h5>
                   <div className="space-y-1 text-gray-300">
