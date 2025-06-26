@@ -11,6 +11,7 @@ import { useContract } from './context/ContractContext'
 import { useWeb3 } from './context/Web3Context'
 import AdminControls from './components/AdminControls'
 import AdminPanel from './components/AdminPanel'
+import { ClientOnly, HydrationSafe } from './components/ClientLayout'
 
 export default function HomePage() {
   // 状态管理 / State Management
@@ -250,7 +251,9 @@ export default function HomePage() {
         </div>
 
         {/* 管理员面板 / Admin Panel */}
-        <AdminPanel />
+        <ClientOnly>
+          <AdminPanel />
+        </ClientOnly>
 
         {/* 经典对战推荐 / Classic Matchup Recommendations */}
         {!showComparison && matchupsLoaded && (
@@ -260,7 +263,7 @@ export default function HomePage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {matchups.map((matchup, index) => {
-                const allTeamsData = getAllTeams() // 获取所有队伍（包括自定义）/ Get all teams (including custom)
+                const allTeamsData = isMounted ? getAllTeams() : teams // 获取所有队伍（包括自定义）/ Get all teams (including custom)
                 const teamA = allTeamsData.find(t => t.id === matchup.teamA)
                 const teamB = allTeamsData.find(t => t.id === matchup.teamB)
                 return (
@@ -322,7 +325,7 @@ export default function HomePage() {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {getAllTeams().map((team) => (
+              {(isMounted ? getAllTeams() : teams).map((team) => (
                 <div
                   key={team.id}
                   className="team-card cursor-pointer hover:glow-effect"
@@ -378,14 +381,16 @@ export default function HomePage() {
                 {isCustomTeam(selectedTeamA.id) ? selectedTeamA.name : tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)} 🆚 {isCustomTeam(selectedTeamB.id) ? selectedTeamB.name : tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}
               </h2>
               {/* 只有管理员才能看到重新选择按钮 / Only admin can see reselect button */}
-              {isMounted && isAdmin && (
-                <button 
-                  onClick={resetSelection}
-                  className="btn-secondary text-sm"
-                >
-                  {t('Reselect Teams')}
-                </button>
-              )}
+              <ClientOnly>
+                {isAdmin && (
+                  <button 
+                    onClick={resetSelection}
+                    className="btn-secondary text-sm"
+                  >
+                    {t('Reselect Teams')}
+                  </button>
+                )}
+              </ClientOnly>
             </div>
 
             {/* 战斗力评分对比 / Combat Power Score Comparison */}
@@ -675,21 +680,23 @@ export default function HomePage() {
               )}
 
               {/* 调试信息显示（仅在开发环境） / Debug info display (dev only) */}
-              {isMounted && process.env.NODE_ENV === 'development' && (
-                <div className="mt-4 p-3 bg-gray-800 border border-gray-600 rounded-lg text-xs">
-                  <h5 className="text-gray-400 font-bold mb-2">Debug Info / 调试信息:</h5>
-                  <div className="space-y-1 text-gray-300">
-                    <div>Current Address / 当前地址: {address || 'Not connected'}</div>
-                    <div>Admin Address / 管理员地址: {ADMIN_ADDRESS}</div>
-                    <div>Is Admin / 是否管理员: {isAdmin ? 'Yes' : 'No'}</div>
-                    <div>Match ID / 比赛ID: {currentMatchId || 'None'}</div>
-                    <div>Match Settled / 比赛已结算: {matchInfo?.settled ? 'Yes' : 'No'}</div>
-                    <div>User Bet Amount / 用户下注金额: {userBet?.amount || '0'} CHZ</div>
-                    <div>User Bet Team / 用户下注队伍: {userBet?.team || 'None'}</div>
-                    <div>Reward Claimed / 奖励已领取: {userBet?.claimed ? 'Yes' : 'No'}</div>
+              <ClientOnly>
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mt-4 p-3 bg-gray-800 border border-gray-600 rounded-lg text-xs">
+                    <h5 className="text-gray-400 font-bold mb-2">Debug Info / 调试信息:</h5>
+                    <div className="space-y-1 text-gray-300">
+                      <div>Current Address / 当前地址: {address || 'Not connected'}</div>
+                      <div>Admin Address / 管理员地址: {ADMIN_ADDRESS}</div>
+                      <div>Is Admin / 是否管理员: {isAdmin ? 'Yes' : 'No'}</div>
+                      <div>Match ID / 比赛ID: {currentMatchId || 'None'}</div>
+                      <div>Match Settled / 比赛已结算: {matchInfo?.settled ? 'Yes' : 'No'}</div>
+                      <div>User Bet Amount / 用户下注金额: {userBet?.amount || '0'} CHZ</div>
+                      <div>User Bet Team / 用户下注队伍: {userBet?.team || 'None'}</div>
+                      <div>Reward Claimed / 奖励已领取: {userBet?.claimed ? 'Yes' : 'No'}</div>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </ClientOnly>
 
               {/* 错误显示 / Error Display */}
               {error && (
@@ -727,11 +734,13 @@ export default function HomePage() {
               )}
 
               {/* Add AdminControls component */}
-              <AdminControls 
-                matchId={currentMatchId || 1} 
-                teamAName={selectedTeamA ? (isCustomTeam(selectedTeamA.id) ? selectedTeamA.name : tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)) : undefined}
-                teamBName={selectedTeamB ? (isCustomTeam(selectedTeamB.id) ? selectedTeamB.name : tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)) : undefined}
-              />
+              <ClientOnly>
+                <AdminControls 
+                  matchId={currentMatchId || 1} 
+                  teamAName={selectedTeamA ? (isCustomTeam(selectedTeamA.id) ? selectedTeamA.name : tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)) : undefined}
+                  teamBName={selectedTeamB ? (isCustomTeam(selectedTeamB.id) ? selectedTeamB.name : tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)) : undefined}
+                />
+              </ClientOnly>
 
               {/* 实时投票结果显示 / Real-time Voting Results Display */}
               {matchInfo && (parseFloat(matchInfo.totalTeamA) > 0 || parseFloat(matchInfo.totalTeamB) > 0) && (

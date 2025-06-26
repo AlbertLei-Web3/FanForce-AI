@@ -34,7 +34,7 @@ export default function AdminPanel() {
   const [message, setMessage] = useState<Message | null>(null) // 添加消息状态 / Add message state
   
   // 动态队伍管理状态 / Dynamic team management states
-  const [allTeams, setAllTeams] = useState(getAllTeams())
+  const [allTeams, setAllTeams] = useState<any[]>([])
   const [showAddTeamModal, setShowAddTeamModal] = useState(false)
   const [newTeamData, setNewTeamData] = useState({
     name: '',
@@ -48,6 +48,8 @@ export default function AdminPanel() {
     setIsAdmin(address?.toLowerCase() === ADMIN_ADDRESS.toLowerCase())
     // 客户端挂载后加载对战数据 / Load matchups after client mount
     setMatchups(getClassicMatchups())
+    // 客户端挂载后加载队伍数据 / Load teams after client mount
+    setAllTeams(getAllTeams())
   }, [address])
 
   useEffect(() => {

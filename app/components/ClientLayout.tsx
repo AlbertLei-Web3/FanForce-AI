@@ -4,7 +4,7 @@
 
 'use client'
 
-import { ReactNode } from 'react'
+import { useState, useEffect, ReactNode } from 'react'
 import { LanguageProvider } from '../context/LanguageContext'
 import { Web3Provider } from '../context/Web3Context'
 import { ContractProvider } from '../context/ContractContext'
@@ -42,4 +42,67 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
       </Web3Provider>
     </LanguageProvider>
   )
+}
+
+// 客户端挂载检测组件 / Client Mount Detection Component
+interface ClientOnlyProps {
+  children: ReactNode
+  fallback?: ReactNode
+}
+
+export function ClientOnly({ children, fallback = null }: ClientOnlyProps) {
+  const [hasMounted, setHasMounted] = useState(false)
+
+  useEffect(() => {
+    setHasMounted(true)
+  }, [])
+
+  if (!hasMounted) {
+    return <>{fallback}</>
+  }
+
+  return <>{children}</>
+}
+
+// 延迟渲染组件，用于需要localStorage或其他浏览器API的组件
+// Delayed Render Component for components that need localStorage or other browser APIs
+interface DelayedRenderProps {
+  children: ReactNode
+  delay?: number
+  fallback?: ReactNode
+}
+
+export function DelayedRender({ children, delay = 100, fallback = null }: DelayedRenderProps) {
+  const [shouldRender, setShouldRender] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShouldRender(true)
+    }, delay)
+
+    return () => clearTimeout(timer)
+  }, [delay])
+
+  if (!shouldRender) {
+    return <>{fallback}</>
+  }
+
+  return <>{children}</>
+}
+
+// 水合安全组件 - 确保服务器端和客户端渲染一致
+// Hydration Safe Component - ensures server and client render consistency
+interface HydrationSafeProps {
+  children: ReactNode
+  serverFallback?: ReactNode
+}
+
+export function HydrationSafe({ children, serverFallback = <div></div> }: HydrationSafeProps) {
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  return isClient ? <>{children}</> : <>{serverFallback}</>
 } 
