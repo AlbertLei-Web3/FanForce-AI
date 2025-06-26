@@ -164,8 +164,21 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       throw new Error('Wallet not connected')
     }
     
-    const provider = new ethers.BrowserProvider(window.ethereum)
+    // 强制创建新的提供者实例，避免缓存问题 / Force create new provider instance to avoid cache issues
+    const provider = new ethers.BrowserProvider(window.ethereum, 'any')
+    
+    // 强制重新请求账户，确保获取当前活跃钱包 / Force re-request accounts to ensure current active wallet
+    await provider.send('eth_requestAccounts', [])
+    
     const signer = await provider.getSigner()
+    const signerAddress = await signer.getAddress()
+    
+    // 验证签名者地址与当前连接地址一致 / Verify signer address matches current connected address
+    if (address && signerAddress.toLowerCase() !== address.toLowerCase()) {
+      throw new Error(`Address mismatch: Expected ${address}, got ${signerAddress}. Please refresh and reconnect wallet.`)
+    }
+    
+    console.log('✅ Contract created with signer:', signerAddress)
     return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
   }
 
@@ -187,16 +200,25 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       // 检查比赛是否已存在 / Check if match already exists
       const exists = await checkMatchExists(matchId)
       
+      // 检查当前用户是否为管理员 / Check if current user is admin
+      const ADMIN_ADDRESS = '0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5'
+      const isAdmin = userAddress.toLowerCase() === ADMIN_ADDRESS.toLowerCase()
+      
       if (exists) {
         // 比赛已存在，检查用户是否已下注 / Match exists, check if user already bet
         const userAlreadyBet = await checkUserAlreadyBet(matchId, userAddress)
         
         if (userAlreadyBet) {
-          // 用户已下注，生成新的唯一ID创建新比赛 / User already bet, generate new unique ID for new match
-          console.log(`User already bet on match ${matchId}, generating unique ID for new match`)
-          matchId = generateUniqueMatchId(teamA, teamB)
-          console.log(`Generated unique match ID ${matchId} for ${teamA} vs ${teamB}`)
-          return await createMatch(teamA, teamB, matchId)
+          if (isAdmin) {
+            // 管理员已下注，生成新的唯一ID创建新比赛 / Admin already bet, generate new unique ID for new match
+            console.log(`Admin already bet on match ${matchId}, generating unique ID for new match`)
+            matchId = generateUniqueMatchId(teamA, teamB)
+            console.log(`Generated unique match ID ${matchId} for ${teamA} vs ${teamB}`)
+            return await createMatch(teamA, teamB, matchId)
+          } else {
+            // 用户已下注，不能创建新比赛，提示错误 / User already bet, cannot create new match, show error
+            throw new Error('You have already bet on this match. Please contact admin to create a new match for these teams. / 您已经在此比赛中下过注了，请联系管理员为这些队伍创建新比赛。')
+          }
         } else {
           // 用户未下注，直接连接现有比赛 / User hasn't bet, connect to existing match
           console.log(`Match ${matchId} already exists, user hasn't bet yet, connecting directly`)
@@ -206,9 +228,14 @@ export function ContractProvider({ children }: { children: ReactNode }) {
           return matchId
         }
       } else {
-        // 比赛不存在，创建新比赛 / Match doesn't exist, create new one
-        console.log(`Match ${matchId} doesn't exist, creating new match`)
-        return await createMatch(teamA, teamB, matchId)
+        if (isAdmin) {
+          // 比赛不存在，管理员可以创建新比赛 / Match doesn't exist, admin can create new one
+          console.log(`Match ${matchId} doesn't exist, admin creating new match`)
+          return await createMatch(teamA, teamB, matchId)
+        } else {
+          // 比赛不存在，用户不能创建比赛，提示错误 / Match doesn't exist, user cannot create match, show error
+          throw new Error('This match does not exist. Please contact admin to create this match first. / 此比赛不存在，请联系管理员先创建此比赛。')
+        }
       }
       
     } catch (err: any) {
