@@ -9,7 +9,7 @@
 import { useState, useEffect } from 'react'
 import { useWeb3 } from '../context/Web3Context'
 import { useContract } from '../context/ContractContext'
-import { teams, deleteClassicMatchup, getClassicMatchups, addClassicMatchup } from '../../data/teams'
+import { teams, deleteClassicMatchup, getClassicMatchups, addClassicMatchup, getAllTeams, saveDynamicTeam } from '../../data/teams'
 import { useLanguage } from '../context/LanguageContext'
 
 const ADMIN_ADDRESS = '0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5'
@@ -31,6 +31,16 @@ export default function AdminPanel() {
   const [matchups, setMatchups] = useState(getClassicMatchups())
   const [isCreating, setIsCreating] = useState(false)
   const [message, setMessage] = useState<Message | null>(null) // 添加消息状态 / Add message state
+  
+  // 动态队伍管理状态 / Dynamic team management states
+  const [allTeams, setAllTeams] = useState(getAllTeams())
+  const [showAddTeamModal, setShowAddTeamModal] = useState(false)
+  const [newTeamData, setNewTeamData] = useState({
+    name: '',
+    winRate: 75,
+    avgAge: 28.5,
+    injuryCount: 1
+  })
 
   useEffect(() => {
     setIsAdmin(address?.toLowerCase() === ADMIN_ADDRESS.toLowerCase())
@@ -75,9 +85,9 @@ export default function AdminPanel() {
     setIsCreating(true)
     
     try {
-      // 获取队伍信息 / Get team information
-      const teamA = teams.find(t => t.id === selectedTeamA)
-      const teamB = teams.find(t => t.id === selectedTeamB)
+      // 获取队伍信息（包括动态队伍） / Get team information (including dynamic teams)
+      const teamA = allTeams.find(t => t.id === selectedTeamA)
+      const teamB = allTeams.find(t => t.id === selectedTeamB)
       
       if (teamA && teamB) {
         // 管理员直接使用 createMatch 创建新比赛，避免连接到已有比赛
@@ -113,9 +123,9 @@ export default function AdminPanel() {
         
                  // 管理员可以强制创建唯一ID的比赛 / Admin can force create match with unique ID
          try {
-           // 重新获取队伍信息 / Re-get team information
-           const teamA = teams.find(t => t.id === selectedTeamA)
-           const teamB = teams.find(t => t.id === selectedTeamB)
+           // 重新获取队伍信息（包括动态队伍） / Re-get team information (including dynamic teams)
+           const teamA = allTeams.find(t => t.id === selectedTeamA)
+           const teamB = allTeams.find(t => t.id === selectedTeamB)
            
                        if (teamA && teamB) {
               const uniqueMatchId = await createMatch(
@@ -150,6 +160,30 @@ export default function AdminPanel() {
     const newMatchups = deleteClassicMatchup(index)
     setMatchups(newMatchups)
     showMessage('success', t('Match deleted successfully'))
+  }
+
+  // 处理添加队伍 / Handle add team
+  const handleAddTeam = () => {
+    if (!newTeamData.name.trim()) {
+      showMessage('error', '请输入队伍名称 / Please enter team name')
+      return
+    }
+
+    try {
+      // 保存新队伍到localStorage，使用时间戳确保唯一性 / Save new team to localStorage with timestamp for uniqueness
+      const savedTeam = saveDynamicTeam(newTeamData)
+      
+      // 刷新队伍列表 / Refresh team list
+      setAllTeams(getAllTeams())
+      
+      // 重置表单 / Reset form
+      setNewTeamData({ name: '', winRate: 75, avgAge: 28.5, injuryCount: 1 })
+      setShowAddTeamModal(false)
+      
+      showMessage('success', `队伍 "${savedTeam.name}" 添加成功 / Team "${savedTeam.name}" added successfully`)
+    } catch (error) {
+      showMessage('error', '添加队伍失败 / Failed to add team')
+    }
   }
 
   return (
@@ -200,6 +234,16 @@ export default function AdminPanel() {
                 </button>
               </div>
 
+              {/* 添加队伍按钮 / Add Team Button */}
+              <div className="mb-6">
+                <button
+                  onClick={() => setShowAddTeamModal(true)}
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  ➕ 添加队伍 / Add Team
+                </button>
+              </div>
+
               {/* 创建新比赛 */}
               <div className="mb-8">
                 <h3 className="text-xl font-semibold text-white mb-4">{t('Create New Match')}</h3>
@@ -217,11 +261,24 @@ export default function AdminPanel() {
                       className="w-full bg-gray-800 text-white rounded p-2 border border-gray-700"
                     >
                       <option value="">{t('Select Team A')}</option>
-                      {teams.map(team => (
-                        <option key={team.id} value={team.id}>
-                          {tTeam(team.nameEn, team.nameCn)}
-                        </option>
-                      ))}
+                      {/* 原有队伍 / Original Teams */}
+                      <optgroup label="📊 官方队伍 / Official Teams">
+                        {teams.map(team => (
+                          <option key={team.id} value={team.id}>
+                            {tTeam(team.nameEn, team.nameCn)}
+                          </option>
+                        ))}
+                      </optgroup>
+                      {/* 动态队伍 / Dynamic Teams */}
+                      {allTeams.length > teams.length && (
+                        <optgroup label="⚡ 自定义队伍 / Custom Teams">
+                          {allTeams.slice(teams.length).map(team => (
+                            <option key={team.id} value={team.id}>
+                              {team.name} ⏰
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
                     </select>
                   </div>
 
@@ -236,11 +293,24 @@ export default function AdminPanel() {
                       className="w-full bg-gray-800 text-white rounded p-2 border border-gray-700"
                     >
                       <option value="">{t('Select Team B')}</option>
-                      {teams.map(team => (
-                        <option key={team.id} value={team.id}>
-                          {tTeam(team.nameEn, team.nameCn)}
-                        </option>
-                      ))}
+                      {/* 原有队伍 / Original Teams */}
+                      <optgroup label="📊 官方队伍 / Official Teams">
+                        {teams.map(team => (
+                          <option key={team.id} value={team.id}>
+                            {tTeam(team.nameEn, team.nameCn)}
+                          </option>
+                        ))}
+                      </optgroup>
+                      {/* 动态队伍 / Dynamic Teams */}
+                      {allTeams.length > teams.length && (
+                        <optgroup label="⚡ 自定义队伍 / Custom Teams">
+                          {allTeams.slice(teams.length).map(team => (
+                            <option key={team.id} value={team.id}>
+                              {team.name} ⏰
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
                     </select>
                   </div>
                 </div>
@@ -302,6 +372,95 @@ export default function AdminPanel() {
                   })}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 添加队伍模态框 / Add Team Modal */}
+      {showAddTeamModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-white mb-4 text-center">
+              ➕ 添加队伍 / Add Team
+            </h3>
+            
+            {/* 队伍名称输入 / Team Name Input */}
+            <div className="mb-4">
+              <label className="block text-gray-400 text-sm mb-2">
+                队伍名称 / Team Name (例如: 某代号)
+              </label>
+              <input
+                type="text"
+                value={newTeamData.name}
+                onChange={(e) => setNewTeamData({...newTeamData, name: e.target.value})}
+                className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-green-500 focus:outline-none"
+                placeholder="输入队伍名称..."
+              />
+            </div>
+
+            {/* 历史胜率输入 / Historical Win Rate Input */}
+            <div className="mb-4">
+              <label className="block text-gray-400 text-sm mb-2">
+                Historical Win Rate (%)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={newTeamData.winRate}
+                onChange={(e) => setNewTeamData({...newTeamData, winRate: Number(e.target.value)})}
+                className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-green-500 focus:outline-none"
+              />
+            </div>
+
+            {/* 平均年龄输入 / Average Age Input */}
+            <div className="mb-4">
+              <label className="block text-gray-400 text-sm mb-2">
+                Average Age (years old)
+              </label>
+              <input
+                type="number"
+                min="18"
+                max="40"
+                step="0.1"
+                value={newTeamData.avgAge}
+                onChange={(e) => setNewTeamData({...newTeamData, avgAge: Number(e.target.value)})}
+                className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-green-500 focus:outline-none"
+              />
+            </div>
+
+            {/* 伤病数量输入 / Injury Count Input */}
+            <div className="mb-6">
+              <label className="block text-gray-400 text-sm mb-2">
+                Injury Count (people)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="10"
+                value={newTeamData.injuryCount}
+                onChange={(e) => setNewTeamData({...newTeamData, injuryCount: Number(e.target.value)})}
+                className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-green-500 focus:outline-none"
+              />
+            </div>
+            
+            {/* 按钮组 / Button Group */}
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowAddTeamModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                disabled={loading}
+              >
+                取消 / Cancel
+              </button>
+              <button
+                onClick={handleAddTeam}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                disabled={loading || !newTeamData.name.trim()}
+              >
+                添加 / Add Team
+              </button>
             </div>
           </div>
         </div>

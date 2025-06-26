@@ -219,4 +219,60 @@ export const deleteClassicMatchup = (index: number) => {
   return newMatchups;
 };
 
+// =============== 动态队伍管理功能 / Dynamic Team Management Functions ===============
+// 管理员可以添加自定义队伍，使用时间戳确保唯一性，避免用户重复押注问题
+// Admin can add custom teams using timestamps to ensure uniqueness and prevent duplicate betting
+
+// 动态队伍存储键 / Dynamic teams storage key
+const DYNAMIC_TEAMS_KEY = 'fanforce_dynamic_teams';
+
+// 获取动态队伍列表 / Get dynamic teams list
+export const getDynamicTeams = (): Team[] => {
+  if (typeof window === 'undefined') return [];
+  const stored = localStorage.getItem(DYNAMIC_TEAMS_KEY);
+  return stored ? JSON.parse(stored) : [];
+};
+
+// 保存动态队伍 / Save dynamic team
+export const saveDynamicTeam = (teamData: {
+  name: string;
+  winRate: number;
+  avgAge: number;
+  injuryCount: number;
+}): Team => {
+  // 使用时间戳生成唯一ID，确保不会重复 / Use timestamp to generate unique ID, ensuring no duplicates
+  const timestamp = Date.now();
+  const newTeam: Team = {
+    id: `team_${timestamp}`,
+    name: teamData.name,
+    nameEn: teamData.name,
+    nameCn: teamData.name,
+    winRate: teamData.winRate,
+    avgAge: teamData.avgAge,
+    injuryCount: teamData.injuryCount,
+    // 默认值，保持数据结构完整 / Default values to maintain data structure integrity
+    countryCode: 'XX',
+    starPlayer: 'Custom Player',
+    coachName: 'Custom Coach',
+    fifaRanking: 999,
+    description: `Custom team created at ${new Date(timestamp).toLocaleString()}`,
+    keyStrengths: ['Custom Strength'],
+    keyWeaknesses: ['Custom Weakness']
+  };
+
+  // 保存到localStorage / Save to localStorage
+  const existingTeams = getDynamicTeams();
+  const updatedTeams = [...existingTeams, newTeam];
+  localStorage.setItem(DYNAMIC_TEAMS_KEY, JSON.stringify(updatedTeams));
+  
+  return newTeam;
+};
+
+// 获取所有队伍（静态+动态） / Get all teams (static + dynamic)
+export const getAllTeams = (): Team[] => {
+  const staticTeams = teams; // 原有的8支世界杯队伍 / Original 8 World Cup teams
+  const dynamicTeams = getDynamicTeams(); // 管理员添加的自定义队伍 / Admin-added custom teams
+  return [...staticTeams, ...dynamicTeams];
+};
+
 export default teams; 
