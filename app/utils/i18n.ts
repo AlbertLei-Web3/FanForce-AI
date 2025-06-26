@@ -83,6 +83,7 @@ export interface TranslationKeys {
   'Loading match info...': string
   'Match is already settled': string
   'You have already bet on this match': string
+  'Match deleted successfully': string
 }
 
 // 英文翻译 / English translations
@@ -155,7 +156,8 @@ const enTranslations: TranslationKeys = {
   'Creating match...': 'Creating match...',
   'Loading match info...': 'Loading match info...',
   'Match is already settled': 'Match is already settled',
-  'You have already bet on this match': 'You have already bet on this match'
+  'You have already bet on this match': 'You have already bet on this match',
+  'Match deleted successfully': 'Match deleted successfully'
 }
 
 // 中文翻译 / Chinese translations
@@ -228,7 +230,8 @@ const zhTranslations: TranslationKeys = {
   'Creating match...': '创建比赛中...',
   'Loading match info...': '加载比赛信息中...',
   'Match is already settled': '比赛已结算',
-  'You have already bet on this match': '您已经在此比赛中下注了'
+  'You have already bet on this match': '您已经在此比赛中下注了',
+  'Match deleted successfully': '比赛删除成功'
 }
 
 // 翻译函数 / Translation function
