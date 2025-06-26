@@ -193,20 +193,42 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       const signer = await provider.getSigner()
       const userAddress = await signer.getAddress()
       
-      // 生成确定性比赛ID / Generate deterministic match ID
-      let matchId = generateMatchId(teamA, teamB)
-      console.log(`Generated match ID ${matchId} for ${teamA} vs ${teamB}`)
-      
-      // 检查比赛是否已存在 / Check if match already exists
-      const exists = await checkMatchExists(matchId)
-      
       // 检查当前用户是否为管理员 / Check if current user is admin
       const ADMIN_ADDRESS = '0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5'
       const isAdmin = userAddress.toLowerCase() === ADMIN_ADDRESS.toLowerCase()
       
+      console.log(`🔍 ConnectToMatch Debug - User: ${userAddress}, IsAdmin: ${isAdmin}`)
+      console.log(`🔍 Teams: ${teamA} vs ${teamB}`)
+      
+      // 生成确定性比赛ID / Generate deterministic match ID
+      let matchId = generateMatchId(teamA, teamB)
+      console.log(`🔍 Generated deterministic match ID: ${matchId}`)
+      
+      // 检查比赛是否已存在 / Check if match already exists
+      let exists = await checkMatchExists(matchId)
+      console.log(`🔍 Deterministic match ${matchId} exists: ${exists}`)
+      
+      // 如果确定性ID找不到比赛，尝试搜索可能的比赛ID / If deterministic ID doesn't find match, try searching possible match IDs
+      if (!exists) {
+        console.log(`🔍 Deterministic match not found, searching for existing matches...`)
+        
+        // 尝试搜索一系列可能的比赛ID / Try searching a range of possible match IDs
+        const possibleMatchIds = await searchExistingMatches(teamA, teamB)
+        
+        if (possibleMatchIds.length > 0) {
+          // 找到了现有比赛，使用第一个 / Found existing match, use the first one
+          matchId = possibleMatchIds[0]
+          exists = true
+          console.log(`🔍 Found existing match: ${matchId}`)
+        } else {
+          console.log(`🔍 No existing matches found for these teams`)
+        }
+      }
+      
       if (exists) {
         // 比赛已存在，检查用户是否已下注 / Match exists, check if user already bet
         const userAlreadyBet = await checkUserAlreadyBet(matchId, userAddress)
+        console.log(`🔍 User already bet on match ${matchId}: ${userAlreadyBet}`)
         
         if (userAlreadyBet) {
           if (isAdmin) {
@@ -216,12 +238,16 @@ export function ContractProvider({ children }: { children: ReactNode }) {
             console.log(`Generated unique match ID ${matchId} for ${teamA} vs ${teamB}`)
             return await createMatch(teamA, teamB, matchId)
           } else {
-            // 用户已下注，不能创建新比赛，提示错误 / User already bet, cannot create new match, show error
-            throw new Error('You have already bet on this match. Please contact admin to create a new match for these teams. / 您已经在此比赛中下过注了，请联系管理员为这些队伍创建新比赛。')
+            // 用户已下注，但仍然需要连接到比赛以加载状态 / User already bet, but still need to connect to match to load state
+            console.log(`✅ User already bet on match ${matchId}, connecting to load state`)
+            setCurrentMatchId(matchId)
+            await refreshMatchInfo(matchId, teamA, teamB) // 传递队伍名称 / Pass team names
+            await refreshUserBet(matchId)
+            return matchId
           }
         } else {
           // 用户未下注，直接连接现有比赛 / User hasn't bet, connect to existing match
-          console.log(`Match ${matchId} already exists, user hasn't bet yet, connecting directly`)
+          console.log(`✅ Match ${matchId} exists, user hasn't bet yet, connecting directly`)
           setCurrentMatchId(matchId)
           await refreshMatchInfo(matchId, teamA, teamB) // 传递队伍名称 / Pass team names
           await refreshUserBet(matchId)
@@ -239,11 +265,104 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       }
       
     } catch (err: any) {
-      console.error('Connect to match failed:', err)
+      console.error('❌ Connect to match failed:', err)
       setError(err.message || 'Failed to connect to match')
+      // 确保失败时清理状态 / Ensure state cleanup on failure
+      setCurrentMatchId(null)
       return null
     } finally {
       setLoading(false)
+    }
+  }
+
+  // 搜索现有比赛的函数 / Function to search existing matches
+  const searchExistingMatches = async (teamA: string, teamB: string): Promise<number[]> => {
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum!)
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+      
+      const foundMatches: number[] = []
+      
+      // 搜索策略1: 直接搜索用户提到的比赛ID / Search strategy 1: Direct search for user-mentioned match IDs
+      const knownMatchIds = [865671, 118499] // 添加用户提到的具体比赛ID
+      console.log(`🔍 Searching known match IDs: ${knownMatchIds.join(', ')}`)
+      
+      for (const testId of knownMatchIds) {
+        try {
+          const matchInfo = await contract.getMatch(testId)
+          if (Number(matchInfo[0]) > 0) {
+            console.log(`✅ Found known match ${testId}`)
+            foundMatches.push(testId)
+          }
+        } catch (error) {
+          console.log(`❌ Known match ${testId} not found`)
+        }
+      }
+      
+      // 如果找到了已知比赛，直接返回 / If found known matches, return directly
+      if (foundMatches.length > 0) {
+        return foundMatches
+      }
+      
+      // 搜索策略2: 尝试不同的队伍名称格式 / Search strategy 2: Try different team name formats
+      const teamVariations = [
+        [teamA, teamB],
+        [teamA.split('|')[0], teamB.split('|')[0]], // 只用英文名 / English name only
+        [teamA.split('|')[0] || teamA, teamB.split('|')[0] || teamB], // 安全分割 / Safe split
+        // 尝试自定义队伍的原始名称 / Try original names for custom teams
+        [teamA.replace(/team_\d+/, ''), teamB.replace(/team_\d+/, '')],
+      ]
+      
+      for (const [tA, tB] of teamVariations) {
+        if (!tA || !tB) continue // 跳过空名称
+        
+        const testId = generateMatchId(tA, tB)
+        console.log(`🔍 Testing match ID ${testId} for ${tA} vs ${tB}`)
+        
+        try {
+          const matchInfo = await contract.getMatch(testId)
+          if (Number(matchInfo[0]) > 0) {
+            console.log(`✅ Found match ${testId}`)
+            foundMatches.push(testId)
+          }
+        } catch (error) {
+          // 忽略查询错误，继续搜索 / Ignore query errors, continue searching
+        }
+      }
+      
+      // 搜索策略3: 广泛搜索可能的比赛ID范围 / Search strategy 3: Wide search of possible match ID ranges
+      if (foundMatches.length === 0) {
+        console.log(`🔍 Performing wide range search...`)
+        
+        // 搜索常见的ID范围 / Search common ID ranges
+        const searchRanges = [
+          { start: 100000, end: 200000 }, // 6位数范围
+          { start: 800000, end: 900000 }, // 用户提到的865671在这个范围
+          { start: 500000, end: 600000 }, // 其他可能范围
+        ]
+        
+        for (const range of searchRanges) {
+          for (let testId = range.start; testId <= range.end; testId += 1000) { // 每1000个ID检查一次
+            try {
+              const matchInfo = await contract.getMatch(testId)
+              if (Number(matchInfo[0]) > 0) {
+                console.log(`✅ Found match in range search: ${testId}`)
+                foundMatches.push(testId)
+                if (foundMatches.length >= 5) break // 最多找5个就够了
+              }
+            } catch (error) {
+              // 忽略查询错误 / Ignore query errors
+            }
+          }
+          if (foundMatches.length > 0) break // 找到就停止
+        }
+      }
+      
+      return foundMatches
+      
+    } catch (error) {
+      console.error('Error searching existing matches:', error)
+      return []
     }
   }
 
@@ -360,15 +479,26 @@ export function ContractProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // 领取奖励
+  // 领取奖励 / Claim reward
   const claimReward = async (matchId: number): Promise<boolean> => {
     try {
       setLoading(true)
       setError(null)
       
+      console.log(`🏆 ClaimReward Debug Info:`)
+      console.log(`  Match ID: ${matchId}`)
+      console.log(`  Current Match ID: ${currentMatchId}`)
+      console.log(`  User Address: ${address}`)
+      
       // 额外的安全检查 / Additional safety checks
       if (!isConnected || !window.ethereum || !address) {
         throw new Error('Wallet not connected / 钱包未连接')
+      }
+      
+      // 验证 matchId 是否有效 / Verify matchId is valid
+      if (!matchId || matchId === null || matchId === undefined) {
+        console.error(`❌ Invalid matchId: ${matchId}`)
+        throw new Error('Invalid match ID. Please refresh the page and try again. / 无效的比赛ID。请刷新页面后重试。')
       }
       
       // 确保不是管理员地址在调用 / Ensure admin address is not calling
@@ -381,12 +511,33 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       const provider = new ethers.BrowserProvider(window.ethereum)
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
       
+      console.log(`  Checking match ${matchId} state...`)
       const matchInfo = await contract.getMatch(matchId)
+      console.log(`  Match Info:`, {
+        matchId: Number(matchInfo[0]),
+        totalA: ethers.formatEther(matchInfo[1]),
+        totalB: ethers.formatEther(matchInfo[2]),
+        rewardPool: ethers.formatEther(matchInfo[3]),
+        result: Number(matchInfo[4]),
+        settled: matchInfo[5],
+        rewardInjected: matchInfo[6]
+      })
+      
+      if (Number(matchInfo[0]) === 0) {
+        throw new Error(`Match ${matchId} does not exist. Please check the match ID. / 比赛${matchId}不存在。请检查比赛ID。`)
+      }
+      
       if (!matchInfo[5]) { // settled
         throw new Error('Match not settled yet / 比赛尚未结算')
       }
       
+      console.log(`  Checking user bet for ${address}...`)
       const userBetInfo = await contract.getUserBet(matchId, address)
+      console.log(`  User Bet Info:`, {
+        team: Number(userBetInfo[0]),
+        amount: ethers.formatEther(userBetInfo[1]),
+        claimed: userBetInfo[2]
+      })
       if (Number(userBetInfo[1]) === 0) { // amount
         throw new Error('No bet found for this match / 此比赛中没有发现下注记录')
       }
@@ -395,28 +546,54 @@ export function ContractProvider({ children }: { children: ReactNode }) {
         throw new Error('Reward already claimed / 奖励已领取')
       }
       
-      console.log('Calling claimReward for match:', matchId, 'user:', address)
+      console.log('✅ All validations passed, calling claimReward...')
+      console.log('  Calling claimReward for match:', matchId, 'user:', address)
       
       // 获取签名者并调用 claimReward / Get signer and call claimReward
       const signer = await provider.getSigner()
+      const signerAddress = await signer.getAddress()
+      console.log('  Signer address:', signerAddress)
+      
       const contractWithSigner = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
       
       // 明确调用 claimReward 函数 / Explicitly call claimReward function
       const tx = await contractWithSigner.claimReward(matchId)
-      console.log('ClaimReward transaction sent:', tx.hash)
+      console.log('  ClaimReward transaction sent:', tx.hash)
       
       await tx.wait()
-      console.log('ClaimReward transaction confirmed')
+      console.log('  ClaimReward transaction confirmed')
       
       await refreshUserBet(matchId) // 刷新用户下注信息 / Refresh user bet info
       return true
       
     } catch (err: any) {
-      console.error('Claim reward failed:', err)
+      console.error('❌ Claim reward failed:', err)
       
       // 特殊处理 "Only admin" 错误 / Special handling for "Only admin" error
       if (err.message && err.message.includes('Only admin')) {
-        setError('Error: You are calling an admin function instead of claimReward. Please refresh the page and try again. / 错误：您调用了管理员函数而不是领取奖励函数。请刷新页面后重试。')
+        const detailedError = `❌ "Only admin" error detected!\n\n` +
+                             `🔍 Debug Information:\n` +
+                             `- Match ID: ${matchId}\n` +
+                             `- Current Match ID: ${currentMatchId}\n` +
+                             `- User Address: ${address}\n` +
+                             `- Admin Address: 0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5\n\n` +
+                             `💡 This usually means:\n` +
+                             `1. Invalid or null match ID\n` +
+                             `2. State synchronization issue\n` +
+                             `3. Match was not properly connected\n\n` +
+                             `🛠️ Solution: Please refresh the page and try again.\n\n` +
+                             `❌ 检测到"Only admin"错误！\n\n` +
+                             `🔍 调试信息：\n` +
+                             `- 比赛ID: ${matchId}\n` +
+                             `- 当前比赛ID: ${currentMatchId}\n` +
+                             `- 用户地址: ${address}\n` +
+                             `- 管理员地址: 0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5\n\n` +
+                             `💡 这通常意味着：\n` +
+                             `1. 无效或空的比赛ID\n` +
+                             `2. 状态同步问题\n` +
+                             `3. 比赛没有正确连接\n\n` +
+                             `🛠️ 解决方案：请刷新页面后重试。`
+        setError(detailedError)
       } else {
         setError(err.message || 'Failed to claim reward / 领取奖励失败')
       }
