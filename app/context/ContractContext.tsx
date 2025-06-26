@@ -3,6 +3,7 @@
 // 提供基本的合约交互功能，与现有Web3Context兼容
 // Provides basic contract interaction functionality, compatible with existing Web3Context
 // 关联文件: Web3Context.tsx (钱包连接), AdminPanel.tsx (管理员功能), page.tsx (主界面)
+// 智能比赛连接逻辑，避免重复创建已存在的比赛 / Smart match connection logic to avoid recreating existing matches
 
 'use client'
 
@@ -59,6 +60,7 @@ interface ContractContextType {
   userBet: UserBet | null // 添加用户下注信息 / Add user bet info
   
   createMatch: (teamA: string, teamB: string) => Promise<number | null>
+  connectToMatch: (teamA: string, teamB: string) => Promise<number | null> // 新增智能连接函数 / New smart connection function
   placeBet: (matchId: number, team: 1 | 2, amount: string) => Promise<boolean>
   injectReward: (matchId: number, amount: string) => Promise<boolean>
   settleMatch: (matchId: number, result: 1 | 2) => Promise<boolean>
@@ -79,6 +81,41 @@ export function ContractProvider({ children }: { children: ReactNode }) {
   const [matchInfo, setMatchInfo] = useState<MatchInfo | null>(null)
   const [userBet, setUserBet] = useState<UserBet | null>(null) // 添加用户下注状态 / Add user bet state
 
+  // 生成确定性比赛ID / Generate deterministic match ID
+  const generateMatchId = (teamA: string, teamB: string): number => {
+    // 标准化队伍名称顺序，确保A vs B 和 B vs A 产生相同ID / Normalize team order to ensure A vs B and B vs A generate same ID
+    const teams = [teamA, teamB].sort()
+    const teamKey = teams.join('-')
+    
+    // 使用简单哈希算法生成确定性ID / Use simple hash algorithm to generate deterministic ID
+    let hash = 0
+    for (let i = 0; i < teamKey.length; i++) {
+      const char = teamKey.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // Convert to 32-bit integer
+    }
+    
+    // 确保ID在合理范围内 / Ensure ID is in reasonable range
+    return Math.abs(hash) % 900000 + 100000 // 100000-999999 range
+  }
+
+  // 检查比赛是否存在 / Check if match exists
+  const checkMatchExists = async (matchId: number): Promise<boolean> => {
+    try {
+      if (!isConnected || !window.ethereum) return false
+      
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+      
+      const info = await contract.getMatch(matchId)
+      // 如果matchId > 0，说明比赛存在 / If matchId > 0, match exists
+      return Number(info[0]) > 0
+    } catch (error) {
+      console.error('Error checking match existence:', error)
+      return false
+    }
+  }
+
   // 获取合约实例
   const getContract = async () => {
     if (!isConnected || !window.ethereum) {
@@ -90,15 +127,49 @@ export function ContractProvider({ children }: { children: ReactNode }) {
     return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
   }
 
-  // 创建比赛
-  const createMatch = async (teamA: string, teamB: string): Promise<number | null> => {
+  // 智能连接到比赛 / Smart connect to match
+  const connectToMatch = async (teamA: string, teamB: string): Promise<number | null> => {
     try {
       setLoading(true)
       setError(null)
       
-      // 生成matchId
-      const timestamp = Math.floor(Date.now() / 1000)
-      const matchId = timestamp % 999999
+      // 生成确定性比赛ID / Generate deterministic match ID
+      const matchId = generateMatchId(teamA, teamB)
+      console.log(`Generated match ID ${matchId} for ${teamA} vs ${teamB}`)
+      
+      // 检查比赛是否已存在 / Check if match already exists
+      const exists = await checkMatchExists(matchId)
+      
+      if (exists) {
+        // 比赛已存在，直接连接 / Match exists, connect directly
+        console.log(`Match ${matchId} already exists, connecting directly`)
+        setCurrentMatchId(matchId)
+        await refreshMatchInfo(matchId)
+        await refreshUserBet(matchId)
+        return matchId
+      } else {
+        // 比赛不存在，创建新比赛 / Match doesn't exist, create new one
+        console.log(`Match ${matchId} doesn't exist, creating new match`)
+        return await createMatch(teamA, teamB, matchId)
+      }
+      
+    } catch (err: any) {
+      console.error('Connect to match failed:', err)
+      setError(err.message || 'Failed to connect to match')
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 创建比赛 (支持指定ID) / Create match (support specified ID)
+  const createMatch = async (teamA: string, teamB: string, specifiedId?: number): Promise<number | null> => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // 使用指定ID或生成新ID / Use specified ID or generate new one
+      const matchId = specifiedId || generateMatchId(teamA, teamB)
       
       const contract = await getContract()
       const tx = await contract.createMatch(matchId)
@@ -286,6 +357,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
     matchInfo,
     userBet, // 添加到context值 / Add to context value
     createMatch,
+    connectToMatch, // 添加新函数 / Add new function
     placeBet,
     injectReward,
     settleMatch,

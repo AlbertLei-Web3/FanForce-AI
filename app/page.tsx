@@ -32,6 +32,7 @@ export default function HomePage() {
   const { address } = useWeb3()
   const { 
     createMatch, 
+    connectToMatch,
     placeBet, 
     currentMatchId, 
     matchInfo, 
@@ -78,18 +79,16 @@ export default function HomePage() {
   // 处理比赛创建或连接 / Handle match creation or connection
   const handleMatchCreation = async (teamA: Team, teamB: Team) => {
     try {
-      console.log(`Attempting to create/connect match for ${teamA.nameEn} vs ${teamB.nameEn}`)
+      console.log(`Attempting to connect/create match for ${teamA.nameEn} vs ${teamB.nameEn}`)
       
-      // 尝试创建比赛，如果已存在合约会处理 / Try to create match, contract will handle if exists
-      const createdMatchId = await createMatch(
+      // 使用智能连接函数，避免重复创建 / Use smart connection function to avoid duplicate creation
+      const matchId = await connectToMatch(
         `${teamA.nameEn}|${teamA.nameCn}`,
         `${teamB.nameEn}|${teamB.nameCn}`
       )
       
-      if (createdMatchId) {
-        console.log('Match created/connected with ID:', createdMatchId)
-        // 刷新用户下注信息 / Refresh user bet info
-        await refreshUserBet(createdMatchId)
+      if (matchId) {
+        console.log('Match connected/created with ID:', matchId)
       }
       
     } catch (error) {

@@ -22,7 +22,7 @@ interface Message {
 
 export default function AdminPanel() {
   const { address } = useWeb3()
-  const { createMatch, loading } = useContract()
+  const { connectToMatch, loading } = useContract()
   const { t, tTeam } = useLanguage()
   const [isAdmin, setIsAdmin] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -89,7 +89,7 @@ export default function AdminPanel() {
       
       if (teamA && teamB) {
         // 创建智能合约比赛 / Create smart contract match
-        const contractMatchId = await createMatch(
+        const contractMatchId = await connectToMatch(
           `${teamA.nameEn}|${teamA.nameCn}`,
           `${teamB.nameEn}|${teamB.nameCn}`
         )
