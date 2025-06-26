@@ -98,6 +98,12 @@ export interface TranslationKeys {
   'Estimated Reward': string
   'Total Reward': string
   'Real-time data from smart contract': string
+  'Principal': string
+  'Reward Pool Share': string
+  'Total Before Fee': string
+  'Claim Fee': string
+  'Final Reward': string
+  'Waiting for match result': string
 }
 
 // 英文翻译 / English translations
@@ -185,7 +191,12 @@ const enTranslations: TranslationKeys = {
   'Net Bet Amount': 'Net Bet Amount',
   'Estimated Reward': 'Estimated Reward',
   'Total Reward': 'Total Reward',
-  'Real-time data from smart contract': 'Real-time data from smart contract'
+  'Real-time data from smart contract': 'Real-time data from smart contract',
+  'Principal': 'Principal',
+  'Reward Pool Share': 'Reward Pool Share',
+  'Total Before Fee': 'Total Before Fee',
+  'Claim Fee': 'Claim Fee',
+  'Final Reward': 'Final Reward'
 }
 
 // 中文翻译 / Chinese translations
@@ -273,7 +284,12 @@ const zhTranslations: TranslationKeys = {
   'Net Bet Amount': '净下注金额',
   'Estimated Reward': '预估奖励',
   'Total Reward': '总奖励',
-  'Real-time data from smart contract': '来自智能合约的实时数据'
+  'Real-time data from smart contract': '来自智能合约的实时数据',
+  'Principal': '本金',
+  'Reward Pool Share': '奖励池分成',
+  'Total Before Fee': '扣费前总额',
+  'Claim Fee': '领取手续费',
+  'Final Reward': '最终奖励'
 }
 
 // 翻译函数 / Translation function

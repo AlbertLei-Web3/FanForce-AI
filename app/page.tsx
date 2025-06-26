@@ -178,6 +178,7 @@ export default function HomePage() {
   // 检查是否可以领取奖励 / Check if can claim reward
   const canClaimReward = () => {
     return matchInfo?.settled && 
+           matchInfo.result > 0 && // 确保有有效的比赛结果 / Ensure valid match result
            userBet && 
            parseFloat(userBet.amount) > 0 && 
            !userBet.claimed
@@ -190,7 +191,7 @@ export default function HomePage() {
 
   // 检查用户是否下注失败 / Check if user bet on losing team
   const isLosingBet = () => {
-    if (!matchInfo?.settled || !userBet || parseFloat(userBet.amount) === 0) return false
+    if (!matchInfo?.settled || matchInfo.result === 0 || !userBet || parseFloat(userBet.amount) === 0) return false
     return userBet.team !== matchInfo.result
   }
 
@@ -459,13 +460,20 @@ export default function HomePage() {
                   <p className="text-blue-300 text-center">
                     💰 {t('Your Bet')}: {userBet.amount} CHZ on {userBet.team === 1 ? tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn) : tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}
                   </p>
-                  {matchInfo?.settled && (
+                  {/* 只有在比赛已结算且结果有效时才显示输赢状态 / Only show win/loss when match is settled with valid result */}
+                  {matchInfo?.settled && matchInfo.result > 0 && (
                     <p className="text-center mt-2">
                       {userBet.team === matchInfo.result ? (
                         <span className="text-green-400">🎉 {t('You Won!')}</span>
                       ) : (
                         <span className="text-red-400">😔 {t('You Lost')}</span>
                       )}
+                    </p>
+                  )}
+                  {/* 如果比赛未结算，显示等待状态 / If match not settled, show waiting status */}
+                  {!matchInfo?.settled && (
+                    <p className="text-center mt-2">
+                      <span className="text-yellow-400">⏳ Waiting for match result / 等待比赛结果</span>
                     </p>
                   )}
                 </div>
@@ -479,42 +487,76 @@ export default function HomePage() {
                     <h4 className="text-green-400 font-bold text-center mb-3">🏆 {t('Reward Details')}</h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-300">{t('Your Bet Amount')}:</span>
+                        <span className="text-gray-300">{t('Net Bet Amount')} ({t('Principal')}):</span>
                         <span className="text-white font-bold">{userBet?.amount} CHZ</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-300">{t('Platform Fee')} (5%):</span>
-                        <span className="text-red-400">-{(parseFloat(userBet?.amount || '0') * 0.05).toFixed(3)} CHZ</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-300">{t('Net Bet Amount')}:</span>
-                        <span className="text-white">{(parseFloat(userBet?.amount || '0') * 0.95).toFixed(3)} CHZ</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-300">{t('Estimated Reward')}:</span>
+                        <span className="text-gray-300">{t('Reward Pool Share')}:</span>
                         <span className="text-green-400 font-bold">
                           {matchInfo && userBet ? (
                             (() => {
-                              const netBet = parseFloat(userBet.amount) * 0.95;
+                              const netBet = parseFloat(userBet.amount); // userBet.amount已经是净额
                               const totalWinnerBets = userBet.team === 1 ? parseFloat(matchInfo.totalTeamA) : parseFloat(matchInfo.totalTeamB);
                               const rewardPool = parseFloat(matchInfo.rewardPool);
-                              const userShare = totalWinnerBets > 0 ? (netBet / totalWinnerBets) * rewardPool : 0;
-                              return `~${userShare.toFixed(3)} CHZ`;
+                              const winnerRatio = userBet.team === matchInfo.result ? 0.7 : 0.3; // 胜方70%，败方30%
+                              const poolShare = rewardPool * winnerRatio;
+                              const userRewardShare = totalWinnerBets > 0 ? (netBet / totalWinnerBets) * poolShare : 0;
+                              return `+${userRewardShare.toFixed(3)} CHZ`;
+                            })()
+                          ) : '0 CHZ'}
+                        </span>
+                      </div>
+                      <hr className="border-gray-600" />
+                      <div className="flex justify-between">
+                        <span className="text-gray-300">{t('Total Before Fee')}:</span>
+                        <span className="text-white">
+                          {matchInfo && userBet ? (
+                            (() => {
+                              const netBet = parseFloat(userBet.amount);
+                              const totalWinnerBets = userBet.team === 1 ? parseFloat(matchInfo.totalTeamA) : parseFloat(matchInfo.totalTeamB);
+                              const rewardPool = parseFloat(matchInfo.rewardPool);
+                              const winnerRatio = userBet.team === matchInfo.result ? 0.7 : 0.3;
+                              const poolShare = rewardPool * winnerRatio;
+                              const userRewardShare = totalWinnerBets > 0 ? (netBet / totalWinnerBets) * poolShare : 0;
+                              const totalBeforeFee = netBet + userRewardShare;
+                              return `${totalBeforeFee.toFixed(3)} CHZ`;
+                            })()
+                          ) : '0 CHZ'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-300">{t('Claim Fee')} (5%):</span>
+                        <span className="text-red-400">
+                          {matchInfo && userBet ? (
+                            (() => {
+                              const netBet = parseFloat(userBet.amount);
+                              const totalWinnerBets = userBet.team === 1 ? parseFloat(matchInfo.totalTeamA) : parseFloat(matchInfo.totalTeamB);
+                              const rewardPool = parseFloat(matchInfo.rewardPool);
+                              const winnerRatio = userBet.team === matchInfo.result ? 0.7 : 0.3;
+                              const poolShare = rewardPool * winnerRatio;
+                              const userRewardShare = totalWinnerBets > 0 ? (netBet / totalWinnerBets) * poolShare : 0;
+                              const totalBeforeFee = netBet + userRewardShare;
+                              const claimFee = totalBeforeFee * 0.05;
+                              return `-${claimFee.toFixed(3)} CHZ`;
                             })()
                           ) : '0 CHZ'}
                         </span>
                       </div>
                       <hr className="border-gray-600" />
                       <div className="flex justify-between text-lg font-bold">
-                        <span className="text-green-400">{t('Total Reward')}:</span>
+                        <span className="text-green-400">{t('Final Reward')}:</span>
                         <span className="text-green-400">
                           {matchInfo && userBet ? (
                             (() => {
-                              const netBet = parseFloat(userBet.amount) * 0.95;
+                              const netBet = parseFloat(userBet.amount);
                               const totalWinnerBets = userBet.team === 1 ? parseFloat(matchInfo.totalTeamA) : parseFloat(matchInfo.totalTeamB);
                               const rewardPool = parseFloat(matchInfo.rewardPool);
-                              const userShare = totalWinnerBets > 0 ? (netBet / totalWinnerBets) * rewardPool : 0;
-                              return `${userShare.toFixed(3)} CHZ`;
+                              const winnerRatio = userBet.team === matchInfo.result ? 0.7 : 0.3;
+                              const poolShare = rewardPool * winnerRatio;
+                              const userRewardShare = totalWinnerBets > 0 ? (netBet / totalWinnerBets) * poolShare : 0;
+                              const totalBeforeFee = netBet + userRewardShare;
+                              const finalAmount = totalBeforeFee * 0.95; // 扣除5%领取手续费
+                              return `${finalAmount.toFixed(3)} CHZ`;
                             })()
                           ) : '0 CHZ'}
                         </span>
