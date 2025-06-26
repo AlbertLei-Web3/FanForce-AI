@@ -9,7 +9,7 @@
 import { useState, useEffect } from 'react'
 import { useWeb3 } from '../context/Web3Context'
 import { useContract } from '../context/ContractContext'
-import { teams, deleteClassicMatchup, getClassicMatchups, addClassicMatchup, getAllTeams, saveDynamicTeam } from '../../data/teams'
+import { teams, deleteClassicMatchup, getClassicMatchups, addClassicMatchup, getAllTeams, saveDynamicTeam, isCustomTeam } from '../../data/teams'
 import { useLanguage } from '../context/LanguageContext'
 
 const ADMIN_ADDRESS = '0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5'
@@ -336,34 +336,55 @@ export default function AdminPanel() {
                 <h3 className="text-xl font-semibold text-white mb-4">{t('Existing Matches')}</h3>
                 <div className="space-y-4">
                   {matchups.map((matchup, index) => {
-                    const teamA = teams.find(t => t.id === matchup.teamA)
-                    const teamB = teams.find(t => t.id === matchup.teamB)
+                    // 使用allTeams查找队伍，包括自定义队伍 / Use allTeams to find teams, including custom teams
+                    const teamA = allTeams.find(t => t.id === matchup.teamA)
+                    const teamB = allTeams.find(t => t.id === matchup.teamB)
                     if (!teamA || !teamB) return null
 
                     return (
                       <div key={index} className="bg-gray-800 p-4 rounded relative group">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4">
-                            <img 
-                              src={`https://flagsapi.com/${teamA.countryCode}/flat/64.png`}
-                              alt={teamA.name}
-                              className="w-8 h-6"
-                            />
-                            <span className="text-white">{tTeam(teamA.nameEn, teamA.nameCn)}</span>
+                            {/* 条件渲染队伍A图标 / Conditional render team A icon */}
+                            {!isCustomTeam(teamA.id) ? (
+                              <img 
+                                src={`https://flagsapi.com/${teamA.countryCode}/flat/64.png`}
+                                alt={teamA.name}
+                                className="w-8 h-6"
+                              />
+                            ) : (
+                              <div className="w-8 h-6 bg-gray-700 rounded flex items-center justify-center">
+                                <span className="text-xs">⚡</span>
+                              </div>
+                            )}
+                            <span className="text-white">
+                              {isCustomTeam(teamA.id) ? teamA.name : tTeam(teamA.nameEn, teamA.nameCn)}
+                            </span>
                           </div>
                           <span className="text-fanforce-gold">VS</span>
                           <div className="flex items-center space-x-4">
                             <span className="text-white">
-                              {tTeam(teamB.nameEn, teamB.nameCn)}
+                              {isCustomTeam(teamB.id) ? teamB.name : tTeam(teamB.nameEn, teamB.nameCn)}
                             </span>
-                            <img 
-                              src={`https://flagsapi.com/${teamB.countryCode}/flat/64.png`}
-                              alt={teamB.name}
-                              className="w-8 h-6"
-                            />
+                            {/* 条件渲染队伍B图标 / Conditional render team B icon */}
+                            {!isCustomTeam(teamB.id) ? (
+                              <img 
+                                src={`https://flagsapi.com/${teamB.countryCode}/flat/64.png`}
+                                alt={teamB.name}
+                                className="w-8 h-6"
+                              />
+                            ) : (
+                              <div className="w-8 h-6 bg-gray-700 rounded flex items-center justify-center">
+                                <span className="text-xs">⚡</span>
+                              </div>
+                            )}
                           </div>
                         </div>
-                        <p className="text-gray-400 text-sm mt-2 text-center">{t(matchup.titleKey)}</p>
+                        <p className="text-gray-400 text-sm mt-2 text-center">
+                          {matchup.titleKey ? t(matchup.titleKey) : 
+                           (isCustomTeam(teamA.id) || isCustomTeam(teamB.id) ? 
+                            '自定义对战 / Custom Match' : '经典对战 / Classic Match')}
+                        </p>
                         
                         {/* 删除按钮 - 悬停时显示 */}
                         <button
