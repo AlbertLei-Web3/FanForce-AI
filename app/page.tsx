@@ -34,6 +34,7 @@ export default function HomePage() {
     createMatch, 
     connectToMatch,
     placeBet, 
+    claimReward,
     currentMatchId, 
     matchInfo, 
     userBet, 
@@ -176,6 +177,34 @@ export default function HomePage() {
     if (matchInfo.settled) return t('Match is already settled')
     if (userBet && parseFloat(userBet.amount) > 0) return t('You have already bet on this match')
     return ''
+  }
+
+  // 检查是否可以领取奖励 / Check if can claim reward
+  const canClaimReward = () => {
+    return matchInfo?.settled && 
+           userBet && 
+           parseFloat(userBet.amount) > 0 && 
+           !userBet.claimed
+  }
+
+  // 检查是否已经领取奖励 / Check if already claimed reward
+  const hasClaimedReward = () => {
+    return userBet?.claimed || false
+  }
+
+  // 检查用户是否下注失败 / Check if user bet on losing team
+  const isLosingBet = () => {
+    if (!matchInfo?.settled || !userBet || parseFloat(userBet.amount) === 0) return false
+    return userBet.team !== matchInfo.result
+  }
+
+  // 处理领取奖励 / Handle claim reward
+  const handleClaimReward = async () => {
+    if (!currentMatchId) return
+    const success = await claimReward(currentMatchId)
+    if (success) {
+      console.log('Reward claimed successfully')
+    }
   }
 
   // 取消下注 / Cancel Bet
@@ -428,34 +457,77 @@ export default function HomePage() {
               <h3 className="text-xl font-bold text-white mb-6 text-center">
                 🎯 {t('Place Your Bet')}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
+              
+              {/* 显示用户当前下注状态 / Show user's current bet status */}
+              {userBet && parseFloat(userBet.amount) > 0 && (
+                <div className="mb-6 p-4 bg-blue-900/30 border border-blue-600 rounded-lg">
+                  <p className="text-blue-300 text-center">
+                    💰 {t('Your Bet')}: {userBet.amount} CHZ on {userBet.team === 1 ? tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn) : tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}
+                  </p>
+                  {matchInfo?.settled && (
+                    <p className="text-center mt-2">
+                      {userBet.team === matchInfo.result ? (
+                        <span className="text-green-400">🎉 {t('You Won!')}</span>
+                      ) : (
+                        <span className="text-red-400">😔 {t('You Lost')}</span>
+                      )}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* 下注按钮或奖励领取按钮 / Betting buttons or reward claim button */}
+              {canClaimReward() ? (
                 <button
-                  onClick={() => handleVote('A')}
-                  className="btn-primary text-lg py-4 disabled:opacity-50"
-                  disabled={isBetDisabled()}
-                  title={getBetDisabledReason()}
+                  onClick={handleClaimReward}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-lg py-4 rounded-lg transition-colors disabled:opacity-50"
+                  disabled={loading}
                 >
-                  {isBetDisabled() ? getBetDisabledReason() : t('Bet on')}
-                  <br />
-                  <span className="text-sm">
-                    {!isBetDisabled() && `${t('Bet on')} ${tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)}`}
-                  </span>
+                  {loading ? t('Processing...') : `🏆 ${t('Claim Reward')}`}
                 </button>
-                
+              ) : hasClaimedReward() ? (
                 <button
-                  onClick={() => handleVote('B')}
-                  className="btn-secondary text-lg py-4 disabled:opacity-50"
-                  disabled={isBetDisabled()}
-                  title={getBetDisabledReason()}
+                  className="w-full bg-gray-600 text-gray-300 font-bold text-lg py-4 rounded-lg cursor-not-allowed"
+                  disabled
                 >
-                  {isBetDisabled() ? getBetDisabledReason() : t('Bet on')}
-                  <br />
-                  <span className="text-sm">
-                    {!isBetDisabled() && `${t('Bet on')} ${tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}`}
-                  </span>
+                  ✅ {t('Reward Claimed')}
                 </button>
-              </div>
+              ) : isLosingBet() ? (
+                <button
+                  className="w-full bg-red-600 text-white font-bold text-lg py-4 rounded-lg cursor-not-allowed"
+                  disabled
+                >
+                  😔 {t('Lost Bet')}
+                </button>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <button
+                    onClick={() => handleVote('A')}
+                    className="btn-primary text-lg py-4 disabled:opacity-50"
+                    disabled={isBetDisabled()}
+                    title={getBetDisabledReason()}
+                  >
+                    {isBetDisabled() ? getBetDisabledReason() : t('Bet on')}
+                    <br />
+                    <span className="text-sm">
+                      {!isBetDisabled() && `${t('Bet on')} ${tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)}`}
+                    </span>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleVote('B')}
+                    className="btn-secondary text-lg py-4 disabled:opacity-50"
+                    disabled={isBetDisabled()}
+                    title={getBetDisabledReason()}
+                  >
+                    {isBetDisabled() ? getBetDisabledReason() : t('Bet on')}
+                    <br />
+                    <span className="text-sm">
+                      {!isBetDisabled() && `${t('Bet on')} ${tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}`}
+                    </span>
+                  </button>
+                </div>
+              )}
 
               {/* 错误显示 / Error Display */}
               {error && (

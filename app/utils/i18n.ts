@@ -39,6 +39,11 @@ export interface TranslationKeys {
   'Reward Pool': string
   'Your Bet': string
   'Claimed': string
+  'You Won!': string
+  'You Lost': string
+  'Claim Reward': string
+  'Reward Claimed': string
+  'Lost Bet': string
   
   // 球队数据显示 / Team data display
   'Historical Win Rate': string
@@ -116,6 +121,11 @@ const enTranslations: TranslationKeys = {
   'Reward Pool': 'Reward Pool',
   'Your Bet': 'Your Bet',
   'Claimed': 'Claimed',
+  'You Won!': 'You Won!',
+  'You Lost': 'You Lost',
+  'Claim Reward': 'Claim Reward',
+  'Reward Claimed': 'Reward Claimed',
+  'Lost Bet': 'Lost Bet',
   
   'Historical Win Rate': 'Historical Win Rate',
   'Average Age': 'Average Age',
@@ -190,6 +200,11 @@ const zhTranslations: TranslationKeys = {
   'Reward Pool': '奖励池',
   'Your Bet': '您的下注',
   'Claimed': '已领取',
+  'You Won!': '您赢了！',
+  'You Lost': '您输了',
+  'Claim Reward': '领取奖励',
+  'Reward Claimed': '奖励已领取',
+  'Lost Bet': '下注失败',
   
   'Historical Win Rate': '历史胜率',
   'Average Age': '平均年龄',

@@ -43,6 +43,8 @@ interface MatchInfo {
   result: number
   settled: boolean
   rewardInjected: boolean
+  teamA?: string // 添加队伍A名称 / Add team A name
+  teamB?: string // 添加队伍B名称 / Add team B name
 }
 
 // 用户下注信息接口 / User Bet Info Interface
@@ -66,7 +68,7 @@ interface ContractContextType {
   settleMatch: (matchId: number, result: 1 | 2) => Promise<boolean>
   claimReward: (matchId: number) => Promise<boolean>
   resetMatch: (matchId: number) => Promise<boolean>
-  refreshMatchInfo: (matchId: number) => Promise<void>
+  refreshMatchInfo: (matchId: number, teamA?: string, teamB?: string) => Promise<void>
   refreshUserBet: (matchId: number) => Promise<void> // 添加刷新用户下注信息函数 / Add refresh user bet function
 }
 
@@ -144,7 +146,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
         // 比赛已存在，直接连接 / Match exists, connect directly
         console.log(`Match ${matchId} already exists, connecting directly`)
         setCurrentMatchId(matchId)
-        await refreshMatchInfo(matchId)
+        await refreshMatchInfo(matchId, teamA, teamB) // 传递队伍名称 / Pass team names
         await refreshUserBet(matchId)
         return matchId
       } else {
@@ -176,7 +178,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       await tx.wait()
       
       setCurrentMatchId(matchId)
-      await refreshMatchInfo(matchId)
+      await refreshMatchInfo(matchId, teamA, teamB) // 传递队伍名称 / Pass team names
       await refreshUserBet(matchId) // 刷新用户下注信息 / Refresh user bet info
       return matchId
       
@@ -305,7 +307,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
   }
 
   // 刷新比赛信息
-  const refreshMatchInfo = async (matchId: number): Promise<void> => {
+  const refreshMatchInfo = async (matchId: number, teamA?: string, teamB?: string): Promise<void> => {
     try {
       if (!isConnected || !window.ethereum) return
       
@@ -320,7 +322,9 @@ export function ContractProvider({ children }: { children: ReactNode }) {
         rewardPool: ethers.formatEther(info[3]),
         result: Number(info[4]),
         settled: info[5],
-        rewardInjected: info[6]
+        rewardInjected: info[6],
+        teamA: teamA, // 添加队伍名称 / Add team names
+        teamB: teamB
       })
     } catch (err) {
       console.error('Failed to refresh match info:', err)
