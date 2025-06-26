@@ -5,7 +5,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { teams, calculateCombatPower, getClassicMatchups, deleteClassicMatchup, Team } from '../data/teams'
+import { teams, calculateCombatPower, getClassicMatchups, deleteClassicMatchup, Team, getAllTeams, isCustomTeam } from '../data/teams'
 import { useLanguage } from './context/LanguageContext'
 import { useContract } from './context/ContractContext'
 import { useWeb3 } from './context/Web3Context'
@@ -249,8 +249,9 @@ export default function HomePage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {matchups.map((matchup, index) => {
-                const teamA = teams.find(t => t.id === matchup.teamA)
-                const teamB = teams.find(t => t.id === matchup.teamB)
+                const allTeamsData = getAllTeams() // 获取所有队伍（包括自定义）/ Get all teams (including custom)
+                const teamA = allTeamsData.find(t => t.id === matchup.teamA)
+                const teamB = allTeamsData.find(t => t.id === matchup.teamB)
                 return (
                   <button
                     key={index}
@@ -269,21 +270,29 @@ export default function HomePage() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
-                        <img 
-                          src={`https://flagsapi.com/${teamA?.countryCode}/flat/64.png`} 
-                          alt={teamA?.name}
-                          className="w-8 h-6"
-                        />
-                        <span className="text-white font-medium">{tTeam(teamA?.nameEn || '', teamA?.nameCn || '')}</span>
+                        {!isCustomTeam(teamA?.id || '') && (
+                          <img 
+                            src={`https://flagsapi.com/${teamA?.countryCode}/flat/64.png`} 
+                            alt={teamA?.name}
+                            className="w-8 h-6"
+                          />
+                        )}
+                        <span className="text-white font-medium">
+                          {isCustomTeam(teamA?.id || '') ? teamA?.name : tTeam(teamA?.nameEn || '', teamA?.nameCn || '')}
+                        </span>
                       </div>
                       <span className="text-fanforce-gold text-xl">VS</span>
                       <div className="flex items-center space-x-4">
-                        <span className="text-white font-medium">{tTeam(teamB?.nameEn || '', teamB?.nameCn || '')}</span>
-                        <img 
-                          src={`https://flagsapi.com/${teamB?.countryCode}/flat/64.png`} 
-                          alt={teamB?.name}
-                          className="w-8 h-6"
-                        />
+                        <span className="text-white font-medium">
+                          {isCustomTeam(teamB?.id || '') ? teamB?.name : tTeam(teamB?.nameEn || '', teamB?.nameCn || '')}
+                        </span>
+                        {!isCustomTeam(teamB?.id || '') && (
+                          <img 
+                            src={`https://flagsapi.com/${teamB?.countryCode}/flat/64.png`} 
+                            alt={teamB?.name}
+                            className="w-8 h-6"
+                          />
+                        )}
                       </div>
                     </div>
                     <p className="text-gray-400 text-sm mt-2 text-center">{t(matchup.titleKey)}</p>
@@ -302,7 +311,7 @@ export default function HomePage() {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {teams.map((team) => (
+              {getAllTeams().map((team) => (
                 <div
                   key={team.id}
                   className="team-card cursor-pointer hover:glow-effect"
@@ -315,20 +324,31 @@ export default function HomePage() {
                   }}
                 >
                   <div className="text-center">
-                    <img 
-                      src={`https://flagsapi.com/${team.countryCode}/flat/64.png`} 
-                      alt={team.name}
-                      className="w-16 h-12 mx-auto mb-3"
-                    />
-                    <h3 className="text-white font-bold text-lg">{tTeam(team.nameEn, team.nameCn)}</h3>
-                    <p className="text-gray-400 text-sm">{tTeam(team.nameEn, team.nameCn)}</p>
+                    {!isCustomTeam(team.id) && (
+                      <img 
+                        src={`https://flagsapi.com/${team.countryCode}/flat/64.png`} 
+                        alt={team.name}
+                        className="w-16 h-12 mx-auto mb-3"
+                      />
+                    )}
+                    {isCustomTeam(team.id) && (
+                      <div className="w-16 h-12 mx-auto mb-3 bg-gray-700 rounded flex items-center justify-center">
+                        <span className="text-2xl">⚡</span>
+                      </div>
+                    )}
+                    <h3 className="text-white font-bold text-lg">
+                      {isCustomTeam(team.id) ? team.name : tTeam(team.nameEn, team.nameCn)}
+                    </h3>
+                    <p className="text-gray-400 text-sm">
+                      {isCustomTeam(team.id) ? '自定义队伍 / Custom Team' : tTeam(team.nameEn, team.nameCn)}
+                    </p>
                     <p className="text-fanforce-secondary text-xs mt-2">{team.starPlayer}</p>
                     
                     {/* 基础数据预览 / Basic Data Preview */}
                     <div className="mt-3 text-xs text-gray-300 space-y-1">
                       <div>{t('Win Rate')}: {team.winRate}%</div>
                       <div>{t('Avg Age')}: {team.avgAge}{t('y')}</div>
-                      <div>{t('FIFA Ranking')}: #{team.fifaRanking}</div>
+                      {!isCustomTeam(team.id) && <div>{t('FIFA Ranking')}: #{team.fifaRanking}</div>}
                     </div>
                   </div>
                 </div>
@@ -344,7 +364,7 @@ export default function HomePage() {
             {/* 对战标题 / Match Title */}
             <div className="text-center">
               <h2 className="text-4xl font-bold text-white mb-4">
-                {tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)} 🆚 {tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}
+                {isCustomTeam(selectedTeamA.id) ? selectedTeamA.name : tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)} 🆚 {isCustomTeam(selectedTeamB.id) ? selectedTeamB.name : tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}
               </h2>
               {/* 只有管理员才能看到重新选择按钮 / Only admin can see reselect button */}
               {isAdmin && (
@@ -362,12 +382,21 @@ export default function HomePage() {
               
               {/* 队伍A评分 / Team A Score */}
               <div className="team-card text-center glow-effect">
-                <img 
-                  src={`https://flagsapi.com/${selectedTeamA.countryCode}/flat/64.png`} 
-                  alt={selectedTeamA.name}
-                  className="w-20 h-15 mx-auto mb-4"
-                />
-                <h3 className="text-2xl font-bold text-white mb-2">{tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)}</h3>
+                {!isCustomTeam(selectedTeamA.id) && (
+                  <img 
+                    src={`https://flagsapi.com/${selectedTeamA.countryCode}/flat/64.png`} 
+                    alt={selectedTeamA.name}
+                    className="w-20 h-15 mx-auto mb-4"
+                  />
+                )}
+                {isCustomTeam(selectedTeamA.id) && (
+                  <div className="w-20 h-15 mx-auto mb-4 bg-gray-700 rounded flex items-center justify-center">
+                    <span className="text-4xl">⚡</span>
+                  </div>
+                )}
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  {isCustomTeam(selectedTeamA.id) ? selectedTeamA.name : tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)}
+                </h3>
                 <div className="combat-score mb-4">
                   {calculateCombatPower(selectedTeamA)}
                 </div>
@@ -389,12 +418,21 @@ export default function HomePage() {
 
               {/* 队伍B评分 / Team B Score */}
               <div className="team-card text-center glow-effect">
-                <img 
-                  src={`https://flagsapi.com/${selectedTeamB.countryCode}/flat/64.png`} 
-                  alt={selectedTeamB.name}
-                  className="w-20 h-15 mx-auto mb-4"
-                />
-                <h3 className="text-2xl font-bold text-white mb-2">{tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}</h3>
+                {!isCustomTeam(selectedTeamB.id) && (
+                  <img 
+                    src={`https://flagsapi.com/${selectedTeamB.countryCode}/flat/64.png`} 
+                    alt={selectedTeamB.name}
+                    className="w-20 h-15 mx-auto mb-4"
+                  />
+                )}
+                {isCustomTeam(selectedTeamB.id) && (
+                  <div className="w-20 h-15 mx-auto mb-4 bg-gray-700 rounded flex items-center justify-center">
+                    <span className="text-4xl">⚡</span>
+                  </div>
+                )}
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  {isCustomTeam(selectedTeamB.id) ? selectedTeamB.name : tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}
+                </h3>
                 <div className="combat-score mb-4">
                   {calculateCombatPower(selectedTeamB)}
                 </div>
@@ -464,7 +502,10 @@ export default function HomePage() {
               {userBet && parseFloat(userBet.amount) > 0 && (
                 <div className="mb-6 p-4 bg-blue-900/30 border border-blue-600 rounded-lg">
                   <p className="text-blue-300 text-center">
-                    💰 {t('Your Bet')}: {userBet.amount} CHZ on {userBet.team === 1 ? tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn) : tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}
+                    💰 {t('Your Bet')}: {userBet.amount} CHZ on {userBet.team === 1 ? 
+                      (isCustomTeam(selectedTeamA.id) ? selectedTeamA.name : tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)) : 
+                      (isCustomTeam(selectedTeamB.id) ? selectedTeamB.name : tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn))
+                    }
                   </p>
                   {/* 只有在比赛已结算且结果有效时才显示输赢状态 / Only show win/loss when match is settled with valid result */}
                   {matchInfo?.settled && matchInfo.result > 0 && (
@@ -603,7 +644,7 @@ export default function HomePage() {
                     {isBetDisabled() ? getBetDisabledReason() : t('Bet on')}
                     <br />
                     <span className="text-sm">
-                      {!isBetDisabled() && `${t('Bet on')} ${tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)}`}
+                      {!isBetDisabled() && `${t('Bet on')} ${isCustomTeam(selectedTeamA.id) ? selectedTeamA.name : tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)}`}
                     </span>
                   </button>
                   
@@ -616,7 +657,7 @@ export default function HomePage() {
                     {isBetDisabled() ? getBetDisabledReason() : t('Bet on')}
                     <br />
                     <span className="text-sm">
-                      {!isBetDisabled() && `${t('Bet on')} ${tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}`}
+                      {!isBetDisabled() && `${t('Bet on')} ${isCustomTeam(selectedTeamB.id) ? selectedTeamB.name : tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}`}
                     </span>
                   </button>
                 </div>
@@ -642,8 +683,8 @@ export default function HomePage() {
               {/* Add AdminControls component */}
               <AdminControls 
                 matchId={currentMatchId || 1} 
-                teamAName={selectedTeamA ? tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn) : undefined}
-                teamBName={selectedTeamB ? tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn) : undefined}
+                teamAName={selectedTeamA ? (isCustomTeam(selectedTeamA.id) ? selectedTeamA.name : tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)) : undefined}
+                teamBName={selectedTeamB ? (isCustomTeam(selectedTeamB.id) ? selectedTeamB.name : tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)) : undefined}
               />
 
               {/* 实时投票结果显示 / Real-time Voting Results Display */}
@@ -654,7 +695,7 @@ export default function HomePage() {
                   </h4>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-white">{tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)}</span>
+                      <span className="text-white">{isCustomTeam(selectedTeamA.id) ? selectedTeamA.name : tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)}</span>
                       <div className="flex-1 mx-4 bg-gray-700 rounded-full h-3">
                         <div 
                           className="bg-fanforce-primary h-3 rounded-full transition-all duration-500"
@@ -667,7 +708,7 @@ export default function HomePage() {
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <span className="text-white">{tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}</span>
+                                              <span className="text-white">{isCustomTeam(selectedTeamB.id) ? selectedTeamB.name : tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}</span>
                       <div className="flex-1 mx-4 bg-gray-700 rounded-full h-3">
                         <div 
                           className="bg-fanforce-secondary h-3 rounded-full transition-all duration-500"

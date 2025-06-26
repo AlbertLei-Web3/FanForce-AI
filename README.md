@@ -246,11 +246,44 @@ const title = t('2022 World Cup Quarterfinals')
 const teamName = tTeam(team.nameEn, team.nameCn)
 ```
 
-## 🎯 经典对战 / Classic Matchups
+## 🎯 经典对战与自定义队伍 / Classic Matchups and Custom Teams
 
+### 经典对战 / Classic Matchups
 系统预设了四场经典对战组合，让球迷快速体验AI预测功能：
 
 The system presets four classic matchup combinations for fans to quickly experience AI prediction features:
+
+### 自定义队伍显示优化 / Custom Team Display Optimization
+
+**🎨 视觉标识系统 / Visual Identity System:**
+- **自定义队伍标识**: 使用 ⚡ 图标替代国旗
+- **条件渲染**: 根据队伍类型智能显示不同UI元素
+- **双语标识**: 显示"自定义队伍 / Custom Team"标签
+- **统一设计语言**: 保持与官方队伍一致的视觉风格
+
+**🔧 技术实现 / Technical Implementation:**
+```typescript
+// 自定义队伍识别函数 / Custom team identification function
+export const isCustomTeam = (teamId: string): boolean => {
+  return teamId.startsWith('team_') && /^team_\d+$/.test(teamId);
+};
+
+// 条件渲染示例 / Conditional rendering example
+{!isCustomTeam(team.id) && (
+  <img src={`https://flagsapi.com/${team.countryCode}/flat/64.png`} />
+)}
+{isCustomTeam(team.id) && (
+  <div className="bg-gray-700 rounded flex items-center justify-center">
+    <span className="text-4xl">⚡</span>
+  </div>
+)}
+```
+
+**📱 界面适配 / Interface Adaptation:**
+- **对战卡片**: 自定义队伍不显示国旗，只显示队伍名称
+- **选择界面**: 自定义队伍使用特殊图标和标签
+- **对战页面**: 自定义队伍使用一致的视觉风格
+- **投票界面**: 队伍名称智能显示逻辑
 
 - **🇦🇷 阿根廷 vs 🇧🇷 巴西** - 南美双雄对决 / South American Rivalry
 - **🇫🇷 法国 vs 🇬🇧 英格兰** - 欧洲豪门对话 / European Giants Dialogue  

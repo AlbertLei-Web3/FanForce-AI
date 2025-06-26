@@ -275,4 +275,9 @@ export const getAllTeams = (): Team[] => {
   return [...staticTeams, ...dynamicTeams];
 };
 
+// 检测是否为自定义队伍 / Check if it's a custom team
+export const isCustomTeam = (teamId: string): boolean => {
+  return teamId.startsWith('team_') && /^team_\d+$/.test(teamId);
+};
+
 export default teams; 
