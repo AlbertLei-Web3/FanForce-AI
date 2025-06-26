@@ -7,7 +7,7 @@
 
 'use client'
 
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { ethers } from 'ethers'
 import { useWeb3 } from './Web3Context'
 
@@ -82,6 +82,18 @@ export function ContractProvider({ children }: { children: ReactNode }) {
   const [currentMatchId, setCurrentMatchId] = useState<number | null>(null)
   const [matchInfo, setMatchInfo] = useState<MatchInfo | null>(null)
   const [userBet, setUserBet] = useState<UserBet | null>(null) // 添加用户下注状态 / Add user bet state
+
+  // 钱包地址变化时清理状态 / Clear states when wallet address changes
+  useEffect(() => {
+    // 清理错误状态 / Clear error state
+    setError(null)
+    // 清理用户下注信息 / Clear user bet info
+    setUserBet(null)
+    // 如果有当前比赛，重新获取用户下注信息 / If there's current match, refresh user bet info
+    if (currentMatchId && address && isConnected) {
+      refreshUserBet(currentMatchId)
+    }
+  }, [address, isConnected])
 
   // 生成确定性比赛ID / Generate deterministic match ID
   const generateMatchId = (teamA: string, teamB: string): number => {
@@ -327,16 +339,60 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       setLoading(true)
       setError(null)
       
-      const contract = await getContract()
-      const tx = await contract.claimReward(matchId)
+      // 额外的安全检查 / Additional safety checks
+      if (!isConnected || !window.ethereum || !address) {
+        throw new Error('Wallet not connected / 钱包未连接')
+      }
+      
+      // 确保不是管理员地址在调用 / Ensure admin address is not calling
+      const ADMIN_ADDRESS = '0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5'
+      if (address.toLowerCase() === ADMIN_ADDRESS.toLowerCase()) {
+        throw new Error('Admin should not claim rewards, only users can claim / 管理员不应领取奖励，只有用户可以领取')
+      }
+      
+      // 验证比赛状态 / Verify match state
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+      
+      const matchInfo = await contract.getMatch(matchId)
+      if (!matchInfo[5]) { // settled
+        throw new Error('Match not settled yet / 比赛尚未结算')
+      }
+      
+      const userBetInfo = await contract.getUserBet(matchId, address)
+      if (Number(userBetInfo[1]) === 0) { // amount
+        throw new Error('No bet found for this match / 此比赛中没有发现下注记录')
+      }
+      
+      if (userBetInfo[2]) { // claimed
+        throw new Error('Reward already claimed / 奖励已领取')
+      }
+      
+      console.log('Calling claimReward for match:', matchId, 'user:', address)
+      
+      // 获取签名者并调用 claimReward / Get signer and call claimReward
+      const signer = await provider.getSigner()
+      const contractWithSigner = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
+      
+      // 明确调用 claimReward 函数 / Explicitly call claimReward function
+      const tx = await contractWithSigner.claimReward(matchId)
+      console.log('ClaimReward transaction sent:', tx.hash)
+      
       await tx.wait()
+      console.log('ClaimReward transaction confirmed')
       
       await refreshUserBet(matchId) // 刷新用户下注信息 / Refresh user bet info
       return true
       
     } catch (err: any) {
       console.error('Claim reward failed:', err)
-      setError(err.message || 'Failed to claim reward')
+      
+      // 特殊处理 "Only admin" 错误 / Special handling for "Only admin" error
+      if (err.message && err.message.includes('Only admin')) {
+        setError('Error: You are calling an admin function instead of claimReward. Please refresh the page and try again. / 错误：您调用了管理员函数而不是领取奖励函数。请刷新页面后重试。')
+      } else {
+        setError(err.message || 'Failed to claim reward / 领取奖励失败')
+      }
       return false
     } finally {
       setLoading(false)

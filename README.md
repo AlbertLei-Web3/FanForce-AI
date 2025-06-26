@@ -225,6 +225,68 @@ const handleCreateMatch = async () => {
 - 双语错误提示和操作指导
 - 权限分离确保系统安全性
 
+### 8. 奖励领取权限问题解决方案 / Reward Claiming Permission Issue Solution
+
+#### 问题描述 / Problem Description
+用户在管理员结算比赛后尝试领取奖励时，可能遇到"Only admin"错误。这通常由以下原因引起：
+
+Users may encounter "Only admin" error when trying to claim rewards after admin settles the match. This is usually caused by:
+
+**🔍 常见原因 / Common Causes:**
+- **钱包切换状态混乱**: 从管理员钱包切换到用户钱包后，前端状态未正确更新
+- **缓存问题**: 浏览器缓存了错误的权限状态
+- **函数调用混淆**: 在某些情况下可能调用了错误的合约函数
+- **状态同步延迟**: 合约状态与前端状态不同步
+
+**Common Causes:**
+- **Wallet switching state confusion**: Frontend state not properly updated after switching from admin to user wallet
+- **Caching issues**: Browser cached incorrect permission state  
+- **Function call confusion**: Wrong contract function might be called in some cases
+- **State sync delay**: Contract state and frontend state out of sync
+
+#### 解决方案 / Solutions
+
+**🛠️ 技术修复 / Technical Fixes:**
+```typescript
+// 1. 增强的权限检查 / Enhanced permission check
+const claimReward = async (matchId: number): Promise<boolean> => {
+  // 确保不是管理员地址在调用 / Ensure admin address is not calling
+  const ADMIN_ADDRESS = '0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5'
+  if (address.toLowerCase() === ADMIN_ADDRESS.toLowerCase()) {
+    throw new Error('Admin should not claim rewards, only users can claim')
+  }
+  
+  // 验证比赛状态和用户下注 / Verify match state and user bet
+  const matchInfo = await contract.getMatch(matchId)
+  const userBetInfo = await contract.getUserBet(matchId, address)
+  // ... additional validations
+}
+
+// 2. 钱包切换时状态清理 / State cleanup on wallet switch
+useEffect(() => {
+  setError(null)
+  setUserBet(null)
+  if (currentMatchId && address && isConnected) {
+    refreshUserBet(currentMatchId)
+  }
+}, [address, isConnected])
+```
+
+**👤 用户操作指南 / User Operation Guide:**
+1. **刷新页面** / Refresh page - 清理所有缓存状态
+2. **重新连接钱包** / Reconnect wallet - 确保权限状态正确
+3. **确认钱包地址** / Confirm wallet address - 使用用户钱包而非管理员钱包
+4. **清理浏览器缓存** / Clear browser cache - 如问题持续存在
+
+**🔧 调试工具 / Debugging Tools:**
+- **开发模式调试信息**: 显示当前地址、管理员状态、比赛信息等
+- **详细错误提示**: 针对不同错误类型提供具体解决方案
+- **一键刷新功能**: 快速重置页面状态
+
+**Development Mode Debug Info**: Shows current address, admin status, match info, etc.
+**Detailed Error Messages**: Specific solutions for different error types  
+**One-click Refresh**: Quick page state reset
+
 ## 🌐 国际化系统 / Internationalization System
 
 应用采用独立的国际化模块设计，所有文本统一管理，支持完整的中英文切换：

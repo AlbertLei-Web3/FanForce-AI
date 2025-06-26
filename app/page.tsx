@@ -663,10 +663,45 @@ export default function HomePage() {
                 </div>
               )}
 
+              {/* 调试信息显示（仅在开发环境） / Debug info display (dev only) */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-4 p-3 bg-gray-800 border border-gray-600 rounded-lg text-xs">
+                  <h5 className="text-gray-400 font-bold mb-2">Debug Info / 调试信息:</h5>
+                  <div className="space-y-1 text-gray-300">
+                    <div>Current Address / 当前地址: {address || 'Not connected'}</div>
+                    <div>Admin Address / 管理员地址: {ADMIN_ADDRESS}</div>
+                    <div>Is Admin / 是否管理员: {isAdmin ? 'Yes' : 'No'}</div>
+                    <div>Match ID / 比赛ID: {currentMatchId || 'None'}</div>
+                    <div>Match Settled / 比赛已结算: {matchInfo?.settled ? 'Yes' : 'No'}</div>
+                    <div>User Bet Amount / 用户下注金额: {userBet?.amount || '0'} CHZ</div>
+                    <div>User Bet Team / 用户下注队伍: {userBet?.team || 'None'}</div>
+                    <div>Reward Claimed / 奖励已领取: {userBet?.claimed ? 'Yes' : 'No'}</div>
+                  </div>
+                </div>
+              )}
+
               {/* 错误显示 / Error Display */}
               {error && (
                 <div className="mt-4 p-4 bg-red-900/30 border border-red-600 rounded-lg">
                   <p className="text-red-400 text-center">{error}</p>
+                  {/* 如果是"Only admin"错误，显示详细解决方案 / Show detailed solution for "Only admin" error */}
+                  {(error.includes('Only admin') || error.includes('管理员函数')) && (
+                    <div className="mt-4 p-3 bg-orange-900/30 border border-orange-600 rounded-lg">
+                      <h4 className="text-orange-400 font-bold mb-2">🛠️ Troubleshooting / 故障排除:</h4>
+                      <ol className="text-orange-300 text-sm space-y-2 list-decimal list-inside">
+                        <li>Refresh the page / 刷新页面</li>
+                        <li>Disconnect and reconnect your wallet / 断开并重新连接钱包</li>
+                        <li>Make sure you're using a user wallet, not admin wallet / 确保使用用户钱包，而非管理员钱包</li>
+                        <li>Clear browser cache if problem persists / 如问题持续，清理浏览器缓存</li>
+                      </ol>
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="mt-3 w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                      >
+                        🔄 Refresh Page / 刷新页面
+                      </button>
+                    </div>
+                  )}
                   {/* 如果是"Already bet"错误，显示联系管理员按钮 / Show contact admin button for "Already bet" error */}
                   {(error.includes('Already bet') || error.includes('已经在此比赛中下过注')) && (
                     <button
