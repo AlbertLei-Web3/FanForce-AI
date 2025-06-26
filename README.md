@@ -375,15 +375,57 @@ await contract.settleMatch(matchId, winningTeamId);
 We provide complete automated testing scripts to validate all functionality:
 
 ```bash
-# 完整流程测试 / Complete flow testing
+# 🔍 零Gas快速验证（推荐首选）| Zero-gas quick validation (recommended first)
+npx hardhat run scripts/quick-validation.js --network chilizSpicy
+
+# ⚡ Gas优化测试（推荐）| Gas optimized testing (recommended)
+npx hardhat run scripts/gas-optimized-test.js --network chilizSpicyLowGas
+
+# 📊 完整流程测试（Gas消耗较高）| Complete flow testing (higher gas usage)
 npx hardhat run scripts/complete-flow-test.js --network chilizSpicy
 
-# 余额检查 / Balance check
+# 💰 余额检查 | Balance check
 npx hardhat run scripts/check-balance.js --network chilizSpicy
 
-# 奖励池查看 / Reward pool check
+# 🏆 奖励池查看 | Reward pool check
 npx hardhat run scripts/check-reward-pool.js --network chilizSpicy
 ```
+
+### ⚡ Gas费用优化 | Gas Cost Optimization
+
+为了降低测试成本，我们提供了多种优化方案：
+
+To reduce testing costs, we provide multiple optimization solutions:
+
+#### 优化策略 | Optimization Strategies
+
+1. **智能操作检测** / Smart Operation Detection
+   - 检查操作是否已完成，避免重复交易
+   - Check if operations are already completed to avoid duplicate transactions
+
+2. **降低测试金额** / Reduce Test Amounts
+   - 下注金额：2 CHZ → 1 CHZ
+   - 奖励池：10 CHZ → 5 CHZ
+   - Bet amount: 2 CHZ → 1 CHZ
+   - Reward pool: 10 CHZ → 5 CHZ
+
+3. **优化Gas价格设置** / Optimize Gas Price Settings
+   - 标准网络：1 gwei（低于自动定价）
+   - 超低Gas网络：0.5 gwei（测试专用）
+   - Standard network: 1 gwei (lower than auto pricing)
+   - Ultra-low gas network: 0.5 gwei (testing only)
+
+4. **批量检测现有状态** / Batch Check Existing State
+   - 零Gas消耗的只读验证脚本
+   - Zero-gas read-only validation script
+
+#### Gas消耗对比 | Gas Usage Comparison
+
+| 测试方式 / Test Method | Gas消耗 / Gas Usage | 推荐场景 / Recommended Use |
+|----------------------|-------------------|--------------------------|
+| 零Gas验证 / Zero-gas validation | 0 CHZ | 日常状态检查 / Daily status check |
+| Gas优化测试 / Gas optimized test | ~2-4 CHZ | 功能验证 / Feature validation |
+| 完整流程测试 / Complete flow test | ~8-15 CHZ | 全面测试 / Comprehensive testing |
 
 ### 📋 手动验证指南 / Manual Validation Guide
 

@@ -19,15 +19,44 @@ This guide helps you validate the complete user flows of the FanForce AI predict
 ### 运行完整流程测试脚本 | Run Complete Flow Test Script
 
 ```bash
-# 运行自动化测试 | Run automated test
+# 🔍 零Gas消耗快速验证 | Zero gas quick validation
+npx hardhat run scripts/quick-validation.js --network chilizSpicy
+
+# ⚡ Gas优化测试（推荐）| Gas optimized test (recommended)
+npx hardhat run scripts/gas-optimized-test.js --network chilizSpicy
+
+# 🔥 超低Gas价格测试 | Ultra low gas price test
+npx hardhat run scripts/gas-optimized-test.js --network chilizSpicyLowGas
+
+# 📊 完整流程测试（Gas消耗较高）| Complete flow test (higher gas usage)
 npx hardhat run scripts/complete-flow-test.js --network chilizSpicy
 
-# 检查余额 | Check balance
+# 💰 检查余额 | Check balance
 npx hardhat run scripts/check-balance.js --network chilizSpicy
 
-# 检查奖励池 | Check reward pool
+# 🏆 检查奖励池 | Check reward pool
 npx hardhat run scripts/check-reward-pool.js --network chilizSpicy
 ```
+
+### ⚡ Gas优化建议 | Gas Optimization Recommendations
+
+**推荐测试顺序 | Recommended Testing Order:**
+
+1. **先运行零Gas验证** | First run zero-gas validation:
+   ```bash
+   npx hardhat run scripts/quick-validation.js --network chilizSpicy
+   ```
+
+2. **再运行Gas优化测试** | Then run gas-optimized test:
+   ```bash
+   npx hardhat run scripts/gas-optimized-test.js --network chilizSpicyLowGas
+   ```
+
+3. **最后使用前端验证** | Finally validate with frontend:
+   ```bash
+   npm run dev
+   # 访问 http://localhost:3000
+   ```
 
 ## 👤 手动验证流程 | Manual Validation Process
 
