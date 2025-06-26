@@ -15,9 +15,11 @@ const ADMIN_ADDRESS = '0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5'
 
 interface AdminControlsProps {
   matchId: number;
+  teamAName?: string;
+  teamBName?: string;
 }
 
-export default function AdminControls({ matchId }: AdminControlsProps) {
+export default function AdminControls({ matchId, teamAName, teamBName }: AdminControlsProps) {
   const { address } = useWeb3()
   const { injectReward, settleMatch, resetMatch, loading, error, matchInfo } = useContract()
   const [isAdmin, setIsAdmin] = useState(false)
@@ -94,7 +96,7 @@ export default function AdminControls({ matchId }: AdminControlsProps) {
           {matchInfo?.settled && (
             <div className="mt-4 p-3 bg-blue-900/30 border border-blue-600 rounded-lg">
               <p className="text-blue-400 text-center">
-                Match settled! Winner: Team {matchInfo.result === 1 ? 'A' : 'B'}
+                Match settled! Winner: {matchInfo.result === 1 ? (teamAName || 'Team A') : (teamBName || 'Team B')}
               </p>
             </div>
           )}
@@ -163,14 +165,14 @@ export default function AdminControls({ matchId }: AdminControlsProps) {
                   className="w-full px-4 py-3 bg-fanforce-primary text-white rounded-lg hover:bg-fanforce-primary/80 transition-colors disabled:opacity-50"
                   disabled={loading}
                 >
-                  {loading ? 'Processing...' : `Team A Wins (${matchInfo.teamA})`}
+                  {loading ? 'Processing...' : `${teamAName || 'Team A'} Wins`}
                 </button>
                 <button
                   onClick={() => handleSettleMatch(2)}
                   className="w-full px-4 py-3 bg-fanforce-secondary text-white rounded-lg hover:bg-fanforce-secondary/80 transition-colors disabled:opacity-50"
                   disabled={loading}
                 >
-                  {loading ? 'Processing...' : `Team B Wins (${matchInfo.teamB})`}
+                  {loading ? 'Processing...' : `${teamBName || 'Team B'} Wins`}
                 </button>
               </div>
             </div>

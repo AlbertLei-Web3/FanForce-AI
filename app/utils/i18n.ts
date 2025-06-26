@@ -89,6 +89,15 @@ export interface TranslationKeys {
   'Match is already settled': string
   'You have already bet on this match': string
   'Match deleted successfully': string
+  
+  // 奖励详情相关 / Reward details related
+  'Reward Details': string
+  'Your Bet Amount': string
+  'Platform Fee': string
+  'Net Bet Amount': string
+  'Estimated Reward': string
+  'Total Reward': string
+  'Real-time data from smart contract': string
 }
 
 // 英文翻译 / English translations
@@ -167,7 +176,16 @@ const enTranslations: TranslationKeys = {
   'Loading match info...': 'Loading match info...',
   'Match is already settled': 'Match is already settled',
   'You have already bet on this match': 'You have already bet on this match',
-  'Match deleted successfully': 'Match deleted successfully'
+  'Match deleted successfully': 'Match deleted successfully',
+  
+  // Reward details translations
+  'Reward Details': 'Reward Details',
+  'Your Bet Amount': 'Your Bet Amount',
+  'Platform Fee': 'Platform Fee',
+  'Net Bet Amount': 'Net Bet Amount',
+  'Estimated Reward': 'Estimated Reward',
+  'Total Reward': 'Total Reward',
+  'Real-time data from smart contract': 'Real-time data from smart contract'
 }
 
 // 中文翻译 / Chinese translations
@@ -246,7 +264,16 @@ const zhTranslations: TranslationKeys = {
   'Loading match info...': '加载比赛信息中...',
   'Match is already settled': '比赛已结算',
   'You have already bet on this match': '您已经在此比赛中下注了',
-  'Match deleted successfully': '比赛删除成功'
+  'Match deleted successfully': '比赛删除成功',
+  
+  // Reward details translations
+  'Reward Details': '奖励详情',
+  'Your Bet Amount': '您的下注金额',
+  'Platform Fee': '平台手续费',
+  'Net Bet Amount': '净下注金额',
+  'Estimated Reward': '预估奖励',
+  'Total Reward': '总奖励',
+  'Real-time data from smart contract': '来自智能合约的实时数据'
 }
 
 // 翻译函数 / Translation function

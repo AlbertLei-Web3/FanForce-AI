@@ -148,12 +148,8 @@ export default function HomePage() {
     const success = await placeBet(currentMatchId, teamNumber as 1 | 2, betAmount)
     
     if (success) {
-      // 更新投票计数以显示 / Update vote count for display
-      if (selectedBetTeam === 'A') {
-        setVotes(prev => ({ ...prev, teamA: prev.teamA + 1 }))
-      } else {
-        setVotes(prev => ({ ...prev, teamB: prev.teamB + 1 }))
-      }
+      // 下注成功后会自动刷新matchInfo，包含最新的投票数据
+      // After successful bet, matchInfo will be automatically refreshed with latest voting data
       setShowBetModal(false)
       setSelectedBetTeam(null)
     }
@@ -218,7 +214,6 @@ export default function HomePage() {
     setSelectedTeamA(null)
     setSelectedTeamB(null)
     setShowComparison(false)
-    setVotes({ teamA: 0, teamB: 0 })
     setAiCommentary('')
   }
 
@@ -478,13 +473,63 @@ export default function HomePage() {
 
               {/* 下注按钮或奖励领取按钮 / Betting buttons or reward claim button */}
               {canClaimReward() ? (
-                <button
-                  onClick={handleClaimReward}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-lg py-4 rounded-lg transition-colors disabled:opacity-50"
-                  disabled={loading}
-                >
-                  {loading ? t('Processing...') : `🏆 ${t('Claim Reward')}`}
-                </button>
+                <div className="space-y-4">
+                  {/* 奖励详情显示 / Reward Details Display */}
+                  <div className="bg-green-900/30 border border-green-600 rounded-lg p-4">
+                    <h4 className="text-green-400 font-bold text-center mb-3">🏆 {t('Reward Details')}</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-300">{t('Your Bet Amount')}:</span>
+                        <span className="text-white font-bold">{userBet?.amount} CHZ</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-300">{t('Platform Fee')} (5%):</span>
+                        <span className="text-red-400">-{(parseFloat(userBet?.amount || '0') * 0.05).toFixed(3)} CHZ</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-300">{t('Net Bet Amount')}:</span>
+                        <span className="text-white">{(parseFloat(userBet?.amount || '0') * 0.95).toFixed(3)} CHZ</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-300">{t('Estimated Reward')}:</span>
+                        <span className="text-green-400 font-bold">
+                          {matchInfo && userBet ? (
+                            (() => {
+                              const netBet = parseFloat(userBet.amount) * 0.95;
+                              const totalWinnerBets = userBet.team === 1 ? parseFloat(matchInfo.totalTeamA) : parseFloat(matchInfo.totalTeamB);
+                              const rewardPool = parseFloat(matchInfo.rewardPool);
+                              const userShare = totalWinnerBets > 0 ? (netBet / totalWinnerBets) * rewardPool : 0;
+                              return `~${userShare.toFixed(3)} CHZ`;
+                            })()
+                          ) : '0 CHZ'}
+                        </span>
+                      </div>
+                      <hr className="border-gray-600" />
+                      <div className="flex justify-between text-lg font-bold">
+                        <span className="text-green-400">{t('Total Reward')}:</span>
+                        <span className="text-green-400">
+                          {matchInfo && userBet ? (
+                            (() => {
+                              const netBet = parseFloat(userBet.amount) * 0.95;
+                              const totalWinnerBets = userBet.team === 1 ? parseFloat(matchInfo.totalTeamA) : parseFloat(matchInfo.totalTeamB);
+                              const rewardPool = parseFloat(matchInfo.rewardPool);
+                              const userShare = totalWinnerBets > 0 ? (netBet / totalWinnerBets) * rewardPool : 0;
+                              return `${userShare.toFixed(3)} CHZ`;
+                            })()
+                          ) : '0 CHZ'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={handleClaimReward}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-lg py-4 rounded-lg transition-colors disabled:opacity-50"
+                    disabled={loading}
+                  >
+                    {loading ? t('Processing...') : `🏆 ${t('Claim Reward')}`}
+                  </button>
+                </div>
               ) : hasClaimedReward() ? (
                 <button
                   className="w-full bg-gray-600 text-gray-300 font-bold text-lg py-4 rounded-lg cursor-not-allowed"
@@ -537,10 +582,14 @@ export default function HomePage() {
               )}
 
               {/* Add AdminControls component */}
-              <AdminControls matchId={currentMatchId || 1} />
+              <AdminControls 
+                matchId={currentMatchId || 1} 
+                teamAName={selectedTeamA ? tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn) : undefined}
+                teamBName={selectedTeamB ? tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn) : undefined}
+              />
 
-              {/* 投票结果显示 / Voting Results Display */}
-              {(votes.teamA > 0 || votes.teamB > 0) && (
+              {/* 实时投票结果显示 / Real-time Voting Results Display */}
+              {matchInfo && (parseFloat(matchInfo.totalTeamA) > 0 || parseFloat(matchInfo.totalTeamB) > 0) && (
                 <div className="mt-6">
                   <h4 className="text-white font-medium mb-3 text-center">
                     {t('Live Voting Results')}
@@ -552,11 +601,11 @@ export default function HomePage() {
                         <div 
                           className="bg-fanforce-primary h-3 rounded-full transition-all duration-500"
                           style={{ 
-                            width: `${votes.teamA / (votes.teamA + votes.teamB) * 100}%` 
+                            width: `${parseFloat(matchInfo.totalTeamA) / (parseFloat(matchInfo.totalTeamA) + parseFloat(matchInfo.totalTeamB)) * 100}%` 
                           }}
                         ></div>
                       </div>
-                      <span className="text-fanforce-primary font-bold">{votes.teamA}{t('votes')}</span>
+                      <span className="text-fanforce-primary font-bold">{parseFloat(matchInfo.totalTeamA).toFixed(2)} CHZ</span>
                     </div>
                     
                     <div className="flex items-center justify-between">
@@ -565,13 +614,16 @@ export default function HomePage() {
                         <div 
                           className="bg-fanforce-secondary h-3 rounded-full transition-all duration-500"
                           style={{ 
-                            width: `${votes.teamB / (votes.teamA + votes.teamB) * 100}%` 
+                            width: `${parseFloat(matchInfo.totalTeamB) / (parseFloat(matchInfo.totalTeamA) + parseFloat(matchInfo.totalTeamB)) * 100}%` 
                           }}
                         ></div>
                       </div>
-                      <span className="text-fanforce-secondary font-bold">{votes.teamB}{t('votes')}</span>
+                      <span className="text-fanforce-secondary font-bold">{parseFloat(matchInfo.totalTeamB).toFixed(2)} CHZ</span>
                     </div>
                   </div>
+                  <p className="text-gray-400 text-xs text-center mt-2">
+                    {t('Real-time data from smart contract')}
+                  </p>
                 </div>
               )}
             </div>
