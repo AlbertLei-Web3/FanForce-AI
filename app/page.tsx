@@ -451,23 +451,7 @@ export default function HomePage() {
         {showComparison && selectedTeamA && selectedTeamB && (
           <div className="space-y-8">
             
-            {/* 对战标题 / Match Title */}
-            <div className="text-center">
-              <h2 className="text-4xl font-bold text-white mb-4">
-                {isCustomTeam(selectedTeamA.id) ? selectedTeamA.name : tTeam(selectedTeamA.nameEn, selectedTeamA.nameCn)} 🆚 {isCustomTeam(selectedTeamB.id) ? selectedTeamB.name : tTeam(selectedTeamB.nameEn, selectedTeamB.nameCn)}
-              </h2>
-              {/* 只有管理员才能看到重新选择按钮 / Only admin can see reselect button */}
-              <ClientOnly>
-                {isAdmin && (
-                  <button 
-                    onClick={resetSelection}
-                    className="btn-secondary text-sm"
-                  >
-                    {t('Reselect Teams')}
-                  </button>
-                )}
-              </ClientOnly>
-            </div>
+            {/* 对战标题已隐藏 / Match Title Hidden */}
 
             {/* 战斗力评分对比 / Combat Power Score Comparison */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
