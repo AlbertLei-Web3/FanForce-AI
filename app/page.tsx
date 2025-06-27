@@ -282,48 +282,47 @@ export default function HomePage() {
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* 标题区域 / Header Section */}
-        <div className="text-center mb-12">
-          {/* 主品牌标题 / Main Brand Title */}
-          <h1 className="text-6xl font-bold text-white text-shadow mb-3">
-            🏆 {t('FanForce AI - Win-Win Prediction Platform')}
-          </h1>
-          
-          {/* 核心价值主张 / Core Value Proposition */}
-          <div className="mb-6">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-fanforce-primary via-fanforce-secondary to-fanforce-accent bg-clip-text text-transparent mb-2">
-              {t('AI-Powered Non-Zero-Sum Betting - Everyone Profits from Predictions')}
-            </h2>
-            <p className="text-lg text-fanforce-gold font-medium">
-              {t('Revolutionary non-zero-sum design ensures all participants earn rewards from their predictions')}
-            </p>
-          </div>
-          
-          {/* 双赢概念强调框 / Win-Win Concept Highlight Box */}
-          <div className="max-w-4xl mx-auto p-6 bg-gradient-to-r from-fanforce-primary/20 via-fanforce-secondary/20 to-fanforce-accent/20 rounded-lg border border-fanforce-gold/30 mb-6">
-            <div className="flex items-center justify-center space-x-8 text-white">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-fanforce-accent">🎯 Win</div>
-                <div className="text-sm">70% of Pool</div>
-              </div>
-              <div className="text-3xl text-fanforce-gold">+</div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-fanforce-secondary">💡 Lose</div>
-                <div className="text-sm">30% of Pool</div>
-              </div>
-              <div className="text-3xl text-fanforce-gold">=</div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-fanforce-primary">💰 Everyone Profits</div>
-                <div className="text-sm">Smart Prediction Rewards</div>
+        {/* 标题区域 / Header Section - 只在主页显示 / Only show on main page */}
+        {!showComparison && (
+          <div className="text-center mb-12">
+            {/* 主品牌标题 / Main Brand Title */}
+            <h1 className="text-6xl font-bold text-white text-shadow mb-3">
+              🏆 {t('FanForce AI - Win-Win Prediction Platform')}
+            </h1>
+            
+            {/* 核心价值主张 / Core Value Proposition */}
+            <div className="mb-6">
+              <p className="text-lg text-fanforce-gold font-medium">
+                {t('Revolutionary non-zero-sum design ensures all participants earn rewards from their predictions')}
+              </p>
+            </div>
+            
+            {/* 双赢概念强调框 / Win-Win Concept Highlight Box */}
+            <div className="max-w-4xl mx-auto p-6 bg-gradient-to-r from-blue-500/10 via-blue-600/15 to-blue-700/20 rounded-lg border border-blue-400/30 mb-6">
+              <div className="flex items-center justify-center space-x-8 text-white">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">Win</div>
+                  <div className="text-sm text-gray-300">70% of Pool</div>
+                </div>
+                <div className="text-3xl text-fanforce-gold">+</div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">Lose</div>
+                  <div className="text-sm text-gray-300">30% of Pool</div>
+                </div>
+                <div className="text-3xl text-fanforce-gold">=</div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-fanforce-gold">💰 Everyone Profits</div>
+                  <div className="text-sm text-gray-300">Smart Prediction Rewards</div>
+                </div>
               </div>
             </div>
+            
+            {/* 技术说明 / Technical Description */}
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              {t('AI-Powered Non-Zero-Sum Betting - Everyone Profits from Predictions')}
+            </p>
           </div>
-          
-          {/* 技术说明 / Technical Description */}
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            {t('AI-powered combat analysis system based on historical data, player age, injury status and more')}
-          </p>
-        </div>
+        )}
 
         {/* 管理员面板 / Admin Panel */}
         <ClientOnly>
