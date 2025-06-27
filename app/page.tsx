@@ -835,24 +835,7 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* 调试信息显示（仅在开发环境） / Debug info display (dev only) */}
-              <ClientOnly>
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="mt-4 p-3 bg-gray-800 border border-gray-600 rounded-lg text-xs">
-                    <h5 className="text-gray-400 font-bold mb-2">Debug Info / 调试信息:</h5>
-                    <div className="space-y-1 text-gray-300">
-                      <div>Current Address / 当前地址: {address || 'Not connected'}</div>
-                      <div>Admin Address / 管理员地址: {ADMIN_ADDRESS}</div>
-                      <div>Is Admin / 是否管理员: {isAdmin ? 'Yes' : 'No'}</div>
-                      <div>Match ID / 比赛ID: {currentMatchId || 'None'}</div>
-                      <div>Match Settled / 比赛已结算: {matchInfo?.settled ? 'Yes' : 'No'}</div>
-                      <div>User Bet Amount / 用户下注金额: {userBet?.amount || '0'} CHZ</div>
-                      <div>User Bet Team / 用户下注队伍: {userBet?.team || 'None'}</div>
-                      <div>Reward Claimed / 奖励已领取: {userBet?.claimed ? 'Yes' : 'No'}</div>
-                    </div>
-                  </div>
-                )}
-              </ClientOnly>
+              {/* 调试信息已隐藏 / Debug info hidden */}
 
               {/* 错误显示 / Error Display */}
               {error && (
