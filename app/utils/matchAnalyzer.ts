@@ -2,7 +2,7 @@
 // 基于真实球队数据生成个性化AI解说 / Generate personalized AI commentary based on real team data
 // 关联文件：与 data/teams.ts 中的球队数据配合使用 / Associated with team data in data/teams.ts
 
-import { Team } from '../data/teams'
+import { Team } from '../../data/teams'
 
 // 数据分析结果接口 / Data Analysis Result Interface
 export interface MatchAnalysis {
