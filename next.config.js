@@ -5,12 +5,11 @@ const nextConfig = {
     unoptimized: true,
   },
   output: 'standalone',
-  telemetry: {
-    disabled: true
-  },
   experimental: {
     optimizePackageImports: ['@heroicons/react', '@headlessui/react']
-  }
+  },
+  productionBrowserSourceMaps: false,
+  swcMinify: true,
 }
 
 module.exports = nextConfig 
