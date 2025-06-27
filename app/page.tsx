@@ -12,6 +12,7 @@ import { useWeb3 } from './context/Web3Context'
 import AdminControls from './components/AdminControls'
 import AdminPanel from './components/AdminPanel'
 import { ClientOnly, HydrationSafe } from './components/ClientLayout'
+import { generatePersonalizedCommentary } from './utils/matchAnalyzer'
 
 export default function HomePage() {
   // 状态管理 / State Management
@@ -123,7 +124,7 @@ export default function HomePage() {
       const teamB = position === 'B' ? team : selectedTeamB!
       
       setShowComparison(true)
-      generateAICommentary()
+      generateAICommentaryWithTeams(teamA, teamB)
       
       // 处理比赛创建或连接 / Handle match creation or connection
       await handleMatchCreation(teamA, teamB)
@@ -132,16 +133,29 @@ export default function HomePage() {
 
   // 生成AI解说 / Generate AI Commentary
   const generateAICommentary = async () => {
+    if (!selectedTeamA || !selectedTeamB) {
+      console.log('generateAICommentary: Missing teams', { selectedTeamA, selectedTeamB })
+      return
+    }
+    
+    generateAICommentaryWithTeams(selectedTeamA, selectedTeamB)
+  }
+
+  // 生成AI解说（直接传入队伍） / Generate AI Commentary with specific teams
+  const generateAICommentaryWithTeams = async (teamA: Team, teamB: Team) => {
+    console.log('generateAICommentaryWithTeams: Starting analysis for', teamA.nameEn, 'vs', teamB.nameEn)
     setIsAnalyzing(true)
     
-    // 模拟AI分析过程 / Simulate AI analysis process
+    // 基于真实数据生成个性化解说 / Generate personalized commentary based on real data
     setTimeout(() => {
-      const commentaries = [
-        "基于数据分析，这将是一场势均力敌的较量！双方在历史战绩和球员配置上都有各自的优势... / Based on data analysis, this will be an evenly matched contest! Both sides have their respective advantages in historical records and player configurations...",
-        "从战术层面来看，这场对决将是经验与活力的碰撞！年轻球员的冲击力vs老将的稳定发挥... / From a tactical perspective, this matchup will be a collision of experience and vitality! The impact of young players vs the stable performance of veterans...",
-        "伤病情况可能成为决定性因素！主力球员的缺席将如何影响整体战术布局... / Injury situations may become the decisive factor! How will the absence of key players affect the overall tactical setup..."
-      ]
-      setAiCommentary(commentaries[Math.floor(Math.random() * commentaries.length)])
+      try {
+        const personalizedCommentary = generatePersonalizedCommentary(teamA, teamB)
+        console.log('Generated commentary:', personalizedCommentary)
+        setAiCommentary(personalizedCommentary)
+      } catch (error) {
+        console.error('Error generating commentary:', error)
+        setAiCommentary('Error generating analysis. Please try again.')
+      }
       setIsAnalyzing(false)
     }, 2000)
   }
@@ -274,7 +288,7 @@ export default function HomePage() {
                         setSelectedTeamA(teamA)
                         setSelectedTeamB(teamB)
                         setShowComparison(true)
-                        generateAICommentary()
+                        generateAICommentaryWithTeams(teamA, teamB)
                         
                         // 尝试连接或创建合约比赛 / Try to connect or create contract match
                         await handleMatchCreation(teamA, teamB)
