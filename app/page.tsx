@@ -22,6 +22,8 @@ export default function HomePage() {
   const [votes, setVotes] = useState({ teamA: 0, teamB: 0 })
   const [aiCommentary, setAiCommentary] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [hasAnalyzed, setHasAnalyzed] = useState(false)
+  const [showAnalysisButton, setShowAnalysisButton] = useState(true)
   const [matchups, setMatchups] = useState<any[]>([])
   const [matchupsLoaded, setMatchupsLoaded] = useState(false)
   
@@ -124,7 +126,10 @@ export default function HomePage() {
       const teamB = position === 'B' ? team : selectedTeamB!
       
       setShowComparison(true)
-      generateAICommentaryWithTeams(teamA, teamB)
+      // 移除自动触发，改为手动触发 / Remove auto-trigger, change to manual trigger
+      setShowAnalysisButton(true)
+      setHasAnalyzed(false)
+      setAiCommentary('')
       
       // 处理比赛创建或连接 / Handle match creation or connection
       await handleMatchCreation(teamA, teamB)
@@ -145,6 +150,8 @@ export default function HomePage() {
   const generateAICommentaryWithTeams = async (teamA: Team, teamB: Team) => {
     console.log('generateAICommentaryWithTeams: Starting analysis for', teamA.nameEn, 'vs', teamB.nameEn)
     setIsAnalyzing(true)
+    setShowAnalysisButton(false)
+    setAiCommentary('')
     
     // 基于真实数据生成个性化解说 / Generate personalized commentary based on real data
     setTimeout(() => {
@@ -152,12 +159,31 @@ export default function HomePage() {
         const personalizedCommentary = generatePersonalizedCommentary(teamA, teamB)
         console.log('Generated commentary:', personalizedCommentary)
         setAiCommentary(personalizedCommentary)
+        setHasAnalyzed(true)
       } catch (error) {
         console.error('Error generating commentary:', error)
         setAiCommentary('Error generating analysis. Please try again.')
+        setHasAnalyzed(true)
       }
       setIsAnalyzing(false)
-    }, 2000)
+    }, 3000) // 增加到3秒增强期待感
+  }
+
+  // 手动触发AI分析 / Manually trigger AI analysis
+  const handleStartAnalysis = () => {
+    if (selectedTeamA && selectedTeamB) {
+      generateAICommentaryWithTeams(selectedTeamA, selectedTeamB)
+    }
+  }
+
+  // 重新分析 / Re-analyze
+  const handleReAnalysis = () => {
+    setHasAnalyzed(false)
+    setShowAnalysisButton(true)
+    setAiCommentary('')
+    if (selectedTeamA && selectedTeamB) {
+      generateAICommentaryWithTeams(selectedTeamA, selectedTeamB)
+    }
   }
 
   // 下注处理函数 / Betting Handler
@@ -248,6 +274,8 @@ export default function HomePage() {
     setSelectedTeamB(null)
     setShowComparison(false)
     setAiCommentary('')
+    setHasAnalyzed(false)
+    setShowAnalysisButton(true)
   }
 
   return (
@@ -288,7 +316,10 @@ export default function HomePage() {
                         setSelectedTeamA(teamA)
                         setSelectedTeamB(teamB)
                         setShowComparison(true)
-                        generateAICommentaryWithTeams(teamA, teamB)
+                        // 移除自动触发，改为手动触发 / Remove auto-trigger, change to manual trigger  
+                        setShowAnalysisButton(true)
+                        setHasAnalyzed(false)
+                        setAiCommentary('')
                         
                         // 尝试连接或创建合约比赛 / Try to connect or create contract match
                         await handleMatchCreation(teamA, teamB)
@@ -480,13 +511,93 @@ export default function HomePage() {
               <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                 🤖 {t('AI Tactical Analyst Commentary')}
               </h3>
-              {isAnalyzing ? (
-                <div className="flex items-center space-x-2 text-fanforce-secondary">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-fanforce-secondary"></div>
-                  <span>{t('AI is analyzing match data...')}</span>
+              
+              {/* 分析前状态 - 显示开始分析按钮 / Pre-analysis state - Show start analysis button */}
+              {showAnalysisButton && !isAnalyzing && !hasAnalyzed && (
+                <div className="text-center py-8">
+                  <div className="mb-6">
+                    <div className="text-6xl mb-4">🧠</div>
+                    <p className="text-gray-400 mb-6">Ready to generate expert tactical analysis based on real team data</p>
+                  </div>
+                  <button
+                    onClick={handleStartAnalysis}
+                    className="group relative bg-gradient-to-r from-fanforce-primary to-fanforce-secondary hover:from-blue-600 hover:to-amber-500 text-white font-bold text-lg px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-2xl"
+                  >
+                    <span className="flex items-center space-x-2">
+                      <span>🚀</span>
+                      <span>Start AI Analysis</span>
+                      <span className="animate-pulse">✨</span>
+                    </span>
+                    <div className="absolute inset-0 bg-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  </button>
                 </div>
-              ) : (
-                <p className="text-gray-300 leading-relaxed">{aiCommentary}</p>
+              )}
+
+              {/* 分析中状态 - 显示加载动画 / During analysis state - Show loading animation */}
+              {isAnalyzing && (
+                <div className="text-center py-8">
+                  <div className="mb-6">
+                    <div className="relative inline-block">
+                      <div className="text-6xl animate-bounce-slow">🧠</div>
+                      <div className="absolute -top-2 -right-2 text-2xl animate-spin">⚡</div>
+                    </div>
+                    <p className="text-fanforce-secondary font-medium mb-4">AI Brain Processing...</p>
+                  </div>
+                  
+                  <div className="space-y-3 text-sm text-gray-400">
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-2 h-2 bg-fanforce-primary rounded-full animate-pulse"></div>
+                      <span>🔍 Comparing historical performance data</span>
+                    </div>
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-2 h-2 bg-fanforce-secondary rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                      <span>⚡ Analyzing age and fitness factors</span>
+                    </div>
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-2 h-2 bg-fanforce-accent rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                      <span>🏥 Evaluating injury impact on tactics</span>
+                    </div>
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-2 h-2 bg-fanforce-gold rounded-full animate-pulse" style={{animationDelay: '1.5s'}}></div>
+                      <span>🌟 Assessing star player influence</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 分析后状态 - 显示分析结果 / Post-analysis state - Show analysis results */}
+              {hasAnalyzed && !isAnalyzing && aiCommentary && (
+                <div>
+                  <div className="bg-gradient-to-r from-green-900/30 to-blue-900/30 border border-green-500/30 rounded-lg p-4 mb-4">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <span className="text-green-400">✅</span>
+                      <span className="text-green-400 font-medium">Analysis Complete</span>
+                      <span className="text-xs text-gray-400">• Generated just now</span>
+                    </div>
+                    <p className="text-gray-300 leading-relaxed">{aiCommentary}</p>
+                  </div>
+                  
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={handleReAnalysis}
+                      className="flex-1 bg-fanforce-dark hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2"
+                    >
+                      <span>🔄</span>
+                      <span>Re-analyze</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        // 可以后续添加分享功能 / Can add share functionality later
+                        navigator.clipboard.writeText(aiCommentary)
+                        alert('Analysis copied to clipboard!')
+                      }}
+                      className="flex-1 bg-fanforce-accent hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2"
+                    >
+                      <span>📋</span>
+                      <span>Copy Analysis</span>
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
 
