@@ -312,7 +312,6 @@ export default function HomePage() {
                 <div className="text-3xl text-fanforce-gold">=</div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-fanforce-gold">💰 Everyone Profits</div>
-                  <div className="text-sm text-gray-300">Smart Prediction Rewards</div>
                 </div>
               </div>
             </div>
