@@ -18,7 +18,10 @@ export interface TranslationKeys {
   
   // 页面标题 / Page titles
   '2022 World Cup Quarterfinals': string
+  'FanForce AI - Win-Win Prediction Platform': string
   'AI-powered combat analysis system based on historical data, player age, injury status and more': string
+  'AI-Powered Non-Zero-Sum Betting - Everyone Profits from Predictions': string
+  'Revolutionary non-zero-sum design ensures all participants earn rewards from their predictions': string
   
   // AI解说相关 / AI Commentary related
   'AI Tactical Analyst Commentary': string
@@ -119,7 +122,10 @@ const enTranslations: TranslationKeys = {
   'Classic Matchups': 'Classic Matchups',
   
   '2022 World Cup Quarterfinals': '2022 World Cup Quarterfinals',
+  'FanForce AI - Win-Win Prediction Platform': 'FanForce AI - Win-Win Prediction Platform',
   'AI-powered combat analysis system based on historical data, player age, injury status and more': 'AI-powered combat analysis system based on historical data, player age, injury status and more',
+  'AI-Powered Non-Zero-Sum Betting - Everyone Profits from Predictions': 'AI-Powered Non-Zero-Sum Betting - Everyone Profits from Predictions',
+  'Revolutionary non-zero-sum design ensures all participants earn rewards from their predictions': 'Revolutionary non-zero-sum design ensures all participants earn rewards from their predictions',
   
   'AI Tactical Analyst Commentary': 'AI Tactical Analyst Commentary',
   'AI is analyzing match data...': 'AI is analyzing match data...',
@@ -214,7 +220,10 @@ const zhTranslations: TranslationKeys = {
   'Classic Matchups': '经典对战推荐',
   
   '2022 World Cup Quarterfinals': '2022世界杯八强对决',
+  'FanForce AI - Win-Win Prediction Platform': 'FanForce AI - 双赢预测平台',
   'AI-powered combat analysis system based on historical data, player age, injury status and more': 'AI驱动的战斗力分析系统，基于历史数据、球员年龄、伤病情况等多维度评估球队实力',
+  'AI-Powered Non-Zero-Sum Betting - Everyone Profits from Predictions': 'AI驱动的非零和投注 - 让预测变成人人获利',
+  'Revolutionary non-zero-sum design ensures all participants earn rewards from their predictions': '革命性非零和设计确保所有参与者都能从预测中获得奖励',
   
   'AI Tactical Analyst Commentary': 'AI战术分析师解说',
   'AI is analyzing match data...': 'AI正在分析比赛数据...',

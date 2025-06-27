@@ -1,17 +1,33 @@
-# 🏆 FanForce AI | AI驱动的体育预测平台
+# 🏆 FanForce AI - Win-Win Prediction Platform | AI驱动的双赢预测平台
 
 <p align="center">
   <img src="https://img.shields.io/badge/Next.js-14.0-blue" alt="Next.js">
   <img src="https://img.shields.io/badge/TypeScript-5.0-blue" alt="TypeScript">
   <img src="https://img.shields.io/badge/Tailwind-3.3-cyan" alt="Tailwind">
   <img src="https://img.shields.io/badge/Chiliz-SDK-green" alt="Chiliz SDK">
+  <img src="https://img.shields.io/badge/Non--Zero--Sum-Win--Win-gold" alt="Non-Zero-Sum">
 </p>
+
+## 🎯 核心理念 / Core Philosophy
+
+### AI-Powered Non-Zero-Sum Betting - Everyone Profits from Predictions
+### AI驱动的非零和投注 - 让预测变成人人获利
+
+**革命性非零和设计** 确保所有参与者都能从预测中获得奖励：
+- 🎯 **获胜者**: 70%奖励池分成 + 100%本金返还
+- 💡 **失败者**: 30%奖励池分成 + 100%本金返还  
+- 💰 **结果**: 无论输赢，人人都有收益
+
+**Revolutionary non-zero-sum design** ensures all participants earn rewards from their predictions:
+- 🎯 **Winners**: 70% reward pool + 100% principal return
+- 💡 **Losers**: 30% reward pool + 100% principal return
+- 💰 **Result**: Everyone profits regardless of outcome
 
 ## 📖 项目简介 / Project Overview
 
-**FanForce AI** 是一个结合 **Fan Token** 与 **AI** 的体育比赛预测互动工具。基于2022年世界杯八强球队数据，通过AI算法生成战斗力评分，让球迷参与智能化的比赛预测和投票。
+**FanForce AI** 是一个突破传统零和博弈的 **AI驱动体育预测平台**。通过革命性的非零和设计，让所有参与者都能从智能预测中获利，真正实现了"预测即收益"的创新理念。
 
-**FanForce AI** is a sports match prediction platform that combines **Fan Tokens** with **AI**. Based on 2022 World Cup quarterfinals data, it generates combat power scores through AI algorithms, enabling fans to participate in intelligent match predictions and voting.
+**FanForce AI** is a revolutionary **AI-powered sports prediction platform** that breaks traditional zero-sum gaming. Through innovative non-zero-sum design, all participants can profit from intelligent predictions, truly realizing the concept of "predict to profit".
 
 ### 🎯 核心特性 / Core Features
 
