@@ -8,7 +8,7 @@
 
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { useWeb3 } from './Web3Context'
 
 // 用户角色枚举 / User Role Enum
@@ -87,11 +87,8 @@ interface UserContextType {
   getDashboardPath: () => string
   getDefaultRoute: () => string
   
-  // 开发者方法 / Developer Methods (Super Admin Only)
-  currentViewRole: UserRole | null
-  switchRole: (role: UserRole) => void
-  resetRole: () => void
-  getAvailableRoles: () => UserRole[]
+  // 开发者方法 / Developer Methods (简化版 / Simplified)
+  isDevelopmentMode: () => boolean
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -109,8 +106,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
     error: null
   })
 
-  // 开发者角色切换状态 / Developer Role Switching State
-  const [currentViewRole, setCurrentViewRole] = useState<UserRole | null>(null)
+  // 开发模式检查 / Development Mode Check
+  const isDevelopmentMode = useCallback((): boolean => {
+    return process.env.NODE_ENV === 'development'
+  }, [])
 
   // 初始化时检查已存在的会话 / Check existing session on initialization
   useEffect(() => {
@@ -418,38 +417,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const isAudience = (): boolean => hasRole(UserRole.AUDIENCE)
   const isSuperAdmin = (): boolean => hasRole(UserRole.SUPER_ADMIN)
 
-  // 开发者方法 / Developer Methods (Super Admin Only)
-  const switchRole = (role: UserRole): void => {
-    if (!isSuperAdmin()) {
-      console.warn('Role switching is only available for Super Admin users')
-      return
-    }
-    setCurrentViewRole(role)
-  }
-
-  const resetRole = (): void => {
-    if (!isSuperAdmin()) {
-      console.warn('Role reset is only available for Super Admin users')
-      return
-    }
-    setCurrentViewRole(null)
-  }
-
-  const getAvailableRoles = (): UserRole[] => {
-    if (!isSuperAdmin()) return []
-    return [UserRole.ADMIN, UserRole.AMBASSADOR, UserRole.ATHLETE, UserRole.AUDIENCE]
-  }
+  // 简化的开发者方法 / Simplified Developer Methods - removed complex role switching
 
   // 仪表板路由方法 / Dashboard Routing Methods
-  const getDashboardPath = (): string => {
+  const getDashboardPath = useCallback((): string => {
     if (!authState.user) return '/'
     
-    // 如果是超级管理员且正在切换角色，使用当前视图角色 / If super admin and role switching, use current view role
-    const effectiveRole = isSuperAdmin() && currentViewRole ? currentViewRole : authState.user.role
-    
-    switch (effectiveRole) {
+    // 简化逻辑：移除复杂的角色切换，直接根据用户角色跳转 / Simplified logic: remove complex role switching
+    switch (authState.user.role) {
       case UserRole.SUPER_ADMIN:
-        return '/dashboard/admin' // Super admin uses admin dashboard by default
       case UserRole.ADMIN:
         return '/dashboard/admin'
       case UserRole.AMBASSADOR:
@@ -459,13 +435,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
       case UserRole.AUDIENCE:
         return '/dashboard/audience'
       default:
-        return '/'
+        return '/dashboard/audience' // 默认跳转到观众页面 / Default to audience dashboard
     }
-  }
+  }, [authState.user?.role])
 
-  const getDefaultRoute = (): string => {
+  const getDefaultRoute = useCallback((): string => {
     return authState.isAuthenticated ? getDashboardPath() : '/'
-  }
+  }, [authState.isAuthenticated, getDashboardPath])
 
   // 上下文值 / Context Value
   const contextValue: UserContextType = {
@@ -484,10 +460,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     isSuperAdmin,
     getDashboardPath,
     getDefaultRoute,
-    currentViewRole,
-    switchRole,
-    resetRole,
-    getAvailableRoles
+    isDevelopmentMode
   }
 
   return (

@@ -13,8 +13,6 @@ import { useUser, UserRole } from '../../context/UserContext'
 import { useLanguage } from '../../context/LanguageContext'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import RoleSwitcher from './RoleSwitcher'
-import MockDataGenerator from './MockDataGenerator'
 
 interface DashboardLayoutProps {
   children: ReactNode
@@ -40,7 +38,7 @@ export default function DashboardLayout({
   subtitle, 
   actions 
 }: DashboardLayoutProps) {
-  const { authState, logout, isAdmin, isAmbassador, isAthlete, isAudience, isSuperAdmin } = useUser()
+  const { authState, logout, isAdmin, isAmbassador, isAthlete, isAudience, isSuperAdmin, isDevelopmentMode } = useUser()
   const { language, toggleLanguage, t } = useLanguage()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -272,9 +270,51 @@ export default function DashboardLayout({
         </main>
       </div>
       
-      {/* 开发工具 / Development Tools (Super Admin Only) */}
-      <RoleSwitcher />
-      <MockDataGenerator />
+      {/* 简洁开发工具 / Simple Development Tools (Development Mode Only) */}
+      {isDevelopmentMode() && (
+        <div className="fixed bottom-4 right-4 z-50 bg-black/80 backdrop-blur-sm rounded-lg p-4 border border-gray-600 shadow-xl">
+          <h3 className="text-white text-sm font-bold mb-3 flex items-center">
+            🛠️ {language === 'en' ? 'Dev Tools' : '开发工具'}
+          </h3>
+          <div className="space-y-2">
+            <button
+              onClick={() => router.push('/dashboard/admin')}
+              className="w-full text-left px-3 py-2 text-xs bg-red-600/20 hover:bg-red-600/40 text-red-300 rounded transition-colors"
+            >
+              🔧 {language === 'en' ? 'Admin View' : '管理员视图'}
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/ambassador')}
+              className="w-full text-left px-3 py-2 text-xs bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-300 rounded transition-colors"
+            >
+              🧑‍💼 {language === 'en' ? 'Ambassador View' : '大使视图'}
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/athlete')}
+              className="w-full text-left px-3 py-2 text-xs bg-green-600/20 hover:bg-green-600/40 text-green-300 rounded transition-colors"
+            >
+              🏃‍♂️ {language === 'en' ? 'Athlete View' : '运动员视图'}
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/audience')}
+              className="w-full text-left px-3 py-2 text-xs bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 rounded transition-colors"
+            >
+              🙋‍♂️ {language === 'en' ? 'Audience View' : '观众视图'}
+            </button>
+            <hr className="border-gray-600 my-2" />
+            <button
+              onClick={() => {
+                // 简单的重置应用状态 / Simple app state reset
+                localStorage.clear()
+                window.location.reload()
+              }}
+              className="w-full text-left px-3 py-2 text-xs bg-gray-600/20 hover:bg-gray-600/40 text-gray-300 rounded transition-colors"
+            >
+              🔄 {language === 'en' ? 'Reset App' : '重置应用'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 
