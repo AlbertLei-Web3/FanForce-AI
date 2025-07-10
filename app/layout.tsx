@@ -1,15 +1,21 @@
-// FanForce AI - 应用布局文件
-// App Layout File - 定义整个应用的基础布局和样式
-// Defines the basic layout and styles for the entire application
+// FanForce AI - 根布局组件
+// Root Layout Component - 应用的根布局，包含全局上下文和样式
+// Root layout of the application with global contexts and styling
 
-import React from 'react'
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
-import ClientLayout from './components/ClientLayout'
+import { LanguageProvider } from './context/LanguageContext'
+import { Web3Provider } from './context/Web3Context'
+import { ContractProvider } from './context/ContractContext'
+import { UserProvider } from './context/UserContext'
+import { ClientOnly } from './components/ClientLayout'
 
-export const metadata = {
-  title: 'FanForce AI | AI-Powered Sports Prediction Platform',
-  description: 'AI-Powered Sports Prediction Platform with Fan Token Integration',
-  keywords: 'AI, Sports, Prediction, Fan Token, Chiliz, Football, World Cup',
+const inter = Inter({ subsets: ['latin'] })
+
+export const metadata: Metadata = {
+  title: 'FanForce AI - Campus Sports Prediction Platform',
+  description: 'AI-powered campus sports prediction platform with Web3 integration',
 }
 
 export default function RootLayout({
@@ -19,10 +25,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gradient-to-br from-fanforce-dark via-gray-900 to-fanforce-primary min-h-screen font-sans">
-        <ClientLayout>
-          {children}
-        </ClientLayout>
+      <body className={inter.className}>
+        <ClientOnly>
+          <LanguageProvider>
+            <Web3Provider>
+              <ContractProvider>
+                <UserProvider>
+                  {children}
+                </UserProvider>
+              </ContractProvider>
+            </Web3Provider>
+          </LanguageProvider>
+        </ClientOnly>
       </body>
     </html>
   )
