@@ -65,21 +65,64 @@
 - Node.js 18.17+ 
 - npm 或 yarn
 - 现代浏览器支持
+- **PostgreSQL 12+** (新增 / New)
+- **Web3钱包** (MetaMask等)
 
-### 2. 安装依赖 / Installation
+### 2. 数据库设置 / Database Setup
+
+**Step 1: 安装PostgreSQL / Install PostgreSQL**
+```bash
+# Windows (使用Chocolatey)
+choco install postgresql
+
+# macOS (使用Homebrew)
+brew install postgresql
+
+# Ubuntu/Debian
+sudo apt-get install postgresql postgresql-contrib
+```
+
+**Step 2: 创建数据库用户 / Create Database User**
+```sql
+-- 连接到PostgreSQL / Connect to PostgreSQL
+psql -U postgres
+
+-- 创建数据库用户 / Create database user
+CREATE USER fanforce_user WITH PASSWORD 'your_password';
+
+-- 赋予权限 / Grant permissions
+ALTER USER fanforce_user CREATEDB;
+```
+
+**Step 3: 配置环境变量 / Configure Environment Variables**
+```bash
+# 复制环境变量模板 / Copy environment template
+cp .env.example .env.local
+
+# 编辑 .env.local 文件，配置数据库连接
+# Edit .env.local file to configure database connection
+```
+
+**Step 4: 初始化数据库 / Initialize Database**
+```bash
+# 自动创建数据库和表结构 / Automatically create database and tables
+node scripts/init-database.js
+```
+
+### 3. 安装依赖 / Installation
 
 ```bash
 # 克隆项目
 git clone https://github.com/your-username/fanforce-ai.git
 cd fanforce-ai
 
-# 安装依赖
+# 安装依赖 (已包含PostgreSQL驱动)
 npm install
 # 或者使用 yarn
 yarn install
 ```
 
-### 3. 启动开发服务器 / Start Development Server
+### 4. 启动开发服务器 / Start Development Server
 
 ```bash
 npm run dev
@@ -89,12 +132,41 @@ yarn dev
 
 项目将在 `http://localhost:3000` 启动
 
-### 4. 项目构建 / Build for Production
+### 5. 项目构建 / Build for Production
 
 ```bash
 npm run build
 npm start
 ```
+
+### 6. 数据库管理 / Database Management
+
+**测试数据库连接 / Test Database Connection**
+```bash
+# 验证数据库连接状态 / Verify database connection status
+node scripts/init-database.js
+```
+
+**数据库架构 / Database Schema**
+- **11个核心表** / 11 Core Tables
+  - users (用户表)
+  - venues (场馆表)
+  - events (活动表)
+  - athletes (运动员表)
+  - event_participants (活动参与者表)
+  - qr_codes (二维码表)
+  - qr_scans (二维码扫描表)
+  - transactions (交易表)
+  - rewards (奖励表)
+  - analytics (分析表)
+  - invite_codes (邀请码表)
+
+**Web2优先架构 / Web2-First Architecture**
+- 🏗️ **PostgreSQL**: 处理所有业务逻辑和数据存储
+- ⚡ **超简化智能合约**: 仅处理CHZ转账（5个函数）
+- 🔐 **JWT认证**: 基于钱包签名的身份验证
+- 📊 **实时数据**: WebSocket推送更新
+- 💰 **虚拟余额**: 数据库追踪用户资产
 
 ## 📊 核心算法 / Core Algorithm
 

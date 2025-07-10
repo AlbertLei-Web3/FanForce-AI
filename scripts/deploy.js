@@ -12,7 +12,7 @@ async function main() {
 
   // Deploy the contract
   const FanForcePrediction = await ethers.getContractFactory("FanForcePredictionDemo");
-  const prediction = await FanForcePrediction.deploy(); // 不再需要CHZ代币地址参数 / No longer need CHZ token address parameter
+  const prediction = await FanForcePrediction.deploy(); // 不再需要CHZ地址参数 / No longer need CHZ token address parameter
   await prediction.waitForDeployment();
 
   const contractAddress = await prediction.getAddress();
