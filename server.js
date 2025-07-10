@@ -12,11 +12,27 @@ const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
 const winston = require('winston');
 const { body, validationResult } = require('express-validator');
+const http = require('http'); // HTTP server for Socket.io / 用于Socket.io的HTTP服务器
+const { Server } = require('socket.io'); // Socket.io server / Socket.io服务器
 require('dotenv').config(); // Load environment variables / 加载环境变量
 
 // Create Express app
 // 创建Express应用
 const app = express();
+
+// Create HTTP server for Socket.io integration
+// 为Socket.io集成创建HTTP服务器
+const server = http.createServer(app);
+
+// Initialize Socket.io with CORS configuration
+// 使用CORS配置初始化Socket.io
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST']
+  }
+});
 
 // Environment configuration
 // 环境配置
@@ -136,6 +152,224 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
+// WebSocket JWT authentication middleware
+// WebSocket JWT认证中间件
+const authenticateSocketToken = (socket, next) => {
+  const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return next(new Error('Authentication error: No token provided'));
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET || 'fanforce-ai-super-secret-jwt-key-2024', (err, decoded) => {
+    if (err) {
+      return next(new Error('Authentication error: Invalid token'));
+    }
+    socket.userId = decoded.userId;
+    socket.walletAddress = decoded.walletAddress;
+    socket.userRole = decoded.role;
+    next();
+  });
+};
+
+// WebSocket connection handling
+// WebSocket连接处理
+io.use(authenticateSocketToken);
+
+io.on('connection', (socket) => {
+  logger.info(`🔗 User connected: ${socket.userId} (${socket.userRole})`);
+  logger.info(`🔗 用户连接: ${socket.userId} (${socket.userRole})`);
+  
+  // Join user to role-based rooms
+  // 将用户加入基于角色的房间
+  socket.join(`user_${socket.userId}`);
+  socket.join(`role_${socket.userRole}`);
+  
+  // Join general notifications room
+  // 加入通用通知房间
+  socket.join('general_notifications');
+  
+  // Send welcome message with user info
+  // 发送欢迎消息和用户信息
+  socket.emit('connected', {
+    message: 'Connected to FanForce AI real-time server',
+    message_cn: '已连接到FanForce AI实时服务器',
+    userId: socket.userId,
+    role: socket.userRole,
+    timestamp: new Date().toISOString()
+  });
+  
+  // Handle user status updates
+  // 处理用户状态更新
+  socket.on('update_status', async (data) => {
+    try {
+      logger.info(`📊 Status update from user ${socket.userId}: ${JSON.stringify(data)}`);
+      
+      // Broadcast to role-specific rooms
+      // 广播到特定角色房间
+      io.to(`role_${socket.userRole}`).emit('user_status_update', {
+        userId: socket.userId,
+        role: socket.userRole,
+        status: data.status,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      logger.error('Status update error:', error);
+      socket.emit('error', { message: 'Status update failed', error: error.message });
+    }
+  });
+  
+  // Handle event participation updates
+  // 处理活动参与更新
+  socket.on('join_event', async (data) => {
+    try {
+      const { eventId } = data;
+      logger.info(`🎯 User ${socket.userId} joining event ${eventId}`);
+      
+      // Join event-specific room
+      // 加入特定活动房间
+      socket.join(`event_${eventId}`);
+      
+      // Notify other participants
+      // 通知其他参与者
+      socket.to(`event_${eventId}`).emit('participant_joined', {
+        userId: socket.userId,
+        role: socket.userRole,
+        eventId: eventId,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Send confirmation to user
+      // 向用户发送确认
+      socket.emit('event_joined', {
+        message: `Successfully joined event ${eventId}`,
+        message_cn: `成功加入活动 ${eventId}`,
+        eventId: eventId
+      });
+      
+    } catch (error) {
+      logger.error('Join event error:', error);
+      socket.emit('error', { message: 'Failed to join event', error: error.message });
+    }
+  });
+  
+  // Handle QR code scanning events
+  // 处理二维码扫描事件
+  socket.on('qr_scan', async (data) => {
+    try {
+      const { eventId, scanResult } = data;
+      logger.info(`📱 QR scan from user ${socket.userId} for event ${eventId}: ${scanResult}`);
+      
+      // Notify admins and ambassadors
+      // 通知管理员和大使
+      io.to('role_admin').to('role_ambassador').emit('qr_scan_update', {
+        userId: socket.userId,
+        eventId: eventId,
+        scanResult: scanResult,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      logger.error('QR scan error:', error);
+      socket.emit('error', { message: 'QR scan processing failed', error: error.message });
+    }
+  });
+  
+  // Handle match result updates (admin/ambassador only)
+  // 处理比赛结果更新（仅管理员/大使）
+  socket.on('match_result', async (data) => {
+    try {
+      if (socket.userRole !== 'admin' && socket.userRole !== 'ambassador') {
+        socket.emit('error', { message: 'Unauthorized to update match results' });
+        return;
+      }
+      
+      const { eventId, teamAScore, teamBScore, winningTeam } = data;
+      logger.info(`🏆 Match result update: Event ${eventId}, Team A: ${teamAScore}, Team B: ${teamBScore}, Winner: ${winningTeam}`);
+      
+      // Broadcast to all event participants
+      // 广播给所有活动参与者
+      io.to(`event_${eventId}`).emit('match_result_update', {
+        eventId: eventId,
+        teamAScore: teamAScore,
+        teamBScore: teamBScore,
+        winningTeam: winningTeam,
+        timestamp: new Date().toISOString(),
+        updatedBy: socket.userId
+      });
+      
+      // Broadcast to general notifications
+      // 广播到通用通知
+      io.to('general_notifications').emit('match_completed', {
+        message: `Match completed for event ${eventId}`,
+        message_cn: `活动 ${eventId} 的比赛已完成`,
+        eventId: eventId,
+        result: `Team ${winningTeam} wins!`
+      });
+      
+    } catch (error) {
+      logger.error('Match result error:', error);
+      socket.emit('error', { message: 'Failed to update match result', error: error.message });
+    }
+  });
+  
+  // Handle reward distribution notifications
+  // 处理奖励分配通知
+  socket.on('reward_distribution', async (data) => {
+    try {
+      if (socket.userRole !== 'admin') {
+        socket.emit('error', { message: 'Unauthorized to distribute rewards' });
+        return;
+      }
+      
+      const { eventId, recipients } = data;
+      logger.info(`💰 Reward distribution for event ${eventId} to ${recipients.length} recipients`);
+      
+      // Notify each recipient individually
+      // 单独通知每个接收者
+      recipients.forEach(recipient => {
+        io.to(`user_${recipient.userId}`).emit('reward_received', {
+          message: `You received ${recipient.amount} CHZ reward!`,
+          message_cn: `您获得了 ${recipient.amount} CHZ奖励！`,
+          amount: recipient.amount,
+          eventId: eventId,
+          timestamp: new Date().toISOString()
+        });
+      });
+      
+    } catch (error) {
+      logger.error('Reward distribution error:', error);
+      socket.emit('error', { message: 'Failed to distribute rewards', error: error.message });
+    }
+  });
+  
+  // Handle disconnection
+  // 处理断开连接
+  socket.on('disconnect', (reason) => {
+    logger.info(`🔌 User disconnected: ${socket.userId} (${socket.userRole}) - Reason: ${reason}`);
+    logger.info(`🔌 用户断开连接: ${socket.userId} (${socket.userRole}) - 原因: ${reason}`);
+    
+    // Notify user's event rooms about disconnection
+    // 通知用户的活动房间关于断开连接
+    socket.rooms.forEach(room => {
+      if (room.startsWith('event_')) {
+        socket.to(room).emit('participant_disconnected', {
+          userId: socket.userId,
+          role: socket.userRole,
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+  });
+  
+  // Handle ping/pong for connection health
+  // 处理ping/pong以检测连接健康状况
+  socket.on('ping', () => {
+    socket.emit('pong', { timestamp: new Date().toISOString() });
+  });
+});
 
 // Health check endpoint
 // 健康检查端点
@@ -356,13 +590,15 @@ app.use((req, res) => {
   });
 });
 
-// Start server
-// 启动服务器
-app.listen(PORT, () => {
+// Start server with Socket.io support
+// 启动支持Socket.io的服务器
+server.listen(PORT, () => {
   logger.info(`🚀 FanForce AI API server running on port ${PORT}`);
   logger.info(`🚀 FanForce AI API服务器运行在端口 ${PORT}`);
   logger.info(`🌐 Environment: ${NODE_ENV}`);
   logger.info(`📍 Health check: http://localhost:${PORT}/health`);
+  logger.info(`🔗 WebSocket server: ws://localhost:${PORT}`);
+  logger.info(`🔗 WebSocket服务器: ws://localhost:${PORT}`);
 });
 
 // Graceful shutdown

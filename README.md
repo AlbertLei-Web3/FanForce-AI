@@ -198,6 +198,117 @@ Protected Endpoints / 受保护端点:
 - **Authentication**: JWT + Wallet signature verification
 - **Security**: Helmet, CORS, Rate limiting (100 req/15min)
 - **Logging**: Winston (console + file)
+- **WebSocket**: Socket.io for real-time communication
+
+## 🔗 WebSocket Real-time Engine / WebSocket实时引擎 🆕
+
+**FanForce AI now features a comprehensive WebSocket real-time system for live campus sports engagement:**
+**FanForce AI现在具备全面的WebSocket实时系统，用于实时校园体育参与：**
+
+### 连接 & 认证 / Connection & Authentication
+- **WebSocket端点**: `ws://localhost:3001` (开发环境)
+- **认证方式**: JWT token required in handshake (`auth.token`)
+- **自动重连**: 5秒间隔的内置重连机制
+
+### 用户角色 & 权限 / User Roles & Permissions
+- **🔧 Admin**: 全权访问所有事件，更新比赛结果，分发奖励
+- **🧑‍💼 Ambassador**: 创建事件，更新比赛结果，接收QR扫描通知
+- **🏃‍♂️ Athlete**: 参与事件，接收状态更新
+- **🙋‍♂️ Audience**: 加入事件，扫描QR码，接收通知
+
+### 实时事件 / Real-time Events
+
+#### 连接事件 / Connection Events
+- `connected` - 欢迎消息和用户信息
+- `error` - 错误通知
+- `disconnect` - 断开连接通知
+
+#### 用户状态更新 / User Status Updates
+- `update_status` - 更新用户状态 (online/active)
+- `user_status_update` - 广播用户状态变化
+
+#### 事件参与 / Event Participation
+- `join_event` - 加入事件房间
+- `event_joined` - 事件加入确认
+- `participant_joined` - 新参与者通知
+- `participant_disconnected` - 参与者离开通知
+
+#### 比赛结果 / Match Results
+- `match_result` - 提交比赛结果 (仅admin/ambassador)
+- `match_result_update` - 向参与者广播比赛结果
+- `match_completed` - 通用比赛完成通知
+
+#### 二维码系统 / QR Code System
+- `qr_scan` - 报告QR码扫描 (仅audience)
+- `qr_scan_update` - 向admin/ambassador发送QR扫描通知
+
+#### 奖励分配 / Reward Distribution
+- `reward_distribution` - 分配奖励 (仅admin)
+- `reward_received` - 个人奖励通知
+
+#### 健康监控 / Health Monitoring
+- `ping` - 发送ping检查连接健康
+- `pong` - 接收pong响应和时间戳
+
+### 房间结构 / Room Structure
+- `user_{userId}` - 个人用户房间
+- `role_{role}` - 基于角色的房间 (admin, ambassador, athlete, audience)
+- `event_{eventId}` - 事件特定房间
+- `general_notifications` - 全局通知
+
+### 使用示例 / Usage Example
+
+```javascript
+// 连接WebSocket / Connect to WebSocket
+const socket = io('ws://localhost:3001', {
+  auth: { token: jwtToken }
+});
+
+// 监听连接 / Listen for connection
+socket.on('connected', (data) => {
+  console.log('Connected:', data.message);
+});
+
+// 加入事件 / Join an event
+socket.emit('join_event', { eventId: 'event_123' });
+
+// 提交比赛结果 (admin/ambassador) / Submit match result
+socket.emit('match_result', {
+  eventId: 'event_123',
+  teamAScore: 3,
+  teamBScore: 1,
+  winningTeam: 'A'
+});
+
+// 扫描QR码 (audience) / Scan QR code
+socket.emit('qr_scan', {
+  eventId: 'event_123',
+  scanResult: 'jwt_token_from_qr'
+});
+```
+
+### WebSocket测试 / WebSocket Testing
+
+```bash
+# 启动WebSocket服务器 / Start WebSocket server
+npm run server
+
+# 运行WebSocket测试 / Run WebSocket tests
+npm run test-websocket
+
+# 演示页面 / Demo page
+# 访问 http://localhost:3000/websocket-demo
+```
+
+### 实时功能特性 / Real-time Features
+- ✅ **角色认证** / Role-based authentication
+- ✅ **事件房间** / Event rooms
+- ✅ **实时广播** / Real-time broadcasting
+- ✅ **QR码集成** / QR code integration
+- ✅ **比赛结果** / Match results
+- ✅ **奖励通知** / Reward notifications
+- ✅ **健康检查** / Health monitoring
+- ✅ **自动重连** / Auto-reconnection
 - **Testing**: Comprehensive test suite with colored output
 - **Error Handling**: Graceful error responses with bilingual messages
 
