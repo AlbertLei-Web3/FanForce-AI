@@ -40,7 +40,7 @@ export default function DashboardLayout({
   subtitle, 
   actions 
 }: DashboardLayoutProps) {
-  const { authState, logout, isAdmin, isAmbassador, isAthlete, isAudience } = useUser()
+  const { authState, logout, isAdmin, isAmbassador, isAthlete, isAudience, isSuperAdmin } = useUser()
   const { language, toggleLanguage, t } = useLanguage()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -65,14 +65,28 @@ export default function DashboardLayout({
   const getMenuItems = (): MenuItem[] => {
     const baseItems: MenuItem[] = []
 
-    if (isAdmin()) {
-      return [
+    // 超级管理员和管理员都能访问管理员菜单 / Both super admin and admin can access admin menu
+    if (isAdmin() || isSuperAdmin()) {
+      const adminItems = [
         { id: 'overview', label: 'System Overview', labelCn: '系统概览', icon: '📊', href: '/dashboard/admin' },
         { id: 'users', label: 'User Management', labelCn: '用户管理', icon: '👥', href: '/dashboard/admin/users' },
         { id: 'events', label: 'Event Management', labelCn: '活动管理', icon: '🎯', href: '/dashboard/admin/events' },
         { id: 'analytics', label: 'Analytics', labelCn: '数据分析', icon: '📈', href: '/dashboard/admin/analytics' },
         { id: 'settings', label: 'System Settings', labelCn: '系统设置', icon: '⚙️', href: '/dashboard/admin/settings' },
       ]
+      
+      // 超级管理员额外的开发工具菜单 / Additional dev tools menu for super admin
+      if (isSuperAdmin()) {
+        adminItems.push({
+          id: 'dev-tools',
+          label: 'Dev Tools',
+          labelCn: '开发工具',
+          icon: '🛠️',
+          href: '/dashboard/admin/dev-tools'
+        })
+      }
+      
+      return adminItems
     }
 
     if (isAmbassador()) {
@@ -111,13 +125,15 @@ export default function DashboardLayout({
   // 获取角色显示信息 / Get role display info
   const getRoleInfo = () => {
     const roleLabels = {
+      [UserRole.SUPER_ADMIN]: { label: 'Super Admin', labelCn: '超级管理员', color: 'bg-purple-500' },
       [UserRole.ADMIN]: { label: 'System Admin', labelCn: '系统管理员', color: 'bg-red-500' },
       [UserRole.AMBASSADOR]: { label: 'Campus Ambassador', labelCn: '校园大使', color: 'bg-yellow-500' },
       [UserRole.ATHLETE]: { label: 'Student Athlete', labelCn: '学生运动员', color: 'bg-green-500' },
       [UserRole.AUDIENCE]: { label: 'Audience Supporter', labelCn: '观众支持者', color: 'bg-blue-500' }
     }
 
-    return roleLabels[authState.user?.role || UserRole.AUDIENCE]
+    const currentRole = authState.user?.role || UserRole.AUDIENCE
+    return roleLabels[currentRole] || roleLabels[UserRole.AUDIENCE]
   }
 
   const menuItems = getMenuItems()
