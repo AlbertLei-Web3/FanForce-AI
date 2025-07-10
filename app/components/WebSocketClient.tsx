@@ -1,6 +1,6 @@
 /**
- * WebSocket Real-time Client Component
- * WebSocket实时客户端组件
+ * WebSocket Real-time Client Component (Fixed Version)
+ * WebSocket实时客户端组件（修复版本）
  * 
  * This component demonstrates how to integrate WebSocket functionality in React
  * 此组件演示如何在React中集成WebSocket功能
@@ -12,11 +12,18 @@
  * - QR code scanning notifications / 二维码扫描通知
  * - Connection health monitoring / 连接健康监控
  * - Role-based message handling / 基于角色的消息处理
+ * - Fixed reconnection logic / 修复的重连逻辑
  * 
  * Related files / 相关文件:
  * - server.js: WebSocket server implementation / WebSocket服务器实现
  * - test-websocket.js: WebSocket testing client / WebSocket测试客户端
  * - app/context/Web3Context.tsx: Web3 authentication context / Web3认证上下文
+ * 
+ * Fixes / 修复:
+ * - Limited reconnection attempts / 限制重连尝试次数
+ * - Improved error handling / 改进的错误处理
+ * - Stable useEffect dependencies / 稳定的useEffect依赖项
+ * - Better connection state management / 更好的连接状态管理
  */
 
 'use client';
@@ -74,6 +81,12 @@ interface WebSocketClientProps {
   onMessageReceived?: (message: RealtimeMessage) => void;
 }
 
+// Constants for reconnection logic
+// 重连逻辑的常量
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY = 5000; // 5 seconds / 5秒
+const PING_INTERVAL = 30000; // 30 seconds / 30秒
+
 export default function WebSocketClient({ 
   jwtToken, 
   userRole = 'audience', 
@@ -89,6 +102,8 @@ export default function WebSocketClient({
   const [userStatus, setUserStatus] = useState<'online' | 'offline' | 'active'>('offline');
   const [joinedEvents, setJoinedEvents] = useState<string[]>([]);
   const [latestPing, setLatestPing] = useState<string | null>(null);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   
   // WebSocket instance ref
   // WebSocket实例引用
@@ -116,6 +131,12 @@ export default function WebSocketClient({
       return;
     }
 
+    // Prevent multiple connection attempts
+    // 防止多次连接尝试
+    if (socketRef.current && socketRef.current.connected) {
+      return;
+    }
+
     try {
       // Create WebSocket connection
       // 创建WebSocket连接
@@ -123,8 +144,10 @@ export default function WebSocketClient({
         auth: {
           token: jwtToken
         },
-        transports: ['websocket'],
-        autoConnect: false
+        transports: ['websocket', 'polling'], // Allow fallback to polling / 允许回退到轮询
+        autoConnect: false,
+        reconnection: false, // Disable automatic reconnection, we'll handle it manually / 禁用自动重连，我们手动处理
+        timeout: 10000 // 10 seconds timeout / 10秒超时
       });
 
       socketRef.current = socket;
@@ -134,12 +157,14 @@ export default function WebSocketClient({
       socket.on('connect', () => {
         setIsConnected(true);
         setConnectionError(null);
+        setReconnectAttempts(0);
+        setIsReconnecting(false);
         onConnectionChange?.(true);
         
         addMessage({
           type: 'success',
           title: 'Connected / 已连接',
-          content: 'WebSocket connection established / WebSocket连接已建立',
+          content: 'WebSocket connection established successfully / WebSocket连接成功建立',
           timestamp: new Date().toISOString()
         });
 
@@ -149,13 +174,16 @@ export default function WebSocketClient({
           clearInterval(pingIntervalRef.current);
         }
         pingIntervalRef.current = setInterval(() => {
-          socket.emit('ping');
-        }, 30000); // Every 30 seconds / 每30秒
+          if (socket.connected) {
+            socket.emit('ping');
+          }
+        }, PING_INTERVAL);
       });
 
       socket.on('connect_error', (error) => {
         setIsConnected(false);
         setConnectionError(error.message);
+        setIsReconnecting(false);
         onConnectionChange?.(false);
         
         addMessage({
@@ -164,6 +192,10 @@ export default function WebSocketClient({
           content: `Failed to connect: ${error.message} / 连接失败: ${error.message}`,
           timestamp: new Date().toISOString()
         });
+
+        // Trigger reconnection logic
+        // 触发重连逻辑
+        scheduleReconnect();
       });
 
       socket.on('disconnect', (reason) => {
@@ -182,6 +214,12 @@ export default function WebSocketClient({
         if (pingIntervalRef.current) {
           clearInterval(pingIntervalRef.current);
           pingIntervalRef.current = null;
+        }
+
+        // Only reconnect if it's not a manual disconnection
+        // 只有在非手动断开连接时才重连
+        if (reason !== 'io client disconnect' && reason !== 'transport close') {
+          scheduleReconnect();
         }
       });
 
@@ -309,9 +347,39 @@ export default function WebSocketClient({
       socket.connect();
 
     } catch (error) {
-      setConnectionError(error instanceof Error ? error.message : 'Unknown error');
+      setConnectionError(error instanceof Error ? error.message : 'Unknown error / 未知错误');
+      setIsReconnecting(false);
     }
   }, [jwtToken, userRole, addMessage, onConnectionChange]);
+
+  // Schedule reconnection with exponential backoff
+  // 使用指数退避调度重连
+  const scheduleReconnect = useCallback(() => {
+    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      setConnectionError(`Max reconnection attempts reached (${MAX_RECONNECT_ATTEMPTS}) / 达到最大重连尝试次数 (${MAX_RECONNECT_ATTEMPTS})`);
+      setIsReconnecting(false);
+      return;
+    }
+
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+
+    setIsReconnecting(true);
+    const delay = RECONNECT_DELAY * Math.pow(2, reconnectAttempts); // Exponential backoff / 指数退避
+    
+    addMessage({
+      type: 'info',
+      title: 'Reconnecting / 重新连接',
+      content: `Attempting to reconnect in ${delay / 1000} seconds... (${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS}) / 将在 ${delay / 1000} 秒后尝试重新连接... (${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`,
+      timestamp: new Date().toISOString()
+    });
+
+    reconnectTimeoutRef.current = setTimeout(() => {
+      setReconnectAttempts(prev => prev + 1);
+      initializeWebSocket();
+    }, delay);
+  }, [reconnectAttempts, addMessage, initializeWebSocket]);
 
   // Disconnect WebSocket
   // 断开WebSocket连接
@@ -335,7 +403,20 @@ export default function WebSocketClient({
     setUserStatus('offline');
     setJoinedEvents([]);
     setLatestPing(null);
+    setReconnectAttempts(0);
+    setIsReconnecting(false);
+    setConnectionError(null);
   }, []);
+
+  // Manual reconnect function
+  // 手动重连函数
+  const manualReconnect = useCallback(() => {
+    disconnectWebSocket();
+    setReconnectAttempts(0);
+    setTimeout(() => {
+      initializeWebSocket();
+    }, 1000);
+  }, [disconnectWebSocket, initializeWebSocket]);
 
   // Update user status
   // 更新用户状态
@@ -419,23 +500,7 @@ export default function WebSocketClient({
     return () => {
       disconnectWebSocket();
     };
-  }, [jwtToken, initializeWebSocket, disconnectWebSocket]);
-
-  // Effect to handle reconnection
-  // 处理重连的效果
-  useEffect(() => {
-    if (!isConnected && jwtToken && !connectionError) {
-      reconnectTimeoutRef.current = setTimeout(() => {
-        initializeWebSocket();
-      }, 5000); // Retry after 5 seconds / 5秒后重试
-    }
-    
-    return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-    };
-  }, [isConnected, jwtToken, connectionError, initializeWebSocket]);
+  }, [jwtToken]); // Only depend on jwtToken / 只依赖于jwtToken
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
@@ -448,10 +513,25 @@ export default function WebSocketClient({
           <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium ${
             isConnected 
               ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+              : isReconnecting
+              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
               : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
           }`}>
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            <span>{isConnected ? 'Connected / 已连接' : 'Disconnected / 已断开'}</span>
+            <div className={`w-2 h-2 rounded-full ${
+              isConnected 
+                ? 'bg-green-500' 
+                : isReconnecting 
+                ? 'bg-yellow-500 animate-pulse' 
+                : 'bg-red-500'
+            }`}></div>
+            <span>
+              {isConnected 
+                ? 'Connected / 已连接' 
+                : isReconnecting 
+                ? 'Reconnecting / 重新连接中' 
+                : 'Disconnected / 已断开'
+              }
+            </span>
           </div>
         </div>
         
@@ -465,6 +545,15 @@ export default function WebSocketClient({
             <option value="online">Online / 在线</option>
             <option value="active">Active / 活跃</option>
           </select>
+          
+          {!isConnected && !isReconnecting && (
+            <button
+              onClick={manualReconnect}
+              className="px-4 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            >
+              Reconnect / 重新连接
+            </button>
+          )}
           
           <button
             onClick={clearMessages}
@@ -483,7 +572,7 @@ export default function WebSocketClient({
       )}
 
       {/* User info and controls */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-2">User Role / 用户角色</h3>
           <p className="text-sm text-gray-600 dark:text-gray-300 capitalize">{userRole}</p>
@@ -504,6 +593,11 @@ export default function WebSocketClient({
           <p className="text-sm text-gray-600 dark:text-gray-300">
             {latestPing ? new Date(latestPing).toLocaleTimeString() : 'None / 无'}
           </p>
+        </div>
+        
+        <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Reconnects / 重连次数</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-300">{reconnectAttempts}/{MAX_RECONNECT_ATTEMPTS}</p>
         </div>
       </div>
 
