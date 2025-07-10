@@ -179,6 +179,25 @@ node test-api.js
 - 🔔 **实时通知** / Real-time Notifications (WebSocket ready)
 - 🛡️ **安全中间件** / Security Middleware (CORS, rate limiting)
 
+### 🛠️ 角色系统与开发工具 / Role System & Development Tools
+
+**Five-Role Architecture / 五角色架构**
+- 🛡️ **Super Admin** (超级管理员) - Purple Badge / 紫色徽章
+- 🔧 **Admin** (管理员) - Red Badge / 红色徽章
+- 🧑‍💼 **Ambassador** (大使) - Yellow Badge / 黄色徽章
+- 🏃‍♂️ **Athlete** (运动员) - Green Badge / 绿色徽章
+- 🙋‍♂️ **Audience** (观众) - Blue Badge / 蓝色徽章
+
+**Development Tools / 开发工具**
+- 🔄 **Role Switcher** - Instantly switch between roles for testing / 角色切换器 - 快速切换角色测试
+- 📊 **Mock Data Generator** - Generate realistic test data / 模拟数据生成器 - 生成真实测试数据
+- ⚡ **Quick Login** - Bypass wallet signing for development / 快速登录 - 开发时跳过钱包签名
+
+**Recent Fix / 最近修复**
+- Fixed super admin role display error in dashboard layout / 修复了仪表板布局中超级管理员角色显示错误
+- Added proper error handling with fallback to audience role / 添加了适当的错误处理，对未定义角色回退到观众角色
+- Enhanced menu system for super admin access / 增强了超级管理员的菜单系统访问权限
+
 **API端点列表 / API Endpoints List**
 ```
 Public Endpoints / 公共端点:

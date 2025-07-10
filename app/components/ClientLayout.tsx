@@ -55,6 +55,14 @@ export function ClientOnly({ children, fallback = null }: ClientOnlyProps) {
 
   useEffect(() => {
     setHasMounted(true)
+    
+    // 初始化水合警告处理器 / Initialize hydration warning handler
+    if (typeof window !== 'undefined') {
+      // 动态导入以避免服务器端渲染错误 / Dynamic import to avoid SSR errors
+      import('../utils/hydrationUtils').then(({ initHydrationWarningHandler }) => {
+        initHydrationWarningHandler()
+      })
+    }
   }, [])
 
   if (!hasMounted) {
