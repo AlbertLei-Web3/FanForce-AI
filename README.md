@@ -1122,6 +1122,82 @@ export const getAllTeams = (): Team[] => {
 | 开发周期 / Development Time | 长 / Long | 短 / Short |
 | 用户体验 / User Experience | 有问题 / Problematic | 完美 / Perfect |
 
+## 🔧 Troubleshooting WebSocket Demo / WebSocket演示故障排除
+
+### Common Issues / 常见问题
+
+**1. 404 Error on /api/auth/login / 登录API 404错误**
+```
+ERROR: POST http://localhost:3000/api/auth/login 404 (Not Found)
+```
+**Solution / 解决方案:** 
+- Make sure backend server is running on port 3001 / 确保后端服务器运行在端口3001
+- Run `npm run server` to start the backend / 运行 `npm run server` 启动后端
+- The frontend (Next.js) runs on port 3000, API server on port 3001 / 前端(Next.js)运行在端口3000，API服务器在端口3001
+
+**2. WebSocket Connection Failed / WebSocket连接失败**
+```
+ERROR: WebSocket connection failed
+```
+**Solution / 解决方案:**
+- Verify both servers are running / 确认两个服务器都在运行:
+  - Backend: `npm run server` (port 3001)
+  - Frontend: `npm run dev` (port 3000)
+- Check WebSocket URL configuration / 检查WebSocket URL配置
+- Run `npm run test-websocket` to verify connection / 运行 `npm run test-websocket` 验证连接
+
+**3. Environment Variables / 环境变量**
+```
+Create .env file in root directory with:
+在根目录创建 .env 文件，包含:
+
+NEXT_PUBLIC_WEBSOCKET_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+**4. Testing WebSocket Functionality / 测试WebSocket功能**
+```bash
+# Test all WebSocket connections / 测试所有WebSocket连接
+npm run test-websocket
+
+# Test API endpoints / 测试API端点
+npm run test-api
+
+# Run all tests / 运行所有测试
+npm run test-all
+```
+
+### Server Startup Commands / 服务器启动命令
+
+```bash
+# Start backend server with WebSocket support / 启动支持WebSocket的后端服务器
+npm run server
+
+# Start frontend development server / 启动前端开发服务器
+npm run dev
+
+# Access WebSocket demo / 访问WebSocket演示
+http://localhost:3000/websocket-demo
+```
+
+### WebSocket Demo Features / WebSocket演示功能
+
+**Real-time Events / 实时事件:**
+- ✅ User authentication / 用户认证
+- ✅ Role-based permissions / 基于角色的权限
+- ✅ Live status updates / 实时状态更新
+- ✅ Event participation / 事件参与
+- ✅ Match results broadcasting / 比赛结果广播
+- ✅ QR code scanning / 二维码扫描
+- ✅ Reward notifications / 奖励通知
+- ✅ Health monitoring / 健康监控
+
+**User Roles / 用户角色:**
+- 🔧 Admin: System management / 系统管理
+- 🧑‍💼 Ambassador: Event coordination / 活动协调
+- 🏃‍♂️ Athlete: Competition participation / 比赛参与
+- 🙋‍♂️ Audience: Event spectating / 观看活动
+
 ## Contract Addresses / 合约地址
 
 - CHZ Token (Testnet): `0x4Bf7078D36F779Df3E98c24F51482C1002C2E23C` 

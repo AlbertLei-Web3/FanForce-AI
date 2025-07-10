@@ -75,7 +75,7 @@ export default function WebSocketDemoPage() {
     
     try {
       const user = demoUsers[role];
-      const response = await axios.post('/api/auth/login', {
+      const response = await axios.post('http://localhost:3001/api/auth/login', {
         walletAddress: user.walletAddress,
         signature: user.signature,
         message: 'Login to FanForce AI WebSocket Demo'
