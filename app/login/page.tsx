@@ -113,6 +113,97 @@ export default function LoginPage() {
     }
   }
 
+  // 开发模式快速登录 / Development Mode Quick Login
+  const handleQuickLogin = async (role: 'super_admin' | 'admin' | 'ambassador' | 'athlete' | 'audience') => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      setCurrentStep(AuthStep.AUTHENTICATING)
+
+      // 模拟用户数据 / Mock user data
+      const mockUsers = {
+        super_admin: {
+          id: 'dev-super-admin',
+          address: '0x1234567890123456789012345678901234567890',
+          role: 'super_admin',
+          username: 'Super Admin (Dev)',
+          email: 'dev@fanforce.ai',
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        },
+        admin: {
+          id: 'dev-admin',
+          address: '0x2345678901234567890123456789012345678901',
+          role: 'admin',
+          username: 'Admin (Dev)',
+          email: 'admin@fanforce.ai',
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        },
+        ambassador: {
+          id: 'dev-ambassador',
+          address: '0x3456789012345678901234567890123456789012',
+          role: 'ambassador',
+          username: 'Ambassador (Dev)',
+          email: 'ambassador@fanforce.ai',
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        },
+        athlete: {
+          id: 'dev-athlete',
+          address: '0x4567890123456789012345678901234567890123',
+          role: 'athlete',
+          username: 'Athlete (Dev)',
+          email: 'athlete@fanforce.ai',
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        },
+        audience: {
+          id: 'dev-audience',
+          address: '0x5678901234567890123456789012345678901234',
+          role: 'audience',
+          username: 'Audience (Dev)',
+          email: 'audience@fanforce.ai',
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        }
+      }
+
+      const mockUser = mockUsers[role]
+      const mockToken = `dev-token-${role}-${Date.now()}`
+      
+      // 存储模拟用户数据 / Store mock user data
+      localStorage.setItem('fanforce_session_token', mockToken)
+      localStorage.setItem('fanforce_user_info', JSON.stringify(mockUser))
+      
+      // 使用特殊的开发模式签名调用login / Use special dev mode signature to call login
+      const mockSignature = `dev-mock-${role}-${Date.now()}`
+      const mockMessage = `Development mode login for ${role}`
+      
+      // 调用用户上下文的登录方法（它会识别开发模式并直接返回成功）/ Call user context login method (it will recognize dev mode and return success directly)
+      const success = await login(mockSignature, mockMessage)
+      
+      if (success) {
+        setCurrentStep(AuthStep.SUCCESS)
+        
+        // 显示成功消息后立即跳转 / Show success message then redirect immediately
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // 直接跳转到仪表板 / Direct redirect to dashboard
+        router.push('/dashboard')
+      } else {
+        throw new Error('Mock login failed')
+      }
+      
+    } catch (err: any) {
+      console.error('Quick login error:', err)
+      setError(err.message || 'Quick login failed')
+      setCurrentStep(AuthStep.ERROR)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   // 重置认证流程 / Reset Authentication Flow
   const resetAuth = () => {
     setCurrentStep(AuthStep.CONNECT_WALLET)
@@ -199,6 +290,62 @@ export default function LoginPage() {
               {language === 'en' ? 'Campus Sports Prediction Platform' : '校园体育预测平台'}
             </p>
           </div>
+
+          {/* 开发模式快速登录 / Development Mode Quick Login */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-8 p-4 bg-purple-900/20 border border-purple-500/30 rounded-lg">
+              <h3 className="text-sm font-bold text-purple-400 mb-3 flex items-center">
+                <span className="mr-2">⚡</span>
+                {language === 'en' ? 'Development Mode - Quick Login' : '开发模式 - 快速登录'}
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => handleQuickLogin('super_admin')}
+                  disabled={isLoading}
+                  className="flex items-center justify-center p-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded text-xs transition-colors"
+                >
+                  <span className="mr-1">👑</span>
+                  {language === 'en' ? 'Super Admin' : '超级管理员'}
+                </button>
+                <button
+                  onClick={() => handleQuickLogin('admin')}
+                  disabled={isLoading}
+                  className="flex items-center justify-center p-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded text-xs transition-colors"
+                >
+                  <span className="mr-1">🔧</span>
+                  {language === 'en' ? 'Admin' : '管理员'}
+                </button>
+                <button
+                  onClick={() => handleQuickLogin('ambassador')}
+                  disabled={isLoading}
+                  className="flex items-center justify-center p-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 text-white rounded text-xs transition-colors"
+                >
+                  <span className="mr-1">🧑‍💼</span>
+                  {language === 'en' ? 'Ambassador' : '大使'}
+                </button>
+                <button
+                  onClick={() => handleQuickLogin('athlete')}
+                  disabled={isLoading}
+                  className="flex items-center justify-center p-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded text-xs transition-colors"
+                >
+                  <span className="mr-1">🏃‍♂️</span>
+                  {language === 'en' ? 'Athlete' : '运动员'}
+                </button>
+                <button
+                  onClick={() => handleQuickLogin('audience')}
+                  disabled={isLoading}
+                  className="flex items-center justify-center p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded text-xs transition-colors"
+                >
+                  <span className="mr-1">🙋‍♂️</span>
+                  {language === 'en' ? 'Audience' : '观众'}
+                </button>
+                <div className="flex items-center justify-center p-2 bg-gray-700 text-gray-300 rounded text-xs">
+                  <span className="mr-1">ℹ️</span>
+                  {language === 'en' ? 'Dev Only' : '仅开发'}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 认证步骤显示 / Authentication Step Display */}
           <div className="text-center mb-8">

@@ -13,6 +13,8 @@ import { useUser, UserRole } from '../../context/UserContext'
 import { useLanguage } from '../../context/LanguageContext'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import RoleSwitcher from './RoleSwitcher'
+import MockDataGenerator from './MockDataGenerator'
 
 interface DashboardLayoutProps {
   children: ReactNode
@@ -253,6 +255,10 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+      
+      {/* 开发工具 / Development Tools (Super Admin Only) */}
+      <RoleSwitcher />
+      <MockDataGenerator />
     </div>
   )
 } 

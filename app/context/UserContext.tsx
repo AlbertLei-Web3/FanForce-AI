@@ -13,6 +13,7 @@ import { useWeb3 } from './Web3Context'
 
 // 用户角色枚举 / User Role Enum
 export enum UserRole {
+  SUPER_ADMIN = 'super_admin', // 超级管理员 / Super Administrator (Development)
   ADMIN = 'admin',           // 系统管理员 / System Administrator
   AMBASSADOR = 'ambassador', // 校园大使 / Campus Ambassador
   ATHLETE = 'athlete',       // 学生运动员 / Student Athlete
@@ -80,10 +81,17 @@ interface UserContextType {
   isAmbassador: () => boolean
   isAthlete: () => boolean
   isAudience: () => boolean
+  isSuperAdmin: () => boolean
   
   // 仪表板路由方法 / Dashboard Routing Methods
   getDashboardPath: () => string
   getDefaultRoute: () => string
+  
+  // 开发者方法 / Developer Methods (Super Admin Only)
+  currentViewRole: UserRole | null
+  switchRole: (role: UserRole) => void
+  resetRole: () => void
+  getAvailableRoles: () => UserRole[]
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -101,19 +109,22 @@ export function UserProvider({ children }: { children: ReactNode }) {
     error: null
   })
 
+  // 开发者角色切换状态 / Developer Role Switching State
+  const [currentViewRole, setCurrentViewRole] = useState<UserRole | null>(null)
+
   // 初始化时检查已存在的会话 / Check existing session on initialization
   useEffect(() => {
     const initializeAuth = async () => {
       const storedToken = localStorage.getItem('fanforce_session_token')
       const storedUser = localStorage.getItem('fanforce_user_info')
       
-      if (storedToken && storedUser && isConnected) {
+      if (storedToken && storedUser) {
         try {
           const user = JSON.parse(storedUser)
-          // 验证token是否仍然有效 / Verify if token is still valid
-          const isValid = await verifySessionToken(storedToken)
           
-          if (isValid) {
+          // 检查是否是开发模式token / Check if it's a development mode token
+          if (storedToken.startsWith('dev-token-')) {
+            // 开发模式：直接使用存储的信息，不验证后端 / Dev mode: directly use stored info, no backend verification
             setAuthState({
               isAuthenticated: true,
               isLoading: false,
@@ -122,9 +133,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
               error: null
             })
           } else {
-            // Token无效，清除本地存储 / Invalid token, clear local storage
-            localStorage.removeItem('fanforce_session_token')
-            localStorage.removeItem('fanforce_user_info')
+            // 生产模式：需要验证token / Production mode: need to verify token
+            if (isConnected) {
+              const isValid = await verifySessionToken(storedToken)
+              
+              if (isValid) {
+                setAuthState({
+                  isAuthenticated: true,
+                  isLoading: false,
+                  user,
+                  sessionToken: storedToken,
+                  error: null
+                })
+              } else {
+                // Token无效，清除本地存储 / Invalid token, clear local storage
+                localStorage.removeItem('fanforce_session_token')
+                localStorage.removeItem('fanforce_user_info')
+              }
+            }
           }
         } catch (error) {
           console.error('Failed to initialize auth:', error)
@@ -147,6 +173,30 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // 用户登录方法 / User Login Method
   const login = async (signature: string, message: string): Promise<boolean> => {
+    // 检查是否是开发模式的模拟登录 / Check if it's a development mode mock login
+    if (signature.startsWith('dev-mock-')) {
+      // 开发模式：读取已存储的用户数据并设置认证状态 / Dev mode: read stored user data and set auth state
+      try {
+        const storedToken = localStorage.getItem('fanforce_session_token')
+        const storedUser = localStorage.getItem('fanforce_user_info')
+        
+        if (storedToken && storedUser) {
+          const user = JSON.parse(storedUser)
+          setAuthState({
+            isAuthenticated: true,
+            isLoading: false,
+            user,
+            sessionToken: storedToken,
+            error: null
+          })
+          return true
+        }
+      } catch (error) {
+        console.error('Dev mode login error:', error)
+      }
+      return false
+    }
+
     if (!address) {
       setAuthState(prev => ({ ...prev, error: 'No wallet connected' }))
       return false
@@ -366,12 +416,40 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const isAmbassador = (): boolean => hasRole(UserRole.AMBASSADOR)
   const isAthlete = (): boolean => hasRole(UserRole.ATHLETE)
   const isAudience = (): boolean => hasRole(UserRole.AUDIENCE)
+  const isSuperAdmin = (): boolean => hasRole(UserRole.SUPER_ADMIN)
+
+  // 开发者方法 / Developer Methods (Super Admin Only)
+  const switchRole = (role: UserRole): void => {
+    if (!isSuperAdmin()) {
+      console.warn('Role switching is only available for Super Admin users')
+      return
+    }
+    setCurrentViewRole(role)
+  }
+
+  const resetRole = (): void => {
+    if (!isSuperAdmin()) {
+      console.warn('Role reset is only available for Super Admin users')
+      return
+    }
+    setCurrentViewRole(null)
+  }
+
+  const getAvailableRoles = (): UserRole[] => {
+    if (!isSuperAdmin()) return []
+    return [UserRole.ADMIN, UserRole.AMBASSADOR, UserRole.ATHLETE, UserRole.AUDIENCE]
+  }
 
   // 仪表板路由方法 / Dashboard Routing Methods
   const getDashboardPath = (): string => {
     if (!authState.user) return '/'
     
-    switch (authState.user.role) {
+    // 如果是超级管理员且正在切换角色，使用当前视图角色 / If super admin and role switching, use current view role
+    const effectiveRole = isSuperAdmin() && currentViewRole ? currentViewRole : authState.user.role
+    
+    switch (effectiveRole) {
+      case UserRole.SUPER_ADMIN:
+        return '/dashboard/admin' // Super admin uses admin dashboard by default
       case UserRole.ADMIN:
         return '/dashboard/admin'
       case UserRole.AMBASSADOR:
@@ -403,8 +481,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
     isAmbassador,
     isAthlete,
     isAudience,
+    isSuperAdmin,
     getDashboardPath,
-    getDefaultRoute
+    getDefaultRoute,
+    currentViewRole,
+    switchRole,
+    resetRole,
+    getAvailableRoles
   }
 
   return (
