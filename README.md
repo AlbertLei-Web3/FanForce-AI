@@ -144,8 +144,62 @@ npm start
 **测试数据库连接 / Test Database Connection**
 ```bash
 # 验证数据库连接状态 / Verify database connection status
-node scripts/init-database.js
+node test-db-connection.js
 ```
+
+### 7. 后端API服务器 / Backend API Server 🆕
+
+**FanForce AI now includes a comprehensive Express.js backend API system:**
+**FanForce AI现在包含一个全面的Express.js后端API系统：**
+
+**启动API服务器 / Start API Server**
+```bash
+# 编辑server.js文件，输入你的PostgreSQL密码
+# Edit server.js file with your PostgreSQL password
+npm run server
+
+# 或者同时启动前端和后端 / Or start both frontend and backend
+npm run dev-all
+```
+
+**API端点测试 / API Endpoints Testing**
+```bash
+# 编辑test-api.js文件，输入你的PostgreSQL密码
+# Edit test-api.js file with your PostgreSQL password
+node test-api.js
+```
+
+**核心API功能 / Core API Features**
+- 🔐 **JWT认证系统** / JWT Authentication System
+- 👥 **用户管理** / User Management (profiles, roles, balances)
+- 🎯 **活动管理** / Event Management (CRUD operations)
+- 🏃‍♂️ **运动员管理** / Athlete Management (rankings, status)
+- 🏟️ **场馆管理** / Venue Management (capacity, availability)
+- 📊 **分析系统** / Analytics System (metrics, reports)
+- 🔔 **实时通知** / Real-time Notifications (WebSocket ready)
+- 🛡️ **安全中间件** / Security Middleware (CORS, rate limiting)
+
+**API端点列表 / API Endpoints List**
+```
+Public Endpoints / 公共端点:
+├── GET  /health              # 健康检查 / Health check
+├── POST /api/auth/login      # 用户登录 / User login
+├── GET  /api/events          # 活动列表 / Events list
+├── GET  /api/athletes        # 运动员列表 / Athletes list
+└── GET  /api/venues          # 场馆列表 / Venues list
+
+Protected Endpoints / 受保护端点:
+└── GET  /api/users/profile   # 用户档案 / User profile
+```
+
+**技术栈 / Technology Stack**
+- **Backend**: Node.js 22.9.0 + Express.js
+- **Database**: PostgreSQL 17.5 with connection pooling
+- **Authentication**: JWT + Wallet signature verification
+- **Security**: Helmet, CORS, Rate limiting (100 req/15min)
+- **Logging**: Winston (console + file)
+- **Testing**: Comprehensive test suite with colored output
+- **Error Handling**: Graceful error responses with bilingual messages
 
 **数据库架构 / Database Schema**
 - **核心表（11个）/ Core Tables (11)**
