@@ -12,6 +12,7 @@ const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
 const winston = require('winston');
 const { body, validationResult } = require('express-validator');
+require('dotenv').config(); // Load environment variables / 加载环境变量
 
 // Create Express app
 // 创建Express应用
@@ -51,7 +52,7 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
   database: process.env.DB_NAME || 'fanforce_ai',
   user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'your_password', // Replace with your actual password / 替换为你的实际密码
+  password: process.env.DB_PASSWORD, // Read from environment variables / 从环境变量读取
   max: 10, // Maximum number of connections in the pool / 连接池中的最大连接数
   idleTimeoutMillis: 30000, // How long a client is allowed to remain idle / 客户端允许保持空闲的时间
   connectionTimeoutMillis: 5000, // How long to wait for a connection / 等待连接的时间

@@ -5,20 +5,20 @@
 
 const axios = require('axios');
 const { Pool } = require('pg');
+require('dotenv').config(); // Load environment variables / 加载环境变量
 
 // Configuration
 // 配置
 const API_BASE_URL = 'http://localhost:3001';
-const DB_PASSWORD = 'your_password'; // Replace with your actual password / 替换为你的实际密码
 
 // Database configuration
 // 数据库配置
 const pool = new Pool({
-  host: 'localhost',
-  port: 5432,
-  database: 'fanforce_ai',
-  user: 'postgres',
-  password: DB_PASSWORD
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 5432,
+  database: process.env.DB_NAME || 'fanforce_ai',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD // Read from environment variables / 从环境变量读取
 });
 
 // Test data
