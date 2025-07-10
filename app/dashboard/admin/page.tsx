@@ -47,7 +47,7 @@ interface RecentActivity {
 }
 
 export default function AdminDashboard() {
-  const { authState, isAdmin } = useUser()
+  const { authState, isAdmin, isSuperAdmin } = useUser()
   const { language, t } = useLanguage()
   const router = useRouter()
 
@@ -57,13 +57,13 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 权限检查 / Permission Check
+  // 权限检查 / Permission Check - 允许管理员和超级管理员访问 / Allow both admin and super admin access
   useEffect(() => {
-    if (!authState.isAuthenticated || !isAdmin()) {
+    if (!authState.isAuthenticated || (!isAdmin() && !isSuperAdmin())) {
       router.push('/')
       return
     }
-  }, [authState.isAuthenticated, isAdmin, router])
+  }, [authState.isAuthenticated, isAdmin, isSuperAdmin, router])
 
   // 加载系统统计数据 / Load System Statistics
   useEffect(() => {
@@ -92,10 +92,10 @@ export default function AdminDashboard() {
       }
     }
 
-    if (authState.sessionToken && isAdmin()) {
+    if (authState.sessionToken && (isAdmin() || isSuperAdmin())) {
       fetchSystemStats()
     }
-  }, [authState.sessionToken, isAdmin])
+  }, [authState.sessionToken, isAdmin, isSuperAdmin])
 
   // 处理紧急操作 / Handle Emergency Actions
   const handleEmergencyAction = async (action: string) => {

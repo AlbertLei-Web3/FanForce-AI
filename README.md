@@ -194,9 +194,10 @@ node test-api.js
 - ⚡ **Quick Login** - Bypass wallet signing for development / 快速登录 - 开发时跳过钱包签名
 
 **Recent Fix / 最近修复**
-- Fixed super admin role display error in dashboard layout / 修复了仪表板布局中超级管理员角色显示错误
-- Added proper error handling with fallback to audience role / 添加了适当的错误处理，对未定义角色回退到观众角色
-- Enhanced menu system for super admin access / 增强了超级管理员的菜单系统访问权限
+- Fixed infinite redirect loop for Super Admin role / 修复了超级管理员角色的无限重定向循环
+- Updated admin dashboard permission check to allow Super Admin access / 更新了管理员仪表板权限检查以允许超级管理员访问
+- Removed unused complex role switching components (RoleSwitcher, MockDataGenerator) / 移除了未使用的复杂角色切换组件（RoleSwitcher，MockDataGenerator）
+- Enhanced development toolbar with stable role switching / 增强了开发工具栏的稳定角色切换功能
 
 **API端点列表 / API Endpoints List**
 ```
