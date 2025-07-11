@@ -40,15 +40,19 @@ export default function AudienceDashboardStatic () {
     { key: 'teams', headerEn: 'Teams', headerCn: '对战队伍' },
     { key: 'date', headerEn: 'Start Time', headerCn: '开始时间' },
     { key: 'minStake', headerEn: 'Min Stake', headerCn: '最低质押' },
-    { key: 'action', headerEn: 'Action', headerCn: '操作' }
+    { key: 'action', headerEn: 'Support', headerCn: '支持' }
   ]
 
   /* Map upcomingEvents to rows expected by DataTable */
   const rows = upcomingEvents.map(evt => ({
     ...evt,
     action: (
-      <Link key={evt.id} href="#" className="text-fanforce-primary hover:underline">
-        {language === 'en' ? 'Stake' : '质押'}
+      <Link
+        key={evt.id}
+        href={`/dashboard/audience/events/${evt.id}`}
+        className="inline-block px-3 py-1 text-sm font-semibold text-white bg-fanforce-primary hover:bg-fanforce-secondary rounded-lg shadow transition transform hover:-translate-y-0.5 hover:shadow-lg animate-pulse"
+      >
+        {language === 'en' ? 'Support' : '支持'}
       </Link>
     )
   }))
