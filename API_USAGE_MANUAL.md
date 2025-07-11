@@ -382,6 +382,226 @@ GET /api/admin/users?page=1&limit=20&role=athlete&status=active&search=wallet_ad
 
 ---
 
+### 6. 活动申请管理 / Event Application Management
+
+#### GET `/api/admin/event-applications`
+获取活动申请列表和统计信息 / Get event applications list and statistics
+
+**查询参数 / Query Parameters:**
+```http
+GET /api/admin/event-applications?page=1&limit=20&status=pending&search=event_name
+```
+
+**响应示例 / Response Example:**
+```json
+{
+  "success": true,
+  "applications": [
+    {
+      "id": "uuid",
+      "event_name": "Campus Basketball Championship",
+      "ambassador_id": "uuid",
+      "venue": "Main Stadium",
+      "event_date": "2025-08-01T14:00:00.000Z",
+      "expected_attendance": 500,
+      "athlete_id": "uuid",
+      "status": "pending",
+      "created_at": "2025-07-11T01:39:20.750Z",
+      "updated_at": "2025-07-11T01:39:20.750Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 2,
+    "totalPages": 1
+  },
+  "stats": {
+    "pending": 2,
+    "approved": 0,
+    "rejected": 0,
+    "total": 2
+  },
+  "message": "Event applications retrieved successfully"
+}
+```
+
+#### POST `/api/admin/event-applications/review`
+审核活动申请 / Review event application
+
+**请求体 / Request Body:**
+```json
+{
+  "admin_id": "uuid",
+  "application_id": "uuid",
+  "action": "approve",
+  "feedback": "Event approved, please proceed with QR code generation",
+  "metadata": {
+    "approved_capacity": 500,
+    "venue_confirmation": true
+  }
+}
+```
+
+### 7. 二维码管理 / QR Code Management
+
+#### POST `/api/admin/qr-codes/generate`
+生成活动二维码 / Generate event QR codes
+
+**请求体 / Request Body:**
+```json
+{
+  "admin_id": "uuid",
+  "event_id": "uuid",
+  "valid_duration": {
+    "before_event": 180,
+    "after_event": 60
+  },
+  "metadata": {
+    "reward_tiers": {
+      "early": 100,
+      "normal": 70,
+      "late": 30
+    }
+  }
+}
+```
+
+**响应示例 / Response Example:**
+```json
+{
+  "success": true,
+  "qr_code": {
+    "id": "uuid",
+    "event_id": "uuid",
+    "jwt_token": "eyJhbGciOiJIUzI1NiIs...",
+    "valid_from": "2025-08-01T11:00:00.000Z",
+    "valid_until": "2025-08-01T15:00:00.000Z",
+    "status": "active",
+    "created_at": "2025-07-11T01:39:20.750Z"
+  },
+  "message": "QR code generated successfully"
+}
+```
+
+#### GET `/api/admin/qr-codes/status`
+获取二维码状态 / Get QR code status
+
+**查询参数 / Query Parameters:**
+```http
+GET /api/admin/qr-codes/status?event_id=uuid
+```
+
+**响应示例 / Response Example:**
+```json
+{
+  "success": true,
+  "qr_status": {
+    "id": "uuid",
+    "event_id": "uuid",
+    "total_scans": 250,
+    "unique_scans": 248,
+    "invalid_attempts": 2,
+    "status": "active",
+    "scan_distribution": {
+      "early": 100,
+      "normal": 130,
+      "late": 18
+    },
+    "last_scan": "2025-08-01T14:30:00.000Z"
+  },
+  "message": "QR code status retrieved successfully"
+}
+```
+
+### 8. 参与度追踪 / Participation Tracking
+
+#### GET `/api/admin/participation/stats`
+获取参与度统计 / Get participation statistics
+
+**查询参数 / Query Parameters:**
+```http
+GET /api/admin/participation/stats?event_id=uuid&date_range=30
+```
+
+**响应示例 / Response Example:**
+```json
+{
+  "success": true,
+  "participation_stats": {
+    "event_id": "uuid",
+    "total_participants": 248,
+    "participation_rate": 99.2,
+    "tier_distribution": {
+      "early": {
+        "count": 100,
+        "percentage": 40.3
+      },
+      "normal": {
+        "count": 130,
+        "percentage": 52.4
+      },
+      "late": {
+        "count": 18,
+        "percentage": 7.3
+      }
+    },
+    "rewards_allocated": {
+      "total_chz": "1000.00000000",
+      "by_tier": {
+        "early": "500.00000000",
+        "normal": "400.00000000",
+        "late": "100.00000000"
+      }
+    }
+  },
+  "message": "Participation statistics retrieved successfully"
+}
+```
+
+#### POST `/api/admin/participation/allocate`
+分配参与者到派对 / Allocate participants to parties
+
+**请求体 / Request Body:**
+```json
+{
+  "admin_id": "uuid",
+  "event_id": "uuid",
+  "allocation_rules": {
+    "max_party_size": 50,
+    "priority_factors": {
+      "early_arrival": 3,
+      "staking_amount": 2,
+      "previous_attendance": 1
+    }
+  }
+}
+```
+
+**响应示例 / Response Example:**
+```json
+{
+  "success": true,
+  "allocation_results": {
+    "total_allocated": 248,
+    "party_count": 5,
+    "parties": [
+      {
+        "party_id": "uuid",
+        "location": "VIP Room 1",
+        "capacity": 50,
+        "allocated_count": 50,
+        "average_priority_score": 8.5
+      }
+    ],
+    "unallocated_count": 0
+  },
+  "message": "Party allocation completed successfully"
+}
+```
+
+---
+
 ## 数据库API / Database APIs
 
 ### 1. 数据库连接测试 / Database Connection Test
