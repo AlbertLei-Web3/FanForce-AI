@@ -9,7 +9,8 @@ import DashboardLayout from '@/app/components/shared/DashboardLayout';
 import DataTable from '@/app/components/shared/DataTable';
 import StatCard from '@/app/components/shared/StatCard';
 import { useState } from 'react';
-import { FaTrophy, FaFistRaised, FaHistory, FaUsers } from 'react-icons/fa';
+import { FaTrophy, FaFistRaised, FaHistory, FaUsers, FaBasketballBall } from 'react-icons/fa';
+import Link from 'next/link';
 
 // Mock Data for the new sections
 // 新模块的模拟数据
@@ -157,6 +158,27 @@ export default function AudienceDashboard() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Featured Event Section */}
+      <div className="bg-gradient-to-r from-blue-900 via-gray-800 to-red-900 rounded-lg p-6 mb-8 text-center shadow-lg border border-gray-700">
+        <h2 className="text-2xl font-bold text-yellow-400 mb-2 animate-pulse">{language === 'en' ? "Featured Event" : "焦点赛事"}</h2>
+        <p className="text-gray-300 mb-4">{upcomingEvents.rows[0].event}</p>
+        <div className="flex justify-around items-center my-4">
+            <div className="flex flex-col items-center">
+                <FaBasketballBall className="text-5xl text-blue-400"/>
+                <span className="font-bold mt-2 text-lg">Team A</span>
+            </div>
+            <span className="text-4xl font-bold text-gray-500">VS</span>
+            <div className="flex flex-col items-center">
+                <FaBasketballBall className="text-5xl text-red-400"/>
+                <span className="font-bold mt-2 text-lg">Team B</span>
+            </div>
+        </div>
+        <p className="text-sm text-gray-400 mb-6">{upcomingEvents.rows[0].date}</p>
+        <Link href={upcomingEvents.rows[0].action.href} className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-10 rounded-lg text-lg transition-transform transform hover:scale-105 shadow-xl">
+            {language === 'en' ? "Support Now" : "立即支持"}
+        </Link>
       </div>
       
       {/* Tabs */}
