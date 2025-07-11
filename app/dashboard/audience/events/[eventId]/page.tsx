@@ -22,16 +22,22 @@ export default function AudienceEventStakePage({ params }: PageProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<{ id: string, name: string } | null>(null);
   const [stakeAmount, setStakeAmount] = useState('');
+  const [stakingStatus, setStakingStatus] = useState<'idle' | 'success'>('idle');
 
   const handleSupportClick = (team: { id: string, name: string }) => {
     setSelectedTeam(team);
+    setStakingStatus('idle'); // Always reset to the initial state when opening
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setSelectedTeam(null);
-    setStakeAmount('');
+    // A slight delay to allow the closing animation to finish before resetting state
+    setTimeout(() => {
+      setSelectedTeam(null);
+      setStakeAmount('');
+      setStakingStatus('idle');
+    }, 300);
   };
 
   const handleStake = () => {
@@ -43,9 +49,9 @@ export default function AudienceEventStakePage({ params }: PageProps) {
     // 在真实应用中，这里会与钱包/合约进行交互。
     console.log(`Staking ${stakeAmount} on ${selectedTeam?.name}`);
     
-    // After staking, redirect to the success page.
-    // 质押后，重定向到成功页面。
-    router.push(`/dashboard/audience/events/${params.eventId}/success?team=${selectedTeam?.id}`);
+    // Instead of redirecting, change the modal's state to 'success'
+    // 不再重定向，而是将模态框的状态更改为“成功”
+    setStakingStatus('success');
   };
 
   // Mock Data
@@ -163,30 +169,52 @@ export default function AudienceEventStakePage({ params }: PageProps) {
       <Modal 
         isOpen={isModalOpen} 
         onClose={handleCloseModal} 
-        title={`${language === 'en' ? 'Support' : '支持'} ${selectedTeam?.name}`}
+        title={
+          stakingStatus === 'success' 
+            ? (language === 'en' ? 'Success!' : '成功！') 
+            : `${language === 'en' ? 'Support' : '支持'} ${selectedTeam?.name}`
+        }
       >
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="stakeAmount" className="block text-sm font-medium text-gray-300 mb-1">
-              {language === 'en' ? 'Stake Amount (CHZ)' : '质押数量 (CHZ)'}
-            </label>
-            <input
-              type="number"
-              id="stakeAmount"
-              value={stakeAmount}
-              onChange={(e) => setStakeAmount(e.target.value)}
-              placeholder={language === 'en' ? 'Enter amount' : '输入金额'}
-              className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+        {stakingStatus === 'idle' ? (
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="stakeAmount" className="block text-sm font-medium text-gray-300 mb-1">
+                {language === 'en' ? 'Stake Amount (CHZ)' : '质押数量 (CHZ)'}
+              </label>
+              <input
+                type="number"
+                id="stakeAmount"
+                value={stakeAmount}
+                onChange={(e) => setStakeAmount(e.target.value)}
+                placeholder={language === 'en' ? 'Enter amount' : '输入金额'}
+                className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <button
+              onClick={handleStake}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-gray-500"
+              disabled={!stakeAmount || parseFloat(stakeAmount) <= 0}
+            >
+              {language === 'en' ? 'Stake Now' : '立即质押'}
+            </button>
           </div>
-          <button
-            onClick={handleStake}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-gray-500"
-            disabled={!stakeAmount || parseFloat(stakeAmount) <= 0}
-          >
-            {language === 'en' ? 'Stake Now' : '立即质押'}
-          </button>
-        </div>
+        ) : (
+          <div className="text-center p-4">
+            <div className="text-5xl mb-4">🎉</div>
+            <h3 className="font-bold text-xl text-green-400 mb-2">
+              {language === 'en' ? 'Congratulations!' : '恭喜！'}
+            </h3>
+            <p className="text-gray-300 mb-6">
+              {language === 'en' ? 'Your support has been recorded. Good luck!' : '您的支持已记录。祝您好运！'}
+            </p>
+            <button
+              onClick={handleCloseModal}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+            >
+              {language === 'en' ? 'Close' : '关闭'}
+            </button>
+          </div>
+        )}
       </Modal>
     </DashboardLayout>
   )
