@@ -1,30 +1,26 @@
-// FanForce AI - StatCard Component / 统计卡片组件
-// This reusable card shows a numeric value with icon and title.
-// 该可复用卡片组件显示一个带图标和标题的数值。
+// A reusable component to display a single statistic with an icon.
+// 一个可复用的组件，用于显示带图标的单项统计数据。
 
-'use client'
-
-import React from 'react'
+import { ReactNode, FC } from 'react';
 
 interface StatCardProps {
-  /** Title text already localised / 已本地化的标题 */
-  title: string
-  /** Display value (string to allow formatted) / 显示值（字符串以便格式化） */
-  value: string | number
-  /** Emoji or icon component / Emoji 或图标组件 */
-  icon?: React.ReactNode
+  icon: ReactNode; // The icon to display. 要显示的图标。
+  title: string; // The title of the statistic. 统计数据的标题。
+  value: string | number; // The value of the statistic. 统计数据的值。
 }
 
-export default function StatCard ({ title, value, icon }: StatCardProps) {
+const StatCard: FC<StatCardProps> = ({ icon, title, value }) => {
   return (
-    <div className="bg-white/5 border border-white/10 rounded-lg p-6 flex items-center space-x-4 backdrop-blur-sm">
-      <div className="text-3xl">
-        {icon}
+    <div className="bg-gray-800/50 rounded-lg p-4 flex items-center">
+      <div className="bg-gray-700 rounded-full p-3 mr-4">
+        <span className="text-xl text-white">{icon}</span>
       </div>
       <div>
-        <p className="text-sm text-gray-300">{title}</p>
+        <h4 className="text-sm text-gray-400 font-medium">{title}</h4>
         <p className="text-2xl font-bold text-white">{value}</p>
       </div>
     </div>
-  )
-} 
+  );
+};
+
+export default StatCard; 

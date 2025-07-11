@@ -4,100 +4,178 @@
 
 'use client'
 
-import DashboardLayout from '../../components/shared/DashboardLayout'
-import StatCard from '../../components/shared/StatCard'
-import DataTable from '../../components/shared/DataTable'
-import TimelineItem from '../../components/shared/TimelineItem'
-import { useLanguage } from '../../context/LanguageContext'
-import Link from 'next/link'
+import { useLanguage } from '@/app/context/LanguageContext';
+import DashboardLayout from '@/app/components/shared/DashboardLayout';
+import DataTable from '@/app/components/shared/DataTable';
+import StatCard from '@/app/components/shared/StatCard';
+import { useState } from 'react';
+import { FaTrophy, FaFistRaised, FaHistory, FaUsers } from 'react-icons/fa';
 
-export default function AudienceDashboardStatic () {
-  // 国际化 / Internationalisation
-  const { language } = useLanguage()
+// Mock Data for the new sections
+// 新模块的模拟数据
 
-  /* ----------------- 📝 Mock Data / 假数据 ----------------- */
-  const stats = [
-    { id: 1, titleEn: 'Total CHZ Staked', titleCn: '已质押CHZ', value: '1200', icon: '💎' },
-    { id: 2, titleEn: 'Events Joined', titleCn: '参与活动', value: '3', icon: '🎯' },
-    { id: 3, titleEn: 'Points Earned', titleCn: '累计积分', value: '450', icon: '🏆' }
+const mockUserStats = {
+  name: 'Alex "The Oracle"',
+  avatar: '/placeholder.svg',
+  chzBalance: 1250.75,
+  totalSupports: 42,
+  winRate: '68%',
+};
+
+const mockBadges = [
+  { name: 'First Bet', icon: '🏆', unlocked: true, description: 'Placed your first support!' },
+  { name: 'On Fire', icon: '🔥', unlocked: true, description: 'Won 3 supports in a row.' },
+  { name: 'High Roller', icon: '💰', unlocked: true, description: 'Staked over 1000 CHZ in total.' },
+  { name: 'Loyal Fan', icon: '🛡️', unlocked: false, description: 'Supported the same team 5 times.' },
+  { name: 'Campus Legend', icon: '👑', unlocked: false, description: 'Reached the top 10 on the leaderboard.' },
+  { name: 'Iron Will', icon: '🦾', unlocked: false, description: 'Supported an underdog team that won.' },
+];
+
+const mockSupportHistory = {
+  columns: [
+    { key: 'event', headerEn: 'Event', headerCn: '赛事' },
+    { key: 'team', headerEn: 'Team Supported', headerCn: '支持队伍' },
+    { key: 'amount', headerEn: 'Amount (CHZ)', headerCn: '数量 (CHZ)' },
+    { key: 'outcome', headerEn: 'Outcome', headerCn: '结果' },
+    { key: 'date', headerEn: 'Date', headerCn: '日期' },
+  ],
+  rows: [
+    { event: 'Campus B-Ball', team: 'Team A', amount: '100', outcome: { type: 'win', text: '+35 CHZ' }, date: '2023-10-28' },
+    { event: 'Soccer Finals', team: 'Team B', amount: '50', outcome: { type: 'loss', text: '-50 CHZ' }, date: '2023-10-25' },
+    { event: 'Debate Championship', team: 'Team A', amount: '200', outcome: { type: 'win', text: '+90 CHZ' }, date: '2023-10-22' },
+    { event: 'Hackathon', team: 'Team B', amount: '75', outcome: { type: 'pending', text: 'Pending' }, date: '2023-10-21' },
   ]
+};
 
-  const upcomingEvents = [
-    { id: 'evt1', name: 'Campus Basketball Final', teams: 'Team A vs Team B', date: '2025-08-01 14:00', minStake: '5 CHZ', status: 'upcoming' },
-    { id: 'evt2', name: 'Football Derby', teams: 'Team C vs Team D', date: '2025-08-05 16:00', minStake: '3 CHZ', status: 'upcoming' }
-  ]
+const mockLeaderboard = [
+  { rank: 1, name: 'CryptoKing', winRate: '85%', totalWinnings: 2500 },
+  { rank: 2, name: 'Alex "The Oracle"', winRate: '68%', totalWinnings: 1850 },
+  { rank: 3, name: 'StrategySavvy', winRate: '65%', totalWinnings: 1500 },
+  { rank: 4, name: 'RookieRiches', winRate: '60%', totalWinnings: 1200 },
+  { rank: 5, name: 'FanForceFanatic', winRate: '58%', totalWinnings: 950 },
+];
 
-  const timeline = [
-    { id: 'log1', icon: '✅', textEn: 'Staked 10 CHZ on Team A', textCn: '已向A队质押10 CHZ', time: '2 hrs ago' },
-    { id: 'log2', icon: '🎁', textEn: 'Received 15 CHZ reward', textCn: '获得15 CHZ奖励', time: 'Yesterday' },
-    { id: 'log3', icon: '📱', textEn: 'Scanned QR for Football Derby', textCn: '扫码参加足球德比', time: '2 days ago' }
-  ]
-  /* -------------------------------------------------------- */
 
-  /* ---------- Column definition for DataTable / 表格列定义 ---------- */
-  const columns = [
-    { key: 'name', headerEn: 'Event', headerCn: '活动' },
-    { key: 'teams', headerEn: 'Teams', headerCn: '对战队伍' },
-    { key: 'date', headerEn: 'Start Time', headerCn: '开始时间' },
-    { key: 'minStake', headerEn: 'Min Stake', headerCn: '最低质押' },
-    { key: 'action', headerEn: 'Support', headerCn: '支持' }
-  ]
+export default function AudienceDashboard() {
+  const { language } = useLanguage();
+  const [activeTab, setActiveTab] = useState('events');
 
-  /* Map upcomingEvents to rows expected by DataTable */
-  const rows = upcomingEvents.map(evt => ({
-    ...evt,
-    action: (
-      <Link
-        key={evt.id}
-        href={`/dashboard/audience/events/${evt.id}`}
-        className="inline-block px-3 py-1 text-sm font-semibold text-white bg-fanforce-primary hover:bg-fanforce-secondary rounded-lg shadow transition transform hover:-translate-y-0.5 hover:shadow-lg animate-pulse"
-      >
-        {language === 'en' ? 'Support' : '支持'}
-      </Link>
-    )
-  }))
+  const upcomingEvents = {
+    columns: [
+        { key: 'event', headerEn: 'Event', headerCn: '赛事' },
+        { key: 'teams', headerEn: 'Teams', headerCn: '队伍' },
+        { key: 'date', headerEn: 'Date', headerCn: '日期' },
+        { key: 'action', headerEn: 'Action', headerCn: '操作' },
+    ],
+    rows: [
+        { event: "Campus Basketball Final", teams: "Team A vs Team B", date: "2023-11-15", action: { type: 'link', href: '/dashboard/audience/events/evt1', text: 'Support' } },
+        { event: "University Soccer League", teams: "Team C vs Team D", date: "2023-11-18", action: { type: 'link', href: '/dashboard/audience/events/evt2', text: 'Support' } },
+        { event: "Annual Hackathon", teams: "InnovateU vs CodeCrafters", date: "2023-11-20", action: { type: 'link', href: '/dashboard/audience/events/evt3', text: 'Support' } },
+    ]
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'events':
+        return (
+            <div className="bg-gray-800/50 rounded-lg p-6">
+                <h2 className="text-xl font-bold mb-4 text-white">{language === 'en' ? "Upcoming Events" : "未来赛事"}</h2>
+                <DataTable columns={upcomingEvents.columns} rows={upcomingEvents.rows} language={language} />
+            </div>
+        );
+      case 'history':
+        return (
+            <div className="bg-gray-800/50 rounded-lg p-6">
+                <h2 className="text-xl font-bold mb-4 text-white">{language === 'en' ? "My Support History" : "我的支持历史"}</h2>
+                <DataTable columns={mockSupportHistory.columns} rows={mockSupportHistory.rows} language={language} />
+            </div>
+        );
+      case 'leaderboard':
+        return (
+          <div className="bg-gray-800/50 rounded-lg p-6">
+             <h2 className="text-xl font-bold mb-4 text-white">{language === 'en' ? "Top Supporters" : "顶尖支持者"}</h2>
+             <div className="overflow-x-auto">
+               <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-gray-700 text-gray-400">
+                    <th className="p-2">Rank</th>
+                    <th className="p-2">Name</th>
+                    <th className="p-2">Win Rate</th>
+                    <th className="p-2">Total Winnings (CHZ)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mockLeaderboard.map(user => (
+                    <tr key={user.rank} className={`border-b border-gray-800 ${user.name === mockUserStats.name ? 'bg-blue-900/50' : ''}`}>
+                      <td className="p-3 font-bold">{user.rank}</td>
+                      <td className="p-3">{user.name}</td>
+                      <td className="p-3">{user.winRate}</td>
+                      <td className="p-3 text-green-400">{user.totalWinnings.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+             </div>
+             <div className="text-center mt-4">
+               <a href="#" className="text-blue-400 hover:underline">{language === 'en' ? "View Full Leaderboard" : "查看完整排行榜"}</a>
+             </div>
+          </div>
+        )
+      default:
+        return null;
+    }
+  }
 
   return (
     <DashboardLayout
-      title={language === 'en' ? 'Audience Hub' : '观众中心'}
-      subtitle={language === 'en' ? 'Events, Staking & Rewards' : '活动、质押与奖励'}
+      title={language === 'en' ? "Audience Dashboard" : "观众仪表板"}
+      subtitle={language === 'en' ? "Your central hub for campus events" : "您的校园活动中心"}
     >
-      {/* ----- Hero Stat Cards / 统计卡片 ----- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {stats.map(card => (
-          <StatCard
-            key={card.id}
-            title={language === 'en' ? card.titleEn : card.titleCn}
-            value={card.value}
-            icon={card.icon}
-          />
-        ))}
+      {/* Personalized Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="lg:col-span-1 bg-gray-800/50 rounded-lg p-4 flex items-center space-x-4">
+            <img src={mockUserStats.avatar} alt="User Avatar" className="w-16 h-16 rounded-full border-2 border-blue-500"/>
+            <div>
+                <h3 className="font-bold text-lg">{mockUserStats.name}</h3>
+                <p className="text-sm text-gray-400">Audience</p>
+            </div>
+        </div>
+        <StatCard icon={<FaFistRaised />} title="CHZ Balance" value={mockUserStats.chzBalance.toLocaleString()} />
+        <StatCard icon={<FaHistory />} title="Total Supports" value={mockUserStats.totalSupports} />
+        <StatCard icon={<FaTrophy />} title="Win Rate" value={mockUserStats.winRate} />
       </div>
 
-      {/* ----- Upcoming Events Table / 即将到来的活动表格 ----- */}
-      <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-8 backdrop-blur-sm">
-        <h2 className="text-xl font-bold text-white mb-4">
-          {language === 'en' ? 'Upcoming Events' : '即将到来的活动'}
-        </h2>
-        <DataTable columns={columns} rows={rows} />
-      </div>
-
-      {/* ----- Participation Timeline / 参与时间线 ----- */}
-      <div className="bg-white/5 border border-white/10 rounded-lg p-6 backdrop-blur-sm">
-        <h2 className="text-xl font-bold text-white mb-4">
-          {language === 'en' ? 'Recent Activity' : '最近活动'}
-        </h2>
-        <div className="space-y-4">
-          {timeline.map(item => (
-            <TimelineItem
-              key={item.id}
-              icon={item.icon}
-              text={language === 'en' ? item.textEn : item.textCn}
-              time={item.time}
-            />
+      {/* My Badges Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold mb-4 text-white">{language === 'en' ? "My Badges" : "我的徽章"}</h2>
+        <div className="flex space-x-4 overflow-x-auto pb-4">
+          {mockBadges.map(badge => (
+            <div key={badge.name} className={`flex-shrink-0 w-40 h-40 rounded-lg p-4 flex flex-col items-center justify-center text-center transition-all duration-300 ${badge.unlocked ? 'bg-yellow-500/10 border-2 border-yellow-500' : 'bg-gray-800/50'}`}>
+              <div className={`text-4xl mb-2 ${!badge.unlocked && 'opacity-30'}`}>{badge.icon}</div>
+              <h4 className={`font-bold ${!badge.unlocked && 'opacity-30'}`}>{badge.name}</h4>
+              <p className={`text-xs text-gray-400 mt-1 ${!badge.unlocked && 'opacity-30'}`}>{badge.description}</p>
+            </div>
           ))}
         </div>
       </div>
+      
+      {/* Tabs */}
+      <div className="mb-6">
+        <div className="flex border-b border-gray-700">
+            <button onClick={() => setActiveTab('events')} className={`py-2 px-4 text-sm font-medium ${activeTab === 'events' ? 'border-b-2 border-blue-500 text-white' : 'text-gray-400'}`}>
+                {language === 'en' ? "Upcoming Events" : "未来赛事"}
+            </button>
+            <button onClick={() => setActiveTab('history')} className={`py-2 px-4 text-sm font-medium ${activeTab === 'history' ? 'border-b-2 border-blue-500 text-white' : 'text-gray-400'}`}>
+                {language === 'en' ? "My Support History" : "我的支持历史"}
+            </button>
+            <button onClick={() => setActiveTab('leaderboard')} className={`py-2 px-4 text-sm font-medium ${activeTab === 'leaderboard' ? 'border-b-2 border-blue-500 text-white' : 'text-gray-400'}`}>
+                {language === 'en' ? "Leaderboard" : "排行榜"}
+            </button>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      {renderTabContent()}
     </DashboardLayout>
-  )
+  );
 } 
