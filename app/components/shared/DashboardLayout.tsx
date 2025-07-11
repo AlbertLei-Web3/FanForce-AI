@@ -138,7 +138,12 @@ export default function DashboardLayout({
   const roleInfo = getRoleInfo()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-fanforce-dark via-gray-900 to-fanforce-primary">
+    <>
+    {/*
+      采用 Flex 布局让侧边栏与主内容区在同一水平基线，
+      Fix blank spacing issue by switching to flex container so both sidebar and content share the same Y-axis.
+    */}
+    <div className="min-h-screen flex bg-gradient-to-br from-fanforce-dark via-gray-900 to-fanforce-primary">
       {/* 侧边栏背景遮罩 / Sidebar Backdrop */}
       {sidebarOpen && (
         <div 
@@ -148,9 +153,9 @@ export default function DashboardLayout({
       )}
 
       {/* 侧边栏 / Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-gray-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <div className={`z-50 w-64 bg-gray-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 
+        ${sidebarOpen ? 'fixed inset-y-0 left-0 translate-x-0' : 'fixed inset-y-0 left-0 -translate-x-full'} 
+        lg:static lg:h-auto lg:sticky lg:top-0`}>
         <div className="flex flex-col h-full">
           {/* 侧边栏头部 / Sidebar Header */}
           <div className="flex items-center justify-between h-16 px-4 bg-gray-900">
@@ -229,7 +234,7 @@ export default function DashboardLayout({
       </div>
 
       {/* 主内容区域 / Main Content Area */}
-      <div className="lg:ml-64">
+      <div className="flex-1">
         {/* 顶部栏 / Top Bar */}
         <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
           <div className="flex items-center justify-between px-4 py-3">
@@ -316,5 +321,6 @@ export default function DashboardLayout({
         </div>
       )}
     </div>
+    </>
   )
 } 

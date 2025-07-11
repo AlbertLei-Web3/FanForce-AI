@@ -198,6 +198,7 @@ node test-api.js
 - Updated admin dashboard permission check to allow Super Admin access / 更新了管理员仪表板权限检查以允许超级管理员访问
 - Removed unused complex role switching components (RoleSwitcher, MockDataGenerator) / 移除了未使用的复杂角色切换组件（RoleSwitcher，MockDataGenerator）
 - Enhanced development toolbar with stable role switching / 增强了开发工具栏的稳定角色切换功能
+- Fixed admin dashboard layout alignment between sidebar and main content / 修复了侧边栏与主内容对齐问题
 
 **API端点列表 / API Endpoints List**
 ```
@@ -474,7 +475,7 @@ const calculateCombatPower = (team: Team): number => {
 | 🇧🇷 巴西 Brazil | 82% | 27.8岁 | Neymar Jr. | 88分 |
 | 🇫🇷 法国 France | 78% | 26.2岁 | Kylian Mbappé | 85分 |
 | 🇦🇷 阿根廷 Argentina | 75% | 28.5岁 | Lionel Messi | 82分 |
-| 🇳🇱 荷兰 Netherlands | 72% | 27.2岁 | Virgil van Dijk | 79分 |
+| ��🇱 荷兰 Netherlands | 72% | 27.2岁 | Virgil van Dijk | 79分 |
 | 🇵🇹 葡萄牙 Portugal | 70% | 28.1岁 | Cristiano Ronaldo | 76分 |
 | 🇬🇧 英格兰 England | 68% | 26.5岁 | Harry Kane | 75分 |
 | 🇭🇷 克罗地亚 Croatia | 65% | 29.8岁 | Luka Modrić | 71分 |

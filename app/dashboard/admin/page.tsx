@@ -198,11 +198,11 @@ export default function AdminDashboard() {
             }
           }),
           fetch('/api/admin/config', {
-            headers: {
-              'Authorization': `Bearer ${authState.sessionToken}`,
-              'Content-Type': 'application/json',
-            }
-          })
+          headers: {
+            'Authorization': `Bearer ${authState.sessionToken}`,
+            'Content-Type': 'application/json',
+          }
+        })
         ])
 
         // 处理仪表板统计数据 / Process dashboard statistics
@@ -523,80 +523,80 @@ export default function AdminDashboard() {
         {/* 概览标签页 / Overview Tab */}
         {activeTab === 'overview' && (
           <>
-            {/* 系统概览卡片 / System Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* 总用户数 / Total Users */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-300">
-                      {language === 'en' ? 'Total Users' : '总用户数'}
-                    </p>
-                    <p className="text-2xl font-bold text-white">
-                      {formatNumber(stats?.totalUsers || 0)}
-                    </p>
-                    <p className="text-xs text-green-400">
-                      +{stats?.todayUsers || 0} {language === 'en' ? 'today' : '今日'}
-                    </p>
-                  </div>
-                  <div className="text-3xl">👥</div>
-                </div>
+        {/* 系统概览卡片 / System Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* 总用户数 / Total Users */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-300">
+                  {language === 'en' ? 'Total Users' : '总用户数'}
+                </p>
+                <p className="text-2xl font-bold text-white">
+                  {formatNumber(stats?.totalUsers || 0)}
+                </p>
+                <p className="text-xs text-green-400">
+                  +{stats?.todayUsers || 0} {language === 'en' ? 'today' : '今日'}
+                </p>
               </div>
-
-              {/* 活跃活动 / Active Events */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-300">
-                      {language === 'en' ? 'Active Events' : '活跃活动'}
-                    </p>
-                    <p className="text-2xl font-bold text-white">
-                      {formatNumber(stats?.activeEvents || 0)}
-                    </p>
-                    <p className="text-xs text-blue-400">
-                      {stats?.totalEvents || 0} {language === 'en' ? 'total' : '总计'}
-                    </p>
-                  </div>
-                  <div className="text-3xl">🎯</div>
-                </div>
-              </div>
-
-              {/* 总收入 / Total Revenue */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-300">
-                      {language === 'en' ? 'Total Revenue' : '总收入'}
-                    </p>
-                    <p className="text-2xl font-bold text-white">
-                      {formatNumber(stats?.totalRevenue || 0)} CHZ
-                    </p>
-                    <p className="text-xs text-yellow-400">
-                      +{formatNumber(stats?.todayRevenue || 0)} {language === 'en' ? 'today' : '今日'}
-                    </p>
-                  </div>
-                  <div className="text-3xl">💰</div>
-                </div>
-              </div>
-
-              {/* 总质押 / Total Staked */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-300">
-                      {language === 'en' ? 'Total Staked' : '总质押'}
-                    </p>
-                    <p className="text-2xl font-bold text-white">
-                      {formatNumber(stats?.totalStaked || 0)} CHZ
-                    </p>
-                    <p className="text-xs text-purple-400">
-                      +{formatNumber(stats?.todayStaked || 0)} {language === 'en' ? 'today' : '今日'}
-                    </p>
-                  </div>
-                  <div className="text-3xl">💎</div>
-                </div>
-              </div>
+              <div className="text-3xl">👥</div>
             </div>
+          </div>
+
+          {/* 活跃活动 / Active Events */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-300">
+                  {language === 'en' ? 'Active Events' : '活跃活动'}
+                </p>
+                <p className="text-2xl font-bold text-white">
+                  {formatNumber(stats?.activeEvents || 0)}
+                </p>
+                <p className="text-xs text-blue-400">
+                  {stats?.totalEvents || 0} {language === 'en' ? 'total' : '总计'}
+                </p>
+              </div>
+              <div className="text-3xl">🎯</div>
+            </div>
+          </div>
+
+          {/* 总收入 / Total Revenue */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-300">
+                  {language === 'en' ? 'Total Revenue' : '总收入'}
+                </p>
+                <p className="text-2xl font-bold text-white">
+                  {formatNumber(stats?.totalRevenue || 0)} CHZ
+                </p>
+                <p className="text-xs text-yellow-400">
+                  +{formatNumber(stats?.todayRevenue || 0)} {language === 'en' ? 'today' : '今日'}
+                </p>
+              </div>
+              <div className="text-3xl">💰</div>
+            </div>
+          </div>
+
+          {/* 总质押 / Total Staked */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-300">
+                  {language === 'en' ? 'Total Staked' : '总质押'}
+                </p>
+                <p className="text-2xl font-bold text-white">
+                  {formatNumber(stats?.totalStaked || 0)} CHZ
+                </p>
+                <p className="text-xs text-purple-400">
+                  +{formatNumber(stats?.todayStaked || 0)} {language === 'en' ? 'today' : '今日'}
+                </p>
+              </div>
+              <div className="text-3xl">💎</div>
+            </div>
+          </div>
+        </div>
 
             {/* 系统状态和CHZ池健康 / System Status and CHZ Pool Health */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -654,84 +654,84 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* 角色分布 / Role Distribution */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-                <h3 className="text-lg font-bold text-white mb-4">
-                  {language === 'en' ? 'Role Distribution' : '角色分布'}
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
-                      <span className="text-gray-300">
-                        {language === 'en' ? 'Admins' : '管理员'}
-                      </span>
-                    </div>
-                    <span className="text-white font-medium">{stats?.adminCount || 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
-                      <span className="text-gray-300">
-                        {language === 'en' ? 'Ambassadors' : '大使'}
-                      </span>
-                    </div>
-                    <span className="text-white font-medium">{stats?.ambassadorCount || 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                      <span className="text-gray-300">
-                        {language === 'en' ? 'Athletes' : '运动员'}
-                      </span>
-                    </div>
-                    <span className="text-white font-medium">{stats?.athleteCount || 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
-                      <span className="text-gray-300">
-                        {language === 'en' ? 'Audience' : '观众'}
-                      </span>
-                    </div>
-                    <span className="text-white font-medium">{stats?.audienceCount || 0}</span>
-                  </div>
+          {/* 角色分布 / Role Distribution */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+            <h3 className="text-lg font-bold text-white mb-4">
+              {language === 'en' ? 'Role Distribution' : '角色分布'}
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                  <span className="text-gray-300">
+                    {language === 'en' ? 'Admins' : '管理员'}
+                  </span>
                 </div>
+                <span className="text-white font-medium">{stats?.adminCount || 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+                  <span className="text-gray-300">
+                    {language === 'en' ? 'Ambassadors' : '大使'}
+                  </span>
+                </div>
+                <span className="text-white font-medium">{stats?.ambassadorCount || 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                  <span className="text-gray-300">
+                    {language === 'en' ? 'Athletes' : '运动员'}
+                  </span>
+                </div>
+                <span className="text-white font-medium">{stats?.athleteCount || 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                  <span className="text-gray-300">
+                    {language === 'en' ? 'Audience' : '观众'}
+                  </span>
+                </div>
+                <span className="text-white font-medium">{stats?.audienceCount || 0}</span>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* 最近活动 / Recent Activities */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-              <h3 className="text-lg font-bold text-white mb-4">
-                {language === 'en' ? 'Recent System Activities' : '最近系统活动'}
-              </h3>
-              <div className="space-y-3">
-                {recentActivities.length > 0 ? (
-                  recentActivities.slice(0, 10).map((activity) => (
-                    <div key={activity.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                      <div className="flex items-center">
-                        <span className="text-xl mr-3">{getActivityIcon(activity.type)}</span>
-                        <div>
-                          <p className="text-white text-sm">{activity.description}</p>
-                          <p className="text-gray-400 text-xs">
-                            {new Date(activity.timestamp).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                      {activity.amount && (
-                        <span className="text-fanforce-gold font-medium">
-                          {formatNumber(activity.amount)} CHZ
-                        </span>
-                      )}
+        {/* 最近活动 / Recent Activities */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+          <h3 className="text-lg font-bold text-white mb-4">
+            {language === 'en' ? 'Recent System Activities' : '最近系统活动'}
+          </h3>
+          <div className="space-y-3">
+            {recentActivities.length > 0 ? (
+              recentActivities.slice(0, 10).map((activity) => (
+                <div key={activity.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                  <div className="flex items-center">
+                    <span className="text-xl mr-3">{getActivityIcon(activity.type)}</span>
+                    <div>
+                      <p className="text-white text-sm">{activity.description}</p>
+                      <p className="text-gray-400 text-xs">
+                        {new Date(activity.timestamp).toLocaleString()}
+                      </p>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-gray-400">
-                    {language === 'en' ? 'No recent activities' : '暂无最近活动'}
                   </div>
-                )}
+                  {activity.amount && (
+                    <span className="text-fanforce-gold font-medium">
+                      {formatNumber(activity.amount)} CHZ
+                    </span>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-400">
+                {language === 'en' ? 'No recent activities' : '暂无最近活动'}
               </div>
-            </div>
+            )}
+          </div>
+        </div>
           </>
         )}
 
