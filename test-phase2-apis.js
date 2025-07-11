@@ -83,7 +83,7 @@ async function getUserIds() {
     })
 
     const result = await pool.query(`
-      SELECT id, role, username 
+      SELECT id, role 
       FROM users 
       WHERE role IN ('ambassador', 'admin', 'audience')
       ORDER BY role, created_at
@@ -92,13 +92,13 @@ async function getUserIds() {
     for (const user of result.rows) {
       if (user.role === 'ambassador' && !testData.ambassador_id) {
         testData.ambassador_id = user.id
-        console.log(`📋 Ambassador ID: ${user.id} (${user.username})`)
+        console.log(`📋 Ambassador ID: ${user.id}`)
       } else if (user.role === 'admin' && !testData.admin_id) {
         testData.admin_id = user.id
-        console.log(`🔧 Admin ID: ${user.id} (${user.username})`)
+        console.log(`🔧 Admin ID: ${user.id}`)
       } else if (user.role === 'audience' && !testData.audience_id) {
         testData.audience_id = user.id
-        console.log(`🙋‍♂️ Audience ID: ${user.id} (${user.username})`)
+        console.log(`🙋‍♂️ Audience ID: ${user.id}`)
       }
     }
 
@@ -411,12 +411,12 @@ async function testAudienceQRScanWithParty() {
     if (userResult.rows.length > 0) {
       secondAudienceId = userResult.rows[0].id
     } else {
-      // Create a test audience user
-      const createResult = await pool.query(`
-        INSERT INTO users (username, email, role, wallet_address, profile_data)
-        VALUES ('test_audience_2', 'test2@example.com', 'audience', '0x' || encode(gen_random_bytes(20), 'hex'), '{}')
-        RETURNING id
-      `)
+              // Create a test audience user
+        const createResult = await pool.query(`
+          INSERT INTO users (role, wallet_address, profile_data)
+          VALUES ('audience', '0x' || encode(gen_random_bytes(20), 'hex'), '{}')
+          RETURNING id
+        `)
       secondAudienceId = createResult.rows[0].id
     }
   } catch (error) {
