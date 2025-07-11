@@ -118,12 +118,12 @@ export default function AudienceEventStakePage({ params }: PageProps) {
                 ))}
               </div>
             </div>
-            {/* 队伍A的支持按钮 */}
-            {/* Support button for Team A */}
+            {/* 队伍A的支持按钮 - 现在是蓝色 */}
+            {/* Support button for Team A - Now in blue */}
             <div className="mt-8 w-full">
               <button 
                 onClick={() => handleSupportClick({ id: mockTeams.teamA.id, name: mockTeams.teamA.name })}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300 w-full"
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3 px-6 rounded-lg text-lg transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg shadow-blue-500/50"
               >
                 Support Team A
               </button>
@@ -131,7 +131,6 @@ export default function AudienceEventStakePage({ params }: PageProps) {
           </div>
 
           {/* Team B Section - 右侧队伍B的区域 */}
-          {/* Team B Section - Area for Team B on the right */}
           <div className="bg-gray-800 rounded-lg p-6 flex flex-col items-center h-full">
             <div className="flex-grow w-full">
               <div className="flex justify-between items-center mb-6 w-full">
@@ -148,12 +147,12 @@ export default function AudienceEventStakePage({ params }: PageProps) {
                 ))}
               </div>
             </div>
-            {/* 队伍B的支持按钮 */}
-            {/* Support button for Team B */}
+            {/* 队伍B的支持按钮 - 现在是红色 */}
+            {/* Support button for Team B - Now in red */}
             <div className="mt-8 w-full">
               <button 
                 onClick={() => handleSupportClick({ id: mockTeams.teamB.id, name: mockTeams.teamB.name })}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300 w-full"
+                className="w-full bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-bold py-3 px-6 rounded-lg text-lg transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg shadow-red-500/50"
               >
                 Support Team B
               </button>
