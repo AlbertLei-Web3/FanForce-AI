@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
         'user_action' as type,
         action_type as description,
         created_at as timestamp,
-        action_details as details,
+        action_details::jsonb as details,
         (SELECT wallet_address FROM users WHERE id = uml.user_id) as user_address
       FROM user_management_log uml
       WHERE created_at >= NOW() - INTERVAL '24 hours'
@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
         'transaction' as type,
         transaction_type || ' - ' || currency as description,
         created_at as timestamp,
-        json_build_object('amount', amount, 'status', status) as details,
+        json_build_object('amount', amount, 'status', status)::jsonb as details,
         (SELECT wallet_address FROM users WHERE id = t.user_id) as user_address
       FROM transactions t
       WHERE created_at >= NOW() - INTERVAL '24 hours'
@@ -154,7 +154,7 @@ export async function GET(request: NextRequest) {
         'event' as type,
         'Event: ' || title as description,
         created_at as timestamp,
-        json_build_object('status', status, 'participants', current_participants) as details,
+        json_build_object('status', status, 'participants', current_participants)::jsonb as details,
         (SELECT wallet_address FROM users WHERE id = e.ambassador_id) as user_address
       FROM events e
       WHERE created_at >= NOW() - INTERVAL '24 hours'
@@ -252,6 +252,14 @@ export async function GET(request: NextRequest) {
 
     // Update dashboard stats cache
     // 更新仪表板统计缓存
+    // Note: Simplified approach - delete old stats and insert new ones
+    // 注意：简化方法 - 删除旧统计数据并插入新数据
+    await query(`
+      DELETE FROM admin_dashboard_stats 
+      WHERE stat_date = CURRENT_DATE AND period = 'real_time' 
+      AND stat_type IN ('total_users', 'active_users', 'total_events', 'total_staked', 'platform_fees', 'chz_pool_health')
+    `)
+    
     await query(`
       INSERT INTO admin_dashboard_stats (stat_type, stat_value, stat_metadata, period, stat_date)
       VALUES 
@@ -261,9 +269,6 @@ export async function GET(request: NextRequest) {
         ('total_staked', $4, '{}', 'real_time', CURRENT_DATE),
         ('platform_fees', $5, '{}', 'real_time', CURRENT_DATE),
         ('chz_pool_health', $6, '{}', 'real_time', CURRENT_DATE)
-      ON CONFLICT (stat_type, stat_date, period) DO UPDATE SET
-        stat_value = EXCLUDED.stat_value,
-        updated_at = CURRENT_TIMESTAMP
     `, [
       dashboardStats.totalUsers,
       dashboardStats.activeUsers,
