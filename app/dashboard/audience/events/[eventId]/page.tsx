@@ -9,6 +9,8 @@ import DashboardLayout from '../../../../components/shared/DashboardLayout'
 import AthleteCard from '@/app/components/shared/AthleteCard';
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react';
+import Modal from '@/app/components/shared/Modal';
 
 interface PageProps {
   params: { eventId: string }
@@ -17,6 +19,34 @@ interface PageProps {
 export default function AudienceEventStakePage({ params }: PageProps) {
   const { language } = useLanguage()
   const router = useRouter()
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<{ id: string, name: string } | null>(null);
+  const [stakeAmount, setStakeAmount] = useState('');
+
+  const handleSupportClick = (team: { id: string, name: string }) => {
+    setSelectedTeam(team);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedTeam(null);
+    setStakeAmount('');
+  };
+
+  const handleStake = () => {
+    if (!stakeAmount || parseFloat(stakeAmount) <= 0) {
+        alert(language === 'en' ? 'Please enter a valid amount.' : '请输入有效的金额。');
+        return;
+    }
+    // In a real app, here you would interact with a wallet/contract.
+    // 在真实应用中，这里会与钱包/合约进行交互。
+    console.log(`Staking ${stakeAmount} on ${selectedTeam?.name}`);
+    
+    // After staking, redirect to the success page.
+    // 质押后，重定向到成功页面。
+    router.push(`/dashboard/audience/events/${params.eventId}/success?team=${selectedTeam?.id}`);
+  };
 
   // Mock Data
   const mockEvent = {
@@ -85,11 +115,12 @@ export default function AudienceEventStakePage({ params }: PageProps) {
             {/* 队伍A的支持按钮 */}
             {/* Support button for Team A */}
             <div className="mt-8 w-full">
-              <Link href={`/dashboard/audience/events/${params.eventId}/success?team=A`} className="block w-full">
-                <button className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300 w-full">
-                  Support Team A
-                </button>
-              </Link>
+              <button 
+                onClick={() => handleSupportClick({ id: mockTeams.teamA.id, name: mockTeams.teamA.name })}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300 w-full"
+              >
+                Support Team A
+              </button>
             </div>
           </div>
 
@@ -114,11 +145,12 @@ export default function AudienceEventStakePage({ params }: PageProps) {
             {/* 队伍B的支持按钮 */}
             {/* Support button for Team B */}
             <div className="mt-8 w-full">
-              <Link href={`/dashboard/audience/events/${params.eventId}/success?team=B`} className="block w-full">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300 w-full">
-                  Support Team B
-                </button>
-              </Link>
+              <button 
+                onClick={() => handleSupportClick({ id: mockTeams.teamB.id, name: mockTeams.teamB.name })}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300 w-full"
+              >
+                Support Team B
+              </button>
             </div>
           </div>
         </div>
@@ -126,6 +158,36 @@ export default function AudienceEventStakePage({ params }: PageProps) {
         {/* 移除了中央的支持按钮，将其分别置于各自队伍下方 */}
         {/* Removed the central support button, placing them under their respective teams */}
       </div>
+      
+      {/* Staking Modal - 质押模态框 */}
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={handleCloseModal} 
+        title={`${language === 'en' ? 'Support' : '支持'} ${selectedTeam?.name}`}
+      >
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="stakeAmount" className="block text-sm font-medium text-gray-300 mb-1">
+              {language === 'en' ? 'Stake Amount (CHZ)' : '质押数量 (CHZ)'}
+            </label>
+            <input
+              type="number"
+              id="stakeAmount"
+              value={stakeAmount}
+              onChange={(e) => setStakeAmount(e.target.value)}
+              placeholder={language === 'en' ? 'Enter amount' : '输入金额'}
+              className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <button
+            onClick={handleStake}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-gray-500"
+            disabled={!stakeAmount || parseFloat(stakeAmount) <= 0}
+          >
+            {language === 'en' ? 'Stake Now' : '立即质押'}
+          </button>
+        </div>
+      </Modal>
     </DashboardLayout>
   )
 } 
