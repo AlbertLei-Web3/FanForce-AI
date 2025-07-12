@@ -188,6 +188,12 @@ node test-api.js
 - 🏃‍♂️ **Athlete** (运动员) - Green Badge / 绿色徽章
 - 🙋‍♂️ **Audience** (观众) - Blue Badge / 蓝色徽章
 
+**Dashboard Status / 仪表板状态**
+- ✅ **Admin Dashboard** - Complete with system management features / 管理员仪表板 - 完整的系统管理功能
+- ✅ **Audience Dashboard** - Complete with event support and gamification / 观众仪表板 - 完整的事件支持和游戏化功能
+- ✅ **Athlete Dashboard** - Complete with profile, ranking, and competition features / 运动员仪表板 - 完整的档案、排名和比赛功能
+- 🚧 **Ambassador Dashboard** - In development / 大使仪表板 - 开发中
+
 **Development Tools / 开发工具**
 - 🔄 **Role Switcher** - Instantly switch between roles for testing / 角色切换器 - 快速切换角色测试
 - 📊 **Mock Data Generator** - Generate realistic test data / 模拟数据生成器 - 生成真实测试数据
