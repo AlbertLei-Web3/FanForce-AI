@@ -25,7 +25,9 @@ import {
   FaChartLine,
   FaGift,
   FaFire,
-  FaMedal
+  FaMedal,
+  FaTh,
+  FaList
 } from 'react-icons/fa';
 
 // Enhanced Mock Data based on documentation / 基于文档的增强模拟数据
@@ -354,6 +356,7 @@ export default function AudienceDashboard() {
   const [selectedTier, setSelectedTier] = useState(2);
   const [stakeAmount, setStakeAmount] = useState('');
   const [showStakeModal, setShowStakeModal] = useState(false);
+  const [eventsLayout, setEventsLayout] = useState('grid'); // 'grid' or 'list'
 
   // Real-time updates simulation / 实时更新模拟
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -388,86 +391,153 @@ export default function AudienceDashboard() {
     setStakeAmount('');
   };
 
-  const renderEventCard = (event) => (
-    <div key={event.id} className="bg-gray-800/70 rounded-lg p-4 border border-gray-700 hover:border-blue-500 transition-all duration-300">
-      {/* Event Header / 赛事标题 */}
-      <div className="flex justify-between items-start mb-3">
-        <div>
-          <h3 className="text-lg font-bold text-white mb-1">
-            {language === 'en' ? event.title : event.titleCn}
-          </h3>
-          <p className="text-xs text-gray-400">
-            {language === 'en' ? event.venue : event.venueCn} • {event.date} {event.time}
-          </p>
-        </div>
-        <div className="text-right">
-          <div className="bg-green-600/20 text-green-400 px-2 py-1 rounded text-xs font-medium">
-            {event.status.toUpperCase()}
+  const renderEventCard = (event, layout = 'list') => {
+    // Grid layout - compact version / 网格布局 - 紧凑版本
+    if (layout === 'grid') {
+      return (
+        <div key={event.id} className="bg-gray-800/70 rounded-lg p-3 border border-gray-700 hover:border-blue-500 transition-all duration-300">
+          {/* Compact Header / 紧凑标题 */}
+          <div className="flex justify-between items-start mb-2">
+            <div className="flex-1">
+              <h3 className="text-base font-bold text-white mb-1 truncate">
+                {language === 'en' ? event.title : event.titleCn}
+              </h3>
+              <p className="text-xs text-gray-400">
+                {event.date} {event.time}
+              </p>
+            </div>
+            <div className="bg-green-600/20 text-green-400 px-2 py-1 rounded text-xs font-medium">
+              {event.status.toUpperCase()}
+            </div>
           </div>
-          <p className="text-xs text-gray-400 mt-1">
-            QR Expires: {getTimeRemaining(event.qrExpiry)}
+
+          {/* Compact Teams Battle / 紧凑队伍对战 */}
+          <div className="flex justify-around items-center my-3 bg-gray-900/50 rounded-lg p-2">
+            <div className="text-center">
+              <div className="text-2xl mb-1">{event.teamA.icon}</div>
+              <h4 className="font-bold text-white text-xs truncate">{event.teamA.name}</h4>
+              <p className="text-xs text-gray-400">{event.teamA.odds}x</p>
+            </div>
+            <div className="text-2xl font-bold text-gray-500">VS</div>
+            <div className="text-center">
+              <div className="text-2xl mb-1">{event.teamB.icon}</div>
+              <h4 className="font-bold text-white text-xs truncate">{event.teamB.name}</h4>
+              <p className="text-xs text-gray-400">{event.teamB.odds}x</p>
+            </div>
+          </div>
+
+          {/* Compact Stats / 紧凑统计 */}
+          <div className="flex justify-between text-xs mb-2">
+            <span className="text-gray-400">
+              Pool: <span className="text-green-400 font-semibold">{event.totalPool.toLocaleString()}</span>
+            </span>
+            <span className="text-gray-400">
+              {event.currentStakers}/{event.capacity} stakers
+            </span>
+          </div>
+
+          {/* Compact Party Info / 紧凑聚会信息 */}
+          <div className="flex items-center gap-1 mb-2 text-xs text-yellow-400">
+            <FaGift className="text-xs" />
+            <span>Party: {event.partyApplicants}/{event.partyCapacity}</span>
+          </div>
+
+          {/* Compact Support Button / 紧凑支持按钮 */}
+          <button 
+            onClick={() => {
+              setSelectedEvent(event);
+              setShowStakeModal(true);
+            }}
+            className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-2 px-3 rounded-lg transition-all duration-300 transform hover:scale-105 text-xs"
+          >
+            {language === 'en' ? 'Support' : '支持'}
+          </button>
+        </div>
+      );
+    }
+
+    // List layout - detailed version / 列表布局 - 详细版本
+    return (
+      <div key={event.id} className="bg-gray-800/70 rounded-lg p-4 border border-gray-700 hover:border-blue-500 transition-all duration-300">
+        {/* Event Header / 赛事标题 */}
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <h3 className="text-lg font-bold text-white mb-1">
+              {language === 'en' ? event.title : event.titleCn}
+            </h3>
+            <p className="text-xs text-gray-400">
+              {language === 'en' ? event.venue : event.venueCn} • {event.date} {event.time}
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="bg-green-600/20 text-green-400 px-2 py-1 rounded text-xs font-medium">
+              {event.status.toUpperCase()}
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              QR Expires: {getTimeRemaining(event.qrExpiry)}
+            </p>
+          </div>
+        </div>
+
+        {/* Teams Battle / 队伍对战 */}
+        <div className="flex justify-around items-center my-4 bg-gray-900/50 rounded-lg p-3">
+          <div className="text-center">
+            <div className="text-3xl mb-1">{event.teamA.icon}</div>
+            <h4 className="font-bold text-white text-sm">{event.teamA.name}</h4>
+            <p className="text-xs text-gray-400">Odds: {event.teamA.odds}x</p>
+          </div>
+          <div className="text-3xl font-bold text-gray-500">VS</div>
+          <div className="text-center">
+            <div className="text-3xl mb-1">{event.teamB.icon}</div>
+            <h4 className="font-bold text-white text-sm">{event.teamB.name}</h4>
+            <p className="text-xs text-gray-400">Odds: {event.teamB.odds}x</p>
+          </div>
+        </div>
+
+        {/* Event Stats / 赛事统计 */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="bg-gray-900/50 rounded p-2">
+            <p className="text-xs text-gray-400">Total Pool</p>
+            <p className="font-bold text-green-400 text-sm">{event.totalPool.toLocaleString()} CHZ</p>
+          </div>
+          <div className="bg-gray-900/50 rounded p-2">
+            <p className="text-xs text-gray-400">Stakers</p>
+            <p className="font-bold text-blue-400 text-sm">{event.currentStakers}/{event.capacity}</p>
+          </div>
+        </div>
+
+        {/* Party Information / 聚会信息 */}
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded p-2 mb-3">
+          <div className="flex items-center gap-2 mb-1">
+            <FaGift className="text-yellow-500 text-sm" />
+            <span className="font-medium text-yellow-500 text-sm">After-Party Available</span>
+          </div>
+          <p className="text-xs text-gray-300">
+            {language === 'en' ? event.partyVenue : event.partyVenueCn} • 
+            Capacity: {event.partyCapacity} • 
+            Applications: {event.partyApplicants}
           </p>
         </div>
-      </div>
 
-      {/* Teams Battle / 队伍对战 */}
-      <div className="flex justify-around items-center my-4 bg-gray-900/50 rounded-lg p-3">
-        <div className="text-center">
-          <div className="text-3xl mb-1">{event.teamA.icon}</div>
-          <h4 className="font-bold text-white text-sm">{event.teamA.name}</h4>
-          <p className="text-xs text-gray-400">Odds: {event.teamA.odds}x</p>
+        {/* Ambassador Info / 大使信息 */}
+        <div className="flex items-center gap-2 mb-3 text-xs text-gray-400">
+          <FaUsers className="text-xs" />
+          <span>Ambassador: {event.ambassadorInfo.name} ({event.ambassadorInfo.contact})</span>
         </div>
-        <div className="text-3xl font-bold text-gray-500">VS</div>
-        <div className="text-center">
-          <div className="text-3xl mb-1">{event.teamB.icon}</div>
-          <h4 className="font-bold text-white text-sm">{event.teamB.name}</h4>
-          <p className="text-xs text-gray-400">Odds: {event.teamB.odds}x</p>
-        </div>
-      </div>
 
-      {/* Event Stats / 赛事统计 */}
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="bg-gray-900/50 rounded p-2">
-          <p className="text-xs text-gray-400">Total Pool</p>
-          <p className="font-bold text-green-400 text-sm">{event.totalPool.toLocaleString()} CHZ</p>
-        </div>
-        <div className="bg-gray-900/50 rounded p-2">
-          <p className="text-xs text-gray-400">Stakers</p>
-          <p className="font-bold text-blue-400 text-sm">{event.currentStakers}/{event.capacity}</p>
-        </div>
+        {/* Support Button / 支持按钮 */}
+        <button 
+          onClick={() => {
+            setSelectedEvent(event);
+            setShowStakeModal(true);
+          }}
+          className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm"
+        >
+          {language === 'en' ? 'Support Team' : '支持队伍'}
+        </button>
       </div>
-
-      {/* Party Information / 聚会信息 */}
-      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded p-2 mb-3">
-        <div className="flex items-center gap-2 mb-1">
-          <FaGift className="text-yellow-500 text-sm" />
-          <span className="font-medium text-yellow-500 text-sm">After-Party Available</span>
-        </div>
-        <p className="text-xs text-gray-300">
-          {language === 'en' ? event.partyVenue : event.partyVenueCn} • 
-          Capacity: {event.partyCapacity} • 
-          Applications: {event.partyApplicants}
-        </p>
-      </div>
-
-      {/* Ambassador Info / 大使信息 */}
-      <div className="flex items-center gap-2 mb-3 text-xs text-gray-400">
-        <FaUsers className="text-xs" />
-        <span>Ambassador: {event.ambassadorInfo.name} ({event.ambassadorInfo.contact})</span>
-      </div>
-
-      {/* Support Button / 支持按钮 */}
-      <button 
-        onClick={() => {
-          setSelectedEvent(event);
-          setShowStakeModal(true);
-        }}
-        className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm"
-      >
-        {language === 'en' ? 'Support Team' : '支持队伍'}
-      </button>
-    </div>
-  );
+    );
+  };
 
   const renderStakeModal = () => {
     if (!showStakeModal || !selectedEvent) return null;
@@ -642,12 +712,55 @@ export default function AudienceDashboard() {
   };
 
   const renderTabContent = () => {
-    switch (activeTab) {
+        switch (activeTab) {
       case 'events':
         return (
-          <div className="space-y-6">
-            {mockUpcomingEvents.map(renderEventCard)}
+          <div>
+            {/* Layout Toggle Controls / 布局切换控制 */}
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">
+                  {language === 'en' ? 'Layout:' : '布局:'}
+                </span>
+                <div className="flex bg-gray-800/50 rounded-lg p-1">
+                  <button
+                    onClick={() => setEventsLayout('grid')}
+                    className={`flex items-center gap-2 px-3 py-1 rounded text-sm transition-all duration-200 ${
+                      eventsLayout === 'grid'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-400 hover:text-gray-200'
+                    }`}
+                  >
+                    <FaTh className="text-xs" />
+                    {language === 'en' ? 'Grid' : '网格'}
+                  </button>
+                  <button
+                    onClick={() => setEventsLayout('list')}
+                    className={`flex items-center gap-2 px-3 py-1 rounded text-sm transition-all duration-200 ${
+                      eventsLayout === 'list'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-400 hover:text-gray-200'
+                    }`}
+                  >
+                    <FaList className="text-xs" />
+                    {language === 'en' ? 'List' : '列表'}
+                  </button>
+                </div>
+              </div>
+              <div className="text-sm text-gray-400">
+                {mockUpcomingEvents.length} {language === 'en' ? 'events available' : '个可用赛事'}
+              </div>
             </div>
+
+            {/* Events Display / 赛事显示 */}
+            <div className={
+              eventsLayout === 'grid' 
+                ? "grid grid-cols-1 lg:grid-cols-2 gap-4" 
+                : "space-y-4"
+            }>
+              {mockUpcomingEvents.map((event) => renderEventCard(event, eventsLayout))}
+            </div>
+          </div>
         );
       
       case 'history':
