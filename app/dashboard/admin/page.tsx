@@ -1,15 +1,14 @@
 // FanForce AI - 管理员仪表板主页
-// Admin Dashboard Main Page - 系统管理员的主要仪表板页面
-// Main dashboard page for system administrators with enhanced Phase 1 features
-// 系统管理员的主要仪表板页面，包含增强的第一阶段功能
+// Admin Dashboard Main Page - 系统管理员的主要仪表板页面，具有多区域大使监督功能
+// Multi-region ambassador oversight admin dashboard with proper role hierarchy
+// 具有正确角色层级的多区域大使监督管理员仪表板
 // 关联文件:
 // - DashboardLayout.tsx: 仪表板布局组件
 // - UserContext.tsx: 用户角色验证
 // - app/api/admin/dashboard/route.ts: 仪表板统计API
-// - app/api/admin/config/route.ts: 系统配置API
-// - app/api/admin/fee-rules/route.ts: 手续费规则API
-// - app/api/admin/users/route.ts: 用户管理API
-// - app/api/admin/chz-pool/route.ts: CHZ池监控API
+// - app/api/admin/ambassador-oversight/route.ts: 大使监督API (NEW)
+// - app/api/admin/venue-management/route.ts: 场馆管理API (MOVED FROM AMBASSADOR)
+// - app/api/admin/qr-generation/route.ts: QR码生成API (MOVED FROM AMBASSADOR)
 // - lib/enhanced-admin-schema.sql: 增强的管理员数据库架构
 
 'use client'
@@ -44,22 +43,125 @@ interface SystemStats {
   chzPoolHealth: number
   pendingTransactions: number
   systemStatus: string
+  // 多区域监督统计 / Multi-region Oversight Statistics
+  totalUniversities: number
+  activeAmbassadors: number
+  pendingEventApplications: number
+  pendingQRRequests: number
+  crossRegionMetrics: any
+}
+
+// 大使监督数据接口 / Ambassador Oversight Data Interface - NEW
+interface AmbassadorOversightData {
+  id: string
+  name: string
+  university: string
+  region: string
+  contactInfo: string
+  performanceMetrics: {
+    totalEvents: number
+    successfulEvents: number
+    totalRevenue: number
+    monthlyCommission: number
+    athletesRecruited: number
+    audienceReached: number
+    successRate: string
+    tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum'
+  }
+  currentStatus: 'active' | 'inactive' | 'under_review' | 'suspended'
+  lastActivity: string
+  pendingApplications: number
+  recentActivity: Array<{
+    type: string
+    description: string
+    timestamp: string
+  }>
+}
+
+// 场馆管理数据接口 / Venue Management Data Interface - MOVED FROM AMBASSADOR
+interface VenueManagementData {
+  venues: Array<{
+    id: string
+    name: string
+    university: string
+    address: string
+    capacity: number
+    facilities: string[]
+    status: 'active' | 'maintenance' | 'unavailable'
+    managedBy: string // Ambassador ID
+    utilizationRate: number
+    upcomingEvents: number
+  }>
+  pendingVenueRequests: Array<{
+    id: string
+    venueName: string
+    submittedBy: string
+    submittedByName: string
+    university: string
+    status: 'pending' | 'approved' | 'rejected'
+    submissionDate: string
+  }>
+}
+
+// QR码管理数据接口 / QR Code Management Data Interface - MOVED FROM AMBASSADOR  
+interface QRManagementData {
+  pendingRequests: Array<{
+    id: string
+    eventTitle: string
+    requestedBy: string
+    requestedByName: string
+    university: string
+    eventDate: string
+    status: 'pending' | 'approved' | 'rejected'
+    priority: 'normal' | 'high' | 'urgent'
+    requestDate: string
+  }>
+  activeQRCodes: Array<{
+    id: string
+    eventTitle: string
+    generatedFor: string
+    university: string
+    validFrom: string
+    validUntil: string
+    usageCount: number
+    maxUsage: number
+    status: 'active' | 'expired' | 'revoked'
+  }>
+}
+
+// 事件申请数据接口 / Event Application Data Interface
+interface EventApplicationData {
+  applications: Array<{
+    id: string
+    eventTitle: string
+    submittedBy: string
+    submittedByName: string
+    university: string
+    eventDate: string
+    venue: string
+    estimatedParticipants: number
+    status: 'pending' | 'approved' | 'rejected'
+    priority: 'normal' | 'high' | 'urgent'
+    submissionDate: string
+    adminNotes?: string
+  }>
 }
 
 // 最近活动接口 / Recent Activity Interface
 interface RecentActivity {
   id: string
-  type: 'user_registered' | 'event_created' | 'match_completed' | 'payout_made' | 'user_action' | 'transaction' | 'event'
+  type: 'user_registered' | 'event_created' | 'match_completed' | 'payout_made' | 'ambassador_action' | 'admin_action' | 'venue_request' | 'qr_request'
   description: string
   timestamp: string
   amount?: number
   user?: string
+  university?: string
+  region?: string
   details?: any
 }
 
 // 手续费规则接口 / Fee Rules Interface
 interface FeeRules {
-  id: string
   rule_name: string
   staking_fee_percent: number
   withdrawal_fee_percent: number
@@ -67,8 +169,8 @@ interface FeeRules {
   ambassador_share_percent: number
   athlete_share_percent: number
   community_fund_percent: number
-  is_active: boolean
-  effective_date: string
+  updated_at?: string
+  updated_by?: string
 }
 
 // 用户管理数据接口 / User Management Data Interface
@@ -125,7 +227,14 @@ export default function AdminDashboard() {
   const [feeRules, setFeeRules] = useState<FeeRules | null>(null)
   const [userManagementData, setUserManagementData] = useState<UserManagementData | null>(null)
   const [chzPoolStatus, setCHZPoolStatus] = useState<CHZPoolStatus | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'fees' | 'pool' | 'config'>('overview')
+  
+  // 多区域大使监督状态 / Multi-region Ambassador Oversight State - NEW
+  const [ambassadorOversightData, setAmbassadorOversightData] = useState<AmbassadorOversightData[]>([])
+  const [venueManagementData, setVenueManagementData] = useState<VenueManagementData | null>(null)
+  const [qrManagementData, setQRManagementData] = useState<QRManagementData | null>(null)
+  const [eventApplicationData, setEventApplicationData] = useState<EventApplicationData | null>(null)
+  
+  const [activeTab, setActiveTab] = useState<'overview' | 'ambassadors' | 'venues' | 'qr-codes' | 'applications' | 'users' | 'fees' | 'pool' | 'config'>('overview')
   const [refreshing, setRefreshing] = useState(false)
   const [systemConfig, setSystemConfig] = useState<any>(null)
   
@@ -146,6 +255,14 @@ export default function AdminDashboard() {
     status: 'all',
     search: '',
     page: 1
+  })
+
+  // 大使筛选状态 / Ambassador Filter State - NEW
+  const [ambassadorFilters, setAmbassadorFilters] = useState({
+    university: 'all',
+    region: 'all',
+    status: 'all',
+    performanceTier: 'all'
   })
 
   // 权限检查 / Permission Check - 允许管理员和超级管理员访问 / Allow both admin and super admin access
@@ -171,7 +288,11 @@ export default function AdminDashboard() {
           feeRulesResponse,
           userManagementResponse,
           chzPoolResponse,
-          configResponse
+          configResponse,
+          ambassadorOversightResponse,
+          venueManagementResponse,
+          qrManagementResponse,
+          eventApplicationResponse
         ] = await Promise.all([
           fetch(`/api/admin/dashboard?admin_id=${adminId}`, {
             headers: {
@@ -198,11 +319,39 @@ export default function AdminDashboard() {
             }
           }),
           fetch('/api/admin/config', {
-          headers: {
-            'Authorization': `Bearer ${authState.sessionToken}`,
-            'Content-Type': 'application/json',
-          }
-        })
+            headers: {
+              'Authorization': `Bearer ${authState.sessionToken}`,
+              'Content-Type': 'application/json',
+            }
+          }),
+          // NEW: 大使监督数据 / Ambassador oversight data
+          fetch('/api/admin/ambassador-oversight', {
+            headers: {
+              'Authorization': `Bearer ${authState.sessionToken}`,
+              'Content-Type': 'application/json',
+            }
+          }),
+          // MOVED FROM AMBASSADOR: 场馆管理数据 / Venue management data
+          fetch('/api/admin/venue-management', {
+            headers: {
+              'Authorization': `Bearer ${authState.sessionToken}`,
+              'Content-Type': 'application/json',
+            }
+          }),
+          // MOVED FROM AMBASSADOR: QR码管理数据 / QR code management data  
+          fetch('/api/admin/qr-management', {
+            headers: {
+              'Authorization': `Bearer ${authState.sessionToken}`,
+              'Content-Type': 'application/json',
+            }
+          }),
+          // NEW: 事件申请数据 / Event application data
+          fetch('/api/admin/event-applications', {
+            headers: {
+              'Authorization': `Bearer ${authState.sessionToken}`,
+              'Content-Type': 'application/json',
+            }
+          })
         ])
 
         // 处理仪表板统计数据 / Process dashboard statistics
@@ -235,6 +384,30 @@ export default function AdminDashboard() {
         if (configResponse.ok) {
           const configData = await configResponse.json()
           setSystemConfig(configData.configs)
+        }
+
+        // NEW: 处理大使监督数据 / Process ambassador oversight data
+        if (ambassadorOversightResponse.ok) {
+          const ambassadorData = await ambassadorOversightResponse.json()
+          setAmbassadorOversightData(ambassadorData.ambassadors || [])
+        }
+
+        // MOVED FROM AMBASSADOR: 处理场馆管理数据 / Process venue management data
+        if (venueManagementResponse.ok) {
+          const venueData = await venueManagementResponse.json()
+          setVenueManagementData(venueData)
+        }
+
+        // MOVED FROM AMBASSADOR: 处理QR码管理数据 / Process QR code management data
+        if (qrManagementResponse.ok) {
+          const qrData = await qrManagementResponse.json()
+          setQRManagementData(qrData)
+        }
+
+        // NEW: 处理事件申请数据 / Process event application data
+        if (eventApplicationResponse.ok) {
+          const eventAppData = await eventApplicationResponse.json()
+          setEventApplicationData(eventAppData)
         }
 
         setError(null)
@@ -276,6 +449,126 @@ export default function AdminDashboard() {
     }
   }
 
+  // 处理大使操作 / Handle Ambassador Actions - NEW
+  const handleAmbassadorAction = async (ambassadorId: string, action: 'approve' | 'suspend' | 'review' | 'promote' | 'demote', reason?: string) => {
+    try {
+      const response = await fetch('/api/admin/ambassador-actions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authState.sessionToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ambassador_id: ambassadorId,
+          action,
+          reason,
+          admin_id: authState.user?.id
+        })
+      })
+
+      if (response.ok) {
+        alert(`Ambassador ${action} successfully`)
+        refreshData()
+      } else {
+        const errorData = await response.json()
+        alert(`Failed to ${action} ambassador: ${errorData.error}`)
+      }
+    } catch (error) {
+      console.error(`Error ${action} ambassador:`, error)
+      alert(`Error ${action} ambassador`)
+    }
+  }
+
+  // 处理场馆申请 / Handle Venue Requests - MOVED FROM AMBASSADOR
+  const handleVenueRequest = async (requestId: string, action: 'approve' | 'reject', adminNotes?: string) => {
+    try {
+      const response = await fetch('/api/admin/venue-actions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authState.sessionToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          request_id: requestId,
+          action,
+          admin_notes: adminNotes,
+          admin_id: authState.user?.id
+        })
+      })
+
+      if (response.ok) {
+        alert(`Venue request ${action}d successfully`)
+        refreshData()
+      } else {
+        const errorData = await response.json()
+        alert(`Failed to ${action} venue request: ${errorData.error}`)
+      }
+    } catch (error) {
+      console.error(`Error ${action} venue request:`, error)
+      alert(`Error ${action} venue request`)
+    }
+  }
+
+  // 处理QR码申请 / Handle QR Code Requests - MOVED FROM AMBASSADOR
+  const handleQRRequest = async (requestId: string, action: 'approve' | 'reject', adminNotes?: string) => {
+    try {
+      const response = await fetch('/api/admin/qr-actions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authState.sessionToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          request_id: requestId,
+          action,
+          admin_notes: adminNotes,
+          admin_id: authState.user?.id
+        })
+      })
+
+      if (response.ok) {
+        alert(`QR request ${action}d successfully`)
+        refreshData()
+      } else {
+        const errorData = await response.json()
+        alert(`Failed to ${action} QR request: ${errorData.error}`)
+      }
+    } catch (error) {
+      console.error(`Error ${action} QR request:`, error)
+      alert(`Error ${action} QR request`)
+    }
+  }
+
+  // 处理事件申请 / Handle Event Applications - NEW
+  const handleEventApplication = async (applicationId: string, action: 'approve' | 'reject', adminNotes?: string) => {
+    try {
+      const response = await fetch('/api/admin/event-application-actions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authState.sessionToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          application_id: applicationId,
+          action,
+          admin_notes: adminNotes,
+          admin_id: authState.user?.id
+        })
+      })
+
+      if (response.ok) {
+        alert(`Event application ${action}d successfully`)
+        refreshData()
+      } else {
+        const errorData = await response.json()
+        alert(`Failed to ${action} event application: ${errorData.error}`)
+      }
+    } catch (error) {
+      console.error(`Error ${action} event application:`, error)
+      alert(`Error ${action} event application`)
+    }
+  }
+
   // 处理紧急操作 / Handle Emergency Actions
   const handleEmergencyAction = async (action: string) => {
     if (!confirm(`Are you sure you want to execute: ${action}?`)) {
@@ -300,42 +593,6 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error(`Error executing ${action}:`, error)
       alert(`Error executing ${action}`)
-    }
-  }
-
-  // 更新手续费规则 / Update Fee Rules
-  const handleUpdateFeeRules = async () => {
-    try {
-      const adminId = authState.user?.id
-      if (!adminId) {
-        alert('Admin ID not found')
-        return
-      }
-
-      const response = await fetch('/api/admin/fee-rules', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authState.sessionToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...feeRulesForm,
-          admin_id: adminId
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setFeeRules(data.fee_rules)
-        alert(language === 'en' ? 'Fee rules updated successfully' : '手续费规则更新成功')
-        refreshData()
-      } else {
-        const errorData = await response.json()
-        alert(`Failed to update fee rules: ${errorData.error}`)
-      }
-    } catch (error) {
-      console.error('Error updating fee rules:', error)
-      alert('Error updating fee rules')
     }
   }
 
@@ -429,6 +686,10 @@ export default function AdminDashboard() {
       case 'event_created': return '🎯'
       case 'match_completed': return '🏆'
       case 'payout_made': return '💰'
+      case 'ambassador_action': return '🧑‍💼'
+      case 'admin_action': return '🔧'
+      case 'venue_request': return '🏟️'
+      case 'qr_request': return '📱'
       default: return '📝'
     }
   }
@@ -448,7 +709,7 @@ export default function AdminDashboard() {
     return (
       <DashboardLayout 
         title={language === 'en' ? 'Admin Dashboard' : '管理员仪表板'}
-        subtitle={language === 'en' ? 'System Overview & Management' : '系统概览和管理'}
+        subtitle={language === 'en' ? 'Multi-Region System Oversight' : '多区域系统监督'}
       >
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fanforce-primary"></div>
@@ -462,7 +723,7 @@ export default function AdminDashboard() {
     return (
       <DashboardLayout 
         title={language === 'en' ? 'Admin Dashboard' : '管理员仪表板'}
-        subtitle={language === 'en' ? 'System Overview & Management' : '系统概览和管理'}
+        subtitle={language === 'en' ? 'Multi-Region System Oversight' : '多区域系统监督'}
       >
         <div className="bg-red-900/20 border border-red-500 rounded-lg p-4">
           <p className="text-red-400">{error}</p>
@@ -474,7 +735,7 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout 
       title={language === 'en' ? 'Admin Dashboard' : '管理员仪表板'}
-      subtitle={language === 'en' ? 'System Overview & Management' : '系统概览和管理'}
+      subtitle={language === 'en' ? 'Multi-Region System Oversight' : '多区域系统监督'}
       actions={
         <div className="flex space-x-2">
           <button
@@ -495,9 +756,13 @@ export default function AdminDashboard() {
     >
       {/* 导航标签 / Navigation Tabs */}
       <div className="mb-6">
-        <div className="flex space-x-1 bg-white/10 backdrop-blur-sm rounded-lg p-1 border border-white/20">
+        <div className="flex space-x-1 bg-white/10 backdrop-blur-sm rounded-lg p-1 border border-white/20 overflow-x-auto">
           {[
             { id: 'overview', label: language === 'en' ? 'Overview' : '概览', icon: '📊' },
+            { id: 'ambassadors', label: language === 'en' ? 'Ambassador Oversight' : '大使监督', icon: '🧑‍💼' },
+            { id: 'venues', label: language === 'en' ? 'Venue Management' : '场馆管理', icon: '🏟️' },
+            { id: 'qr-codes', label: language === 'en' ? 'QR Generation' : 'QR码生成', icon: '📱' },
+            { id: 'applications', label: language === 'en' ? 'Event Applications' : '活动申请', icon: '📋' },
             { id: 'users', label: language === 'en' ? 'User Management' : '用户管理', icon: '👥' },
             { id: 'fees', label: language === 'en' ? 'Fee Rules' : '手续费规则', icon: '💰' },
             { id: 'pool', label: language === 'en' ? 'CHZ Pool' : 'CHZ池', icon: '💎' },
@@ -506,7 +771,7 @@ export default function AdminDashboard() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'bg-fanforce-primary text-white'
                   : 'text-gray-300 hover:text-white hover:bg-white/10'
@@ -518,6 +783,7 @@ export default function AdminDashboard() {
           ))}
         </div>
       </div>
+
       {/* 标签页内容 / Tab Content */}
       <div className="space-y-6">
         {/* 概览标签页 / Overview Tab */}
@@ -543,21 +809,39 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* 活跃活动 / Active Events */}
+          {/* 活跃大使 / Active Ambassadors - NEW */}
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-300">
-                  {language === 'en' ? 'Active Events' : '活跃活动'}
+                  {language === 'en' ? 'Active Ambassadors' : '活跃大使'}
                 </p>
                 <p className="text-2xl font-bold text-white">
-                  {formatNumber(stats?.activeEvents || 0)}
+                  {formatNumber(stats?.activeAmbassadors || 0)}
                 </p>
                 <p className="text-xs text-blue-400">
-                  {stats?.totalEvents || 0} {language === 'en' ? 'total' : '总计'}
+                  {stats?.ambassadorCount || 0} {language === 'en' ? 'total' : '总计'}
                 </p>
               </div>
-              <div className="text-3xl">🎯</div>
+              <div className="text-3xl">🧑‍💼</div>
+            </div>
+          </div>
+
+          {/* 待审批申请 / Pending Applications - NEW */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-300">
+                  {language === 'en' ? 'Pending Applications' : '待审批申请'}
+                </p>
+                <p className="text-2xl font-bold text-white">
+                  {formatNumber((stats?.pendingEventApplications || 0) + (stats?.pendingQRRequests || 0))}
+                </p>
+                <p className="text-xs text-yellow-400">
+                  {stats?.pendingEventApplications || 0} events + {stats?.pendingQRRequests || 0} QR
+                </p>
+              </div>
+              <div className="text-3xl">📋</div>
             </div>
           </div>
 
@@ -578,127 +862,84 @@ export default function AdminDashboard() {
               <div className="text-3xl">💰</div>
             </div>
           </div>
-
-          {/* 总质押 / Total Staked */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-300">
-                  {language === 'en' ? 'Total Staked' : '总质押'}
-                </p>
-                <p className="text-2xl font-bold text-white">
-                  {formatNumber(stats?.totalStaked || 0)} CHZ
-                </p>
-                <p className="text-xs text-purple-400">
-                  +{formatNumber(stats?.todayStaked || 0)} {language === 'en' ? 'today' : '今日'}
-                </p>
-              </div>
-              <div className="text-3xl">💎</div>
-            </div>
-          </div>
         </div>
 
-            {/* 系统状态和CHZ池健康 / System Status and CHZ Pool Health */}
+            {/* 多区域监督概览 / Multi-region Oversight Overview - NEW */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 系统状态 / System Status */}
+              {/* 大使绩效概览 / Ambassador Performance Overview */}
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
                 <h3 className="text-lg font-bold text-white mb-4">
-                  {language === 'en' ? 'System Status' : '系统状态'}
+                  {language === 'en' ? 'Ambassador Performance Overview' : '大使绩效概览'}
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-300">
-                      {language === 'en' ? 'System Status' : '系统状态'}
+                      {language === 'en' ? 'Total Universities' : '总大学数'}
                     </span>
-                    <div className="flex items-center">
-                      <span className={`w-3 h-3 rounded-full mr-2 ${
-                        stats?.systemStatus === 'active' ? 'bg-green-500' : 'bg-red-500'
-                      }`}></span>
-                      <span className={`text-sm font-medium ${
-                        stats?.systemStatus === 'active' ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {stats?.systemStatus === 'active' ? 
-                          (language === 'en' ? 'Active' : '活跃') : 
-                          (language === 'en' ? 'Maintenance' : '维护中')
-                        }
-                      </span>
-                    </div>
+                    <span className="text-white font-medium">{stats?.totalUniversities || 0}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-300">
-                      {language === 'en' ? 'CHZ Pool Health' : 'CHZ池健康度'}
+                      {language === 'en' ? 'Cross-Region Events' : '跨区域活动'}
                     </span>
-                    <div className="flex items-center">
-                      <div className="w-20 bg-gray-700 rounded-full h-2 mr-2">
-                        <div 
-                          className={`h-2 rounded-full ${
-                            (stats?.chzPoolHealth || 0) >= 80 ? 'bg-green-500' :
-                            (stats?.chzPoolHealth || 0) >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                          }`}
-                          style={{ width: `${stats?.chzPoolHealth || 0}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-white font-medium">{stats?.chzPoolHealth || 0}%</span>
-                    </div>
+                    <span className="text-white font-medium">{stats?.crossRegionMetrics?.totalEvents || 0}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-300">
-                      {language === 'en' ? 'Pending Transactions' : '待处理交易'}
+                      {language === 'en' ? 'Average Success Rate' : '平均成功率'}
                     </span>
-                    <span className={`font-medium ${
-                      (stats?.pendingTransactions || 0) > 10 ? 'text-red-400' : 'text-green-400'
-                    }`}>
+                    <span className="text-green-400 font-medium">{stats?.crossRegionMetrics?.avgSuccessRate || '0%'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300">
+                      {language === 'en' ? 'Top Performing Region' : '表现最佳地区'}
+                    </span>
+                    <span className="text-blue-400 font-medium">{stats?.crossRegionMetrics?.topRegion || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 待处理任务 / Pending Tasks */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+                <h3 className="text-lg font-bold text-white mb-4">
+                  {language === 'en' ? 'Pending Admin Tasks' : '待处理管理任务'}
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300">
+                      {language === 'en' ? 'Event Applications' : '活动申请'}
+                    </span>
+                    <span className={`font-medium ${(stats?.pendingEventApplications || 0) > 5 ? 'text-red-400' : 'text-green-400'}`}>
+                      {stats?.pendingEventApplications || 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300">
+                      {language === 'en' ? 'QR Code Requests' : 'QR码申请'}
+                    </span>
+                    <span className={`font-medium ${(stats?.pendingQRRequests || 0) > 3 ? 'text-red-400' : 'text-green-400'}`}>
+                      {stats?.pendingQRRequests || 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300">
+                      {language === 'en' ? 'Venue Approvals' : '场馆审批'}
+                    </span>
+                    <span className={`font-medium ${(venueManagementData?.pendingVenueRequests?.length || 0) > 2 ? 'text-red-400' : 'text-green-400'}`}>
+                      {venueManagementData?.pendingVenueRequests?.length || 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300">
+                      {language === 'en' ? 'System Alerts' : '系统警报'}
+                    </span>
+                    <span className={`font-medium ${(stats?.pendingTransactions || 0) > 10 ? 'text-red-400' : 'text-green-400'}`}>
                       {stats?.pendingTransactions || 0}
                     </span>
                   </div>
                 </div>
               </div>
-
-          {/* 角色分布 / Role Distribution */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-            <h3 className="text-lg font-bold text-white mb-4">
-              {language === 'en' ? 'Role Distribution' : '角色分布'}
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
-                  <span className="text-gray-300">
-                    {language === 'en' ? 'Admins' : '管理员'}
-                  </span>
-                </div>
-                <span className="text-white font-medium">{stats?.adminCount || 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
-                  <span className="text-gray-300">
-                    {language === 'en' ? 'Ambassadors' : '大使'}
-                  </span>
-                </div>
-                <span className="text-white font-medium">{stats?.ambassadorCount || 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                  <span className="text-gray-300">
-                    {language === 'en' ? 'Athletes' : '运动员'}
-                  </span>
-                </div>
-                <span className="text-white font-medium">{stats?.athleteCount || 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
-                  <span className="text-gray-300">
-                    {language === 'en' ? 'Audience' : '观众'}
-                  </span>
-                </div>
-                <span className="text-white font-medium">{stats?.audienceCount || 0}</span>
-              </div>
             </div>
-          </div>
-        </div>
 
         {/* 最近活动 / Recent Activities */}
         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
@@ -715,6 +956,8 @@ export default function AdminDashboard() {
                       <p className="text-white text-sm">{activity.description}</p>
                       <p className="text-gray-400 text-xs">
                         {new Date(activity.timestamp).toLocaleString()}
+                        {activity.university && ` • ${activity.university}`}
+                        {activity.region && ` • ${activity.region}`}
                       </p>
                     </div>
                   </div>
@@ -733,6 +976,389 @@ export default function AdminDashboard() {
           </div>
         </div>
           </>
+        )}
+
+        {/* 大使监督标签页 / Ambassador Oversight Tab - NEW */}
+        {activeTab === 'ambassadors' && (
+          <div className="space-y-6">
+            {/* 大使筛选器 / Ambassador Filters */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <select 
+                  value={ambassadorFilters.university}
+                  onChange={(e) => setAmbassadorFilters({...ambassadorFilters, university: e.target.value})}
+                  className="bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
+                >
+                  <option value="all">{language === 'en' ? 'All Universities' : '所有大学'}</option>
+                  <option value="tech_university">{language === 'en' ? 'Tech University' : '科技大学'}</option>
+                  <option value="state_university">{language === 'en' ? 'State University' : '州立大学'}</option>
+                </select>
+                
+                <select 
+                  value={ambassadorFilters.region}
+                  onChange={(e) => setAmbassadorFilters({...ambassadorFilters, region: e.target.value})}
+                  className="bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
+                >
+                  <option value="all">{language === 'en' ? 'All Regions' : '所有地区'}</option>
+                  <option value="north">{language === 'en' ? 'North Region' : '北部地区'}</option>
+                  <option value="south">{language === 'en' ? 'South Region' : '南部地区'}</option>
+                </select>
+                
+                <select 
+                  value={ambassadorFilters.status}
+                  onChange={(e) => setAmbassadorFilters({...ambassadorFilters, status: e.target.value})}
+                  className="bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
+                >
+                  <option value="all">{language === 'en' ? 'All Status' : '所有状态'}</option>
+                  <option value="active">{language === 'en' ? 'Active' : '活跃'}</option>
+                  <option value="inactive">{language === 'en' ? 'Inactive' : '不活跃'}</option>
+                  <option value="under_review">{language === 'en' ? 'Under Review' : '审核中'}</option>
+                </select>
+                
+                <select 
+                  value={ambassadorFilters.performanceTier}
+                  onChange={(e) => setAmbassadorFilters({...ambassadorFilters, performanceTier: e.target.value})}
+                  className="bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
+                >
+                  <option value="all">{language === 'en' ? 'All Tiers' : '所有等级'}</option>
+                  <option value="Platinum">{language === 'en' ? 'Platinum' : '铂金'}</option>
+                  <option value="Gold">{language === 'en' ? 'Gold' : '金牌'}</option>
+                  <option value="Silver">{language === 'en' ? 'Silver' : '银牌'}</option>
+                  <option value="Bronze">{language === 'en' ? 'Bronze' : '青铜'}</option>
+                </select>
+              </div>
+            </div>
+
+            {/* 大使列表 / Ambassador List */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {ambassadorOversightData.length > 0 ? (
+                ambassadorOversightData.map((ambassador) => (
+                  <div key={ambassador.id} className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                          {ambassador.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div>
+                          <h4 className="text-white font-bold">{ambassador.name}</h4>
+                          <p className="text-gray-400 text-sm">{ambassador.university}</p>
+                          <p className="text-gray-500 text-xs">{ambassador.region}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                          ambassador.performanceMetrics.tier === 'Platinum' ? 'bg-purple-500/20 text-purple-400' :
+                          ambassador.performanceMetrics.tier === 'Gold' ? 'bg-yellow-500/20 text-yellow-400' :
+                          ambassador.performanceMetrics.tier === 'Silver' ? 'bg-gray-500/20 text-gray-400' :
+                          'bg-orange-500/20 text-orange-400'
+                        }`}>
+                          {ambassador.performanceMetrics.tier}
+                        </span>
+                        <p className={`text-xs mt-1 ${
+                          ambassador.currentStatus === 'active' ? 'text-green-400' :
+                          ambassador.currentStatus === 'under_review' ? 'text-yellow-400' :
+                          'text-red-400'
+                        }`}>
+                          {ambassador.currentStatus}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* 绩效指标 / Performance Metrics */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="bg-gray-900/50 rounded p-2">
+                        <p className="text-xs text-gray-400">Events</p>
+                        <p className="font-bold text-green-400">{ambassador.performanceMetrics.totalEvents}</p>
+                      </div>
+                      <div className="bg-gray-900/50 rounded p-2">
+                        <p className="text-xs text-gray-400">Success Rate</p>
+                        <p className="font-bold text-blue-400">{ambassador.performanceMetrics.successRate}</p>
+                      </div>
+                      <div className="bg-gray-900/50 rounded p-2">
+                        <p className="text-xs text-gray-400">Revenue</p>
+                        <p className="font-bold text-yellow-400">{ambassador.performanceMetrics.totalRevenue.toFixed(2)} CHZ</p>
+                      </div>
+                      <div className="bg-gray-900/50 rounded p-2">
+                        <p className="text-xs text-gray-400">Athletes</p>
+                        <p className="font-bold text-purple-400">{ambassador.performanceMetrics.athletesRecruited}</p>
+                      </div>
+                    </div>
+
+                    {/* 操作按钮 / Action Buttons */}
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleAmbassadorAction(ambassador.id, 'review', 'Performance review')}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded text-sm"
+                      >
+                        {language === 'en' ? 'Review' : '审核'}
+                      </button>
+                      {ambassador.currentStatus === 'active' ? (
+                        <button 
+                          onClick={() => handleAmbassadorAction(ambassador.id, 'suspend', 'Administrative action')}
+                          className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded text-sm"
+                        >
+                          {language === 'en' ? 'Suspend' : '暂停'}
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => handleAmbassadorAction(ambassador.id, 'approve', 'Reactivation')}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded text-sm"
+                        >
+                          {language === 'en' ? 'Activate' : '激活'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-2 text-center py-8 text-gray-400">
+                  {language === 'en' ? 'No ambassadors found' : '未找到大使'}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 场馆管理标签页 / Venue Management Tab - MOVED FROM AMBASSADOR */}
+        {activeTab === 'venues' && (
+          <div className="space-y-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <h3 className="text-lg font-bold text-white mb-4">
+                {language === 'en' ? 'Venue Management (Moved from Ambassador)' : '场馆管理（从大使移出）'}
+              </h3>
+              
+              {/* 待审批场馆申请 / Pending Venue Requests */}
+              <div className="mb-6">
+                <h4 className="text-md font-bold text-white mb-3">
+                  {language === 'en' ? 'Pending Venue Requests' : '待审批场馆申请'}
+                </h4>
+                <div className="space-y-3">
+                  {venueManagementData?.pendingVenueRequests?.length > 0 ? (
+                    venueManagementData.pendingVenueRequests.map((request) => (
+                      <div key={request.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                        <div>
+                          <p className="text-white font-medium">{request.venueName}</p>
+                          <p className="text-gray-400 text-sm">
+                            {language === 'en' ? 'Submitted by:' : '提交人:'} {request.submittedByName} • {request.university}
+                          </p>
+                          <p className="text-gray-500 text-xs">{new Date(request.submissionDate).toLocaleDateString()}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleVenueRequest(request.id, 'approve')}
+                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                          >
+                            {language === 'en' ? 'Approve' : '批准'}
+                          </button>
+                          <button
+                            onClick={() => handleVenueRequest(request.id, 'reject')}
+                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                          >
+                            {language === 'en' ? 'Reject' : '拒绝'}
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-gray-400">
+                      {language === 'en' ? 'No pending venue requests' : '无待审批场馆申请'}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 已批准场馆列表 / Approved Venues List */}
+              <div>
+                <h4 className="text-md font-bold text-white mb-3">
+                  {language === 'en' ? 'Approved Venues' : '已批准场馆'}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {venueManagementData?.venues?.length > 0 ? (
+                    venueManagementData.venues.map((venue) => (
+                      <div key={venue.id} className="bg-white/5 rounded-lg p-4">
+                        <h5 className="text-white font-medium">{venue.name}</h5>
+                        <p className="text-gray-400 text-sm">{venue.university}</p>
+                        <p className="text-gray-500 text-xs">{venue.address}</p>
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="text-blue-400 text-sm">Capacity: {venue.capacity}</span>
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            venue.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                            venue.status === 'maintenance' ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-red-500/20 text-red-400'
+                          }`}>
+                            {venue.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-3 text-center py-4 text-gray-400">
+                      {language === 'en' ? 'No approved venues' : '无已批准场馆'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* QR码生成标签页 / QR Code Generation Tab - MOVED FROM AMBASSADOR */}
+        {activeTab === 'qr-codes' && (
+          <div className="space-y-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <h3 className="text-lg font-bold text-white mb-4">
+                {language === 'en' ? 'QR Code Management (Moved from Ambassador)' : 'QR码管理（从大使移出）'}
+              </h3>
+              
+              {/* 待处理QR码申请 / Pending QR Code Requests */}
+              <div className="mb-6">
+                <h4 className="text-md font-bold text-white mb-3">
+                  {language === 'en' ? 'Pending QR Code Requests' : '待处理QR码申请'}
+                </h4>
+                <div className="space-y-3">
+                  {qrManagementData?.pendingRequests?.length > 0 ? (
+                    qrManagementData.pendingRequests.map((request) => (
+                      <div key={request.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                        <div>
+                          <p className="text-white font-medium">{request.eventTitle}</p>
+                          <p className="text-gray-400 text-sm">
+                            {language === 'en' ? 'Requested by:' : '申请人:'} {request.requestedByName} • {request.university}
+                          </p>
+                          <p className="text-gray-500 text-xs">
+                            {language === 'en' ? 'Event Date:' : '活动日期:'} {new Date(request.eventDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            request.priority === 'urgent' ? 'bg-red-500/20 text-red-400' :
+                            request.priority === 'high' ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-blue-500/20 text-blue-400'
+                          }`}>
+                            {request.priority}
+                          </span>
+                          <button
+                            onClick={() => handleQRRequest(request.id, 'approve')}
+                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                          >
+                            {language === 'en' ? 'Generate QR' : '生成QR'}
+                          </button>
+                          <button
+                            onClick={() => handleQRRequest(request.id, 'reject')}
+                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                          >
+                            {language === 'en' ? 'Reject' : '拒绝'}
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-gray-400">
+                      {language === 'en' ? 'No pending QR requests' : '无待处理QR申请'}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 活跃QR码列表 / Active QR Codes List */}
+              <div>
+                <h4 className="text-md font-bold text-white mb-3">
+                  {language === 'en' ? 'Active QR Codes' : '活跃QR码'}
+                </h4>
+                <div className="space-y-3">
+                  {qrManagementData?.activeQRCodes?.length > 0 ? (
+                    qrManagementData.activeQRCodes.map((qr) => (
+                      <div key={qr.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                        <div>
+                          <p className="text-white font-medium">{qr.eventTitle}</p>
+                          <p className="text-gray-400 text-sm">
+                            {language === 'en' ? 'Generated for:' : '生成给:'} {qr.generatedFor} • {qr.university}
+                          </p>
+                          <p className="text-gray-500 text-xs">
+                            {language === 'en' ? 'Valid:' : '有效期:'} {new Date(qr.validFrom).toLocaleString()} - {new Date(qr.validUntil).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <div className="text-right">
+                            <p className="text-blue-400 text-sm">{qr.usageCount}/{qr.maxUsage}</p>
+                            <p className="text-gray-500 text-xs">{language === 'en' ? 'scans' : '扫描'}</p>
+                          </div>
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            qr.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                            qr.status === 'expired' ? 'bg-gray-500/20 text-gray-400' :
+                            'bg-red-500/20 text-red-400'
+                          }`}>
+                            {qr.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-gray-400">
+                      {language === 'en' ? 'No active QR codes' : '无活跃QR码'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 活动申请标签页 / Event Applications Tab - NEW */}
+        {activeTab === 'applications' && (
+          <div className="space-y-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <h3 className="text-lg font-bold text-white mb-4">
+                {language === 'en' ? 'Event Applications Management' : '活动申请管理'}
+              </h3>
+              <div className="space-y-4">
+                {eventApplicationData?.applications?.length > 0 ? (
+                  eventApplicationData.applications.map((application) => (
+                    <div key={application.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                      <div className="flex-1">
+                        <h4 className="text-white font-medium">{application.eventTitle}</h4>
+                        <p className="text-gray-400 text-sm">
+                          {language === 'en' ? 'Submitted by:' : '提交人:'} {application.submittedByName} • {application.university}
+                        </p>
+                        <p className="text-gray-500 text-xs">
+                          {language === 'en' ? 'Event Date:' : '活动日期:'} {new Date(application.eventDate).toLocaleDateString()} • 
+                          {language === 'en' ? 'Venue:' : '场馆:'} {application.venue} • 
+                          {language === 'en' ? 'Participants:' : '参与者:'} {application.estimatedParticipants}
+                        </p>
+                        <p className="text-gray-600 text-xs">
+                          {language === 'en' ? 'Submitted:' : '提交时间:'} {new Date(application.submissionDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          application.priority === 'urgent' ? 'bg-red-500/20 text-red-400' :
+                          application.priority === 'high' ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-blue-500/20 text-blue-400'
+                        }`}>
+                          {application.priority}
+                        </span>
+                        <button
+                          onClick={() => handleEventApplication(application.id, 'approve')}
+                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                        >
+                          {language === 'en' ? 'Approve' : '批准'}
+                        </button>
+                        <button
+                          onClick={() => handleEventApplication(application.id, 'reject')}
+                          className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                        >
+                          {language === 'en' ? 'Reject' : '拒绝'}
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    {language === 'en' ? 'No pending event applications' : '无待处理活动申请'}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* 用户管理标签页 / User Management Tab */}
@@ -784,10 +1410,10 @@ export default function AdminDashboard() {
         )}
 
         {/* 手续费规则标签页 / Fee Rules Tab */}
-        {activeTab === 'fees' && (
+        {activeTab === 'fees' && feeRules && (
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
             <h3 className="text-lg font-bold text-white mb-4">
-              {language === 'en' ? 'Fee Rules Configuration' : '手续费规则配置'}
+              {language === 'en' ? 'Fee Rules Management' : '手续费规则管理'}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
@@ -800,35 +1426,21 @@ export default function AdminDashboard() {
                     step="0.01"
                     value={feeRulesForm.staking_fee_percent}
                     onChange={(e) => setFeeRulesForm({...feeRulesForm, staking_fee_percent: parseFloat(e.target.value)})}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+                    className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {language === 'en' ? 'Withdrawal Fee (%)' : '提取手续费 (%)'}
+                    {language === 'en' ? 'Withdrawal Fee (%)' : '提现手续费 (%)'}
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     value={feeRulesForm.withdrawal_fee_percent}
                     onChange={(e) => setFeeRulesForm({...feeRulesForm, withdrawal_fee_percent: parseFloat(e.target.value)})}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+                    className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {language === 'en' ? 'Distribution Fee (%)' : '分配手续费 (%)'}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={feeRulesForm.distribution_fee_percent}
-                    onChange={(e) => setFeeRulesForm({...feeRulesForm, distribution_fee_percent: parseFloat(e.target.value)})}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
-                  />
-                </div>
-              </div>
-              <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     {language === 'en' ? 'Ambassador Share (%)' : '大使分成 (%)'}
@@ -838,7 +1450,21 @@ export default function AdminDashboard() {
                     step="0.01"
                     value={feeRulesForm.ambassador_share_percent}
                     onChange={(e) => setFeeRulesForm({...feeRulesForm, ambassador_share_percent: parseFloat(e.target.value)})}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+                    className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
+                  />
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    {language === 'en' ? 'Distribution Fee (%)' : '分配手续费 (%)'}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={feeRulesForm.distribution_fee_percent}
+                    onChange={(e) => setFeeRulesForm({...feeRulesForm, distribution_fee_percent: parseFloat(e.target.value)})}
+                    className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
                   />
                 </div>
                 <div>
@@ -850,7 +1476,7 @@ export default function AdminDashboard() {
                     step="0.01"
                     value={feeRulesForm.athlete_share_percent}
                     onChange={(e) => setFeeRulesForm({...feeRulesForm, athlete_share_percent: parseFloat(e.target.value)})}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+                    className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
                   />
                 </div>
                 <div>
@@ -862,23 +1488,20 @@ export default function AdminDashboard() {
                     step="0.01"
                     value={feeRulesForm.community_fund_percent}
                     onChange={(e) => setFeeRulesForm({...feeRulesForm, community_fund_percent: parseFloat(e.target.value)})}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+                    className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
                   />
                 </div>
               </div>
             </div>
             <div className="mt-6">
-              <button
-                onClick={handleUpdateFeeRules}
-                className="bg-fanforce-primary hover:bg-fanforce-secondary text-white px-4 py-2 rounded-lg"
-              >
+              <button className="bg-fanforce-primary hover:bg-fanforce-secondary text-white font-bold py-2 px-4 rounded">
                 {language === 'en' ? 'Update Fee Rules' : '更新手续费规则'}
               </button>
             </div>
           </div>
         )}
 
-        {/* CHZ池监控标签页 / CHZ Pool Monitoring Tab */}
+        {/* CHZ池标签页 / CHZ Pool Tab */}
         {activeTab === 'pool' && (
           <div className="space-y-6">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
