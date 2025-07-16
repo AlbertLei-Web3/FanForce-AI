@@ -1,6 +1,7 @@
-// FanForce AI - Ambassador Dashboard / 大使仪表板
+// FanForce AI - Ambassador Dashboard / 大使仪表板（现代化响应式设计）
 // Event orchestration hub for campus sports ambassadors (Limited to single university/region)
-// 校园体育大使的赛事协调中心（限制在单一大学/地区）
+// Modern responsive design with enhanced visual appeal and optimized layout
+// 校园体育大使的赛事协调中心（限制在单一大学/地区），采用现代化响应式设计和增强的视觉吸引力
 // ROLE SEPARATION: Ambassadors can only submit applications, not directly manage system-level features
 // 角色分离：大使只能提交申请，不能直接管理系统级功能
 
@@ -13,18 +14,12 @@ import {
   FaTrophy, 
   FaUsers, 
   FaBasketballBall,
-  FaQrcode,
-  FaStar,
-  FaCoins,
   FaCheckCircle,
   FaClock,
   FaMapMarkerAlt,
   FaHandshake,
   FaGift,
   FaFire,
-  FaPlus,
-  FaEdit,
-  FaEye,
   FaUserPlus,
   FaCalendarAlt,
   FaChartLine,
@@ -36,7 +31,25 @@ import {
   FaFileAlt,
   FaHourglassHalf,
   FaPaperPlane,
-  FaExclamationCircle
+  FaExclamationCircle,
+  FaStar,
+  FaCoins,
+  FaPlay,
+  FaPause,
+  FaSpinner,
+  FaUserShield,
+  FaBuilding,
+  FaPlus,
+  FaEdit,
+  FaEye,
+  FaArrowUp,
+  FaArrowDown,
+  FaChevronRight,
+  FaBell,
+  FaCalendar,
+  FaPercent,
+  FaRocket,
+  FaHeart
 } from 'react-icons/fa';
 
 // Mock data for ambassador profile / 大使档案模拟数据
@@ -406,162 +419,178 @@ export default function AmbassadorDashboard() {
   // Calculate total revenue potential / 计算总收入潜力
   const totalRevenuePotential = mockEvents.reduce((sum, event) => sum + event.revenueProjection, 0);
 
+  // Get tier color / 获取等级颜色
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case 'Platinum': return 'from-cyan-400 to-blue-500'
+      case 'Gold': return 'from-yellow-400 to-orange-500'
+      case 'Silver': return 'from-slate-300 to-slate-500'
+      case 'Bronze': return 'from-orange-500 to-red-500'
+      default: return 'from-slate-400 to-slate-600'
+    }
+  }
+
+  // Get status color / 获取状态颜色
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'live': return 'bg-red-500/20 text-red-400 border-red-500/30'
+      case 'upcoming': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+      case 'planning': return 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+      case 'completed': return 'bg-slate-500/20 text-slate-400 border-slate-500/30'
+      case 'approved': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+      case 'pending': return 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+      case 'under_review': return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+      case 'rejected': return 'bg-red-500/20 text-red-400 border-red-500/30'
+      default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30'
+    }
+  }
+
+  // Render compact event card / 渲染紧凑的赛事卡片
   const renderEventCard = (event) => (
-    <div key={event.id} className="bg-gray-800/70 rounded-lg p-4 border border-gray-700 hover:border-blue-500 transition-all duration-300">
+    <div key={event.id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-slate-600/50 transition-all duration-300 hover:transform hover:scale-105">
       {/* Event Header / 赛事标题 */}
-      <div className="flex justify-between items-start mb-3">
+      <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
-          <h3 className="text-lg font-bold text-white mb-1">
+          <h3 className="text-lg font-bold text-white mb-2 line-clamp-1">
             {language === 'en' ? event.title : event.titleCn}
           </h3>
-          <p className="text-sm text-gray-400 flex items-center gap-2">
+          <div className="flex items-center space-x-2 text-sm text-slate-400 mb-2">
             <FaMapMarkerAlt className="text-xs" />
-            {language === 'en' ? event.venue.name : event.venue.nameCn} • {event.date} {event.time}
-          </p>
-        </div>
-        <div className="text-right">
-          <div className={`px-3 py-1 rounded text-xs font-medium ${
-            event.status === 'live' ? 'bg-red-600/20 text-red-400' :
-            event.status === 'upcoming' ? 'bg-green-600/20 text-green-400' :
-            event.status === 'planning' ? 'bg-yellow-600/20 text-yellow-400' :
-            'bg-gray-600/20 text-gray-400'
-          }`}>
-            {event.status.toUpperCase()}
+            <span className="line-clamp-1">{language === 'en' ? event.venue.name : event.venue.nameCn}</span>
+          </div>
+          <div className="flex items-center space-x-2 text-sm text-slate-400">
+            <FaCalendar className="text-xs" />
+            <span>{event.date} • {event.time}</span>
           </div>
         </div>
-      </div>
-
-      {/* Teams & Audience Stats / 队伍和观众统计 */}
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="bg-gray-900/50 rounded p-2">
-          <p className="text-xs text-gray-400">Teams Selected</p>
-          <p className="font-bold text-blue-400 text-sm">
-            {event.teams.teamA.name} vs {event.teams.teamB.name}
-          </p>
-        </div>
-        <div className="bg-gray-900/50 rounded p-2">
-          <p className="text-xs text-gray-400">Audience</p>
-          <p className="font-bold text-purple-400 text-sm">
-            {event.audience.registered} registered
-          </p>
+        <div className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(event.status)}`}>
+          {event.status.toUpperCase()}
         </div>
       </div>
 
-      {/* Revenue & Preparation / 收入和准备情况 */}
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="bg-gray-900/50 rounded p-2">
-          <p className="text-xs text-gray-400">Total Stake</p>
-          <p className="font-bold text-green-400 text-sm">{event.totalStake.toLocaleString()} CHZ</p>
+      {/* Quick Stats / 快速统计 */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="bg-slate-900/50 border border-slate-700/30 rounded-lg p-3">
+          <div className="flex items-center space-x-2 mb-1">
+            <FaUsers className="text-purple-400 text-xs" />
+            <span className="text-slate-400 text-xs">Audience</span>
+          </div>
+          <p className="font-bold text-purple-400">{event.audience.registered}</p>
         </div>
-        <div className="bg-gray-900/50 rounded p-2">
-          <p className="text-xs text-gray-400">Your Revenue</p>
-          <p className="font-bold text-yellow-400 text-sm">{event.revenueProjection.toFixed(2)} CHZ</p>
+        <div className="bg-slate-900/50 border border-slate-700/30 rounded-lg p-3">
+          <div className="flex items-center space-x-2 mb-1">
+            <FaCoins className="text-emerald-400 text-xs" />
+            <span className="text-slate-400 text-xs">Revenue</span>
+          </div>
+          <p className="font-bold text-emerald-400">{event.revenueProjection.toFixed(0)} CHZ</p>
         </div>
       </div>
 
-      {/* Preparation Checklist / 准备清单 */}
-      <div className="bg-blue-600/10 border border-blue-500/30 rounded p-2 mb-3">
-        <div className="flex items-center gap-2 mb-2">
-          <FaCheckCircle className="text-blue-500 text-sm" />
-          <span className="font-medium text-blue-500 text-sm">
-            {language === 'en' ? 'Preparation Status' : '准备状态'}
+      {/* Preparation Progress / 准备进度 */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-slate-300">
+            {language === 'en' ? 'Preparation' : '准备进度'}
+          </span>
+          <span className="text-xs text-slate-400">
+            {Object.values(event.preparation).filter(Boolean).length}/5
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-1 text-xs">
-          <div className={`flex items-center gap-1 ${event.preparation.venueBooked ? 'text-green-400' : 'text-gray-400'}`}>
-            {event.preparation.venueBooked ? '✅' : '⏳'} Venue Booked
-          </div>
-          <div className={`flex items-center gap-1 ${event.preparation.athletesSelected ? 'text-green-400' : 'text-gray-400'}`}>
-            {event.preparation.athletesSelected ? '✅' : '⏳'} Athletes Selected
-          </div>
-          <div className={`flex items-center gap-1 ${event.preparation.qrCodeRequested ? 'text-green-400' : 'text-gray-400'}`}>
-            {event.preparation.qrCodeRequested ? '✅' : '⏳'} QR Requested
-          </div>
-          <div className={`flex items-center gap-1 ${event.preparation.merchantsConfirmed ? 'text-green-400' : 'text-gray-400'}`}>
-            {event.preparation.merchantsConfirmed ? '✅' : '⏳'} Merchants OK
-          </div>
+        <div className="w-full bg-slate-700/50 rounded-full h-2">
+          <div 
+            className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${(Object.values(event.preparation).filter(Boolean).length / 5) * 100}%` }}
+          ></div>
         </div>
       </div>
 
-      {/* Action Buttons / 操作按钮 */}
-      <div className="flex gap-2">
-        <button 
-          onClick={() => {
-            setSelectedEvent(event);
-            setShowEventModal(true);
-          }}
-          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2 px-3 rounded-lg transition-all duration-300 text-sm"
-        >
-          <FaEye className="inline mr-1" />
-          {language === 'en' ? 'Manage' : '管理'}
-        </button>
-        {event.status === 'planning' && (
-          <button className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-3 rounded-lg transition-all duration-300 text-sm">
-            <FaEdit className="inline mr-1" />
-            {language === 'en' ? 'Edit' : '编辑'}
-          </button>
-        )}
-      </div>
+      {/* Action Button / 操作按钮 */}
+      <button 
+        onClick={() => {
+          setSelectedEvent(event);
+          setShowEventModal(true);
+        }}
+        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2"
+      >
+        <FaEye />
+        <span>{language === 'en' ? 'Manage Event' : '管理赛事'}</span>
+      </button>
     </div>
   );
 
+  // Render compact athlete card / 渲染紧凑的运动员卡片
   const renderAthleteCard = (athlete) => (
-    <div key={athlete.id} className="bg-gray-800/70 rounded-lg p-3 border border-gray-700 hover:border-blue-500 transition-all duration-300">
+    <div key={athlete.id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 hover:border-slate-600/50 transition-all duration-300">
       {/* Athlete Header / 运动员标题 */}
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <h4 className="text-base font-bold text-white">{athlete.name}</h4>
-          <p className="text-xs text-gray-400">{athlete.sport} • {athlete.year}</p>
-        </div>
-        <div className="text-right">
-          <div className={`px-2 py-1 rounded text-xs font-medium ${
-            athlete.availability === 'available' ? 'bg-green-600/20 text-green-400' :
-            athlete.availability === 'competing' ? 'bg-red-600/20 text-red-400' :
-            'bg-gray-600/20 text-gray-400'
-          }`}>
-            {athlete.availability.toUpperCase()}
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg">
+            {athlete.name.split(' ').map(n => n[0]).join('')}
           </div>
+          <div>
+            <h4 className="text-white font-bold">{athlete.name}</h4>
+            <p className="text-slate-400 text-sm">{athlete.sport} • {athlete.year}</p>
+          </div>
+        </div>
+        <div className={`px-2 py-1 rounded-full text-xs font-bold border ${
+          athlete.availability === 'available' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+          athlete.availability === 'competing' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+          'bg-slate-500/20 text-slate-400 border-slate-500/30'
+        }`}>
+          {athlete.availability.toUpperCase()}
         </div>
       </div>
 
-      {/* Stats / 统计 */}
-      <div className="grid grid-cols-3 gap-2 mb-2 text-xs">
+      {/* Performance Stats / 表现统计 */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="text-center">
-          <p className="text-gray-400">Ranking</p>
+          <div className="flex items-center justify-center space-x-1 mb-1">
+            <FaStar className="text-yellow-400 text-xs" />
+            <span className="text-slate-400 text-xs">Rank</span>
+          </div>
           <p className="font-bold text-yellow-400">{athlete.ranking}</p>
         </div>
         <div className="text-center">
-          <p className="text-gray-400">Win Rate</p>
-          <p className="font-bold text-green-400">{athlete.winRate}</p>
+          <div className="flex items-center justify-center space-x-1 mb-1">
+            <FaPercent className="text-emerald-400 text-xs" />
+            <span className="text-slate-400 text-xs">Win</span>
+          </div>
+          <p className="font-bold text-emerald-400">{athlete.winRate}</p>
         </div>
         <div className="text-center">
-          <p className="text-gray-400">Matches</p>
+          <div className="flex items-center justify-center space-x-1 mb-1">
+            <FaTrophy className="text-blue-400 text-xs" />
+            <span className="text-slate-400 text-xs">Games</span>
+          </div>
           <p className="font-bold text-blue-400">{athlete.totalMatches}</p>
         </div>
       </div>
 
       {/* Season Progress / 赛季进度 */}
-      <div className="bg-gray-900/50 rounded p-2 mb-2">
-        <p className="text-xs text-gray-400 mb-1">Season Progress</p>
-        <div className="flex justify-between text-xs">
-          <span className={`${athlete.seasonProgress.matches >= athlete.seasonProgress.targetMatches ? 'text-green-400' : 'text-yellow-400'}`}>
-            Matches: {athlete.seasonProgress.matches}/{athlete.seasonProgress.targetMatches}
+      <div className="bg-slate-900/50 border border-slate-700/30 rounded-lg p-3 mb-3">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-medium text-slate-400">
+            {language === 'en' ? 'Season Progress' : '赛季进度'}
           </span>
-          <span className={`${athlete.seasonProgress.socialPosts >= athlete.seasonProgress.targetPosts ? 'text-green-400' : 'text-yellow-400'}`}>
-            Posts: {athlete.seasonProgress.socialPosts}/{athlete.seasonProgress.targetPosts}
+          <span className="text-xs text-slate-500">
+            {athlete.seasonProgress.matches}/{athlete.seasonProgress.targetMatches}
           </span>
         </div>
-      </div>
-
-      {/* Virtual Balance / 虚拟余额 */}
-      <div className="flex justify-between items-center mb-2 text-xs">
-        <span className="text-gray-400">Virtual CHZ:</span>
-        <span className="font-bold text-green-400">{athlete.virtualBalance.toFixed(2)}</span>
+        <div className="w-full bg-slate-700/50 rounded-full h-1.5">
+          <div 
+            className="bg-gradient-to-r from-emerald-500 to-blue-600 h-1.5 rounded-full"
+            style={{ width: `${(athlete.seasonProgress.matches / athlete.seasonProgress.targetMatches) * 100}%` }}
+          ></div>
+        </div>
       </div>
 
       {/* Action Button / 操作按钮 */}
       <button 
-        className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-2 px-3 rounded-lg transition-all duration-300 text-xs"
+        className={`w-full font-medium py-2 px-3 rounded-lg transition-all duration-300 text-sm ${
+          athlete.availability === 'available' 
+            ? 'bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white' 
+            : 'bg-slate-700/50 text-slate-400 cursor-not-allowed'
+        }`}
         disabled={athlete.availability !== 'available'}
       >
         {athlete.availability === 'available' ? 
@@ -572,104 +601,157 @@ export default function AmbassadorDashboard() {
     </div>
   );
 
+  // Render tab content / 渲染标签内容
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
         return (
-          <div className="space-y-6">
-            {/* Key Metrics / 关键指标 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <FaTrophy className="text-blue-400" />
-                  <span className="text-sm text-gray-300">Active Events</span>
+          <div className="space-y-8">
+            {/* Key Performance Metrics / 关键绩效指标 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                    <FaTrophy className="text-blue-400 text-xl" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-white">{mockAmbassadorProfile.activeEvents}</p>
+                    <p className="text-blue-400 text-sm font-medium">Active Events</p>
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-blue-400">{mockAmbassadorProfile.activeEvents}</div>
-                <div className="text-xs text-gray-400">
-                  {mockAmbassadorProfile.totalEvents} total organized
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-r from-green-600/20 to-blue-600/20 border border-green-500/30 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <FaCoins className="text-green-400" />
-                  <span className="text-sm text-gray-300">Revenue This Month</span>
-                </div>
-                <div className="text-2xl font-bold text-green-400">
-                  {mockAmbassadorProfile.monthlyCommission.toFixed(2)}
-                </div>
-                <div className="text-xs text-gray-400">
-                  {mockAmbassadorProfile.totalRevenue.toFixed(2)} CHZ total
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className="flex items-center space-x-1 text-emerald-400">
+                    <FaArrowUp className="text-xs" />
+                    <span>{mockAmbassadorProfile.totalEvents} total</span>
+                  </div>
+                  <span className="text-slate-500">•</span>
+                  <span className="text-slate-400">{mockAmbassadorProfile.successRate} success</span>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <FaUsers className="text-purple-400" />
-                  <span className="text-sm text-gray-300">Athletes Recruited</span>
+              <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                    <FaCoins className="text-emerald-400 text-xl" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-white">{mockAmbassadorProfile.monthlyCommission.toFixed(0)}</p>
+                    <p className="text-emerald-400 text-sm font-medium">Monthly CHZ</p>
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-purple-400">{mockAmbassadorProfile.athletesRecruited}</div>
-                <div className="text-xs text-gray-400">
-                  {filteredAthletes.filter(a => a.availability === 'available').length} available now
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className="flex items-center space-x-1 text-emerald-400">
+                    <FaArrowUp className="text-xs" />
+                    <span>{mockAmbassadorProfile.totalRevenue.toFixed(0)} total</span>
+                  </div>
+                  <span className="text-slate-500">•</span>
+                  <span className="text-slate-400">1% fee share</span>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <FaBullhorn className="text-yellow-400" />
-                  <span className="text-sm text-gray-300">Audience Reached</span>
+              <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                    <FaUsers className="text-purple-400 text-xl" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-white">{mockAmbassadorProfile.athletesRecruited}</p>
+                    <p className="text-purple-400 text-sm font-medium">Athletes</p>
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-yellow-400">{totalAudience}</div>
-                <div className="text-xs text-gray-400">
-                  across {mockEvents.length} events
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className="flex items-center space-x-1 text-emerald-400">
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                    <span>{filteredAthletes.filter(a => a.availability === 'available').length} available</span>
+                  </div>
+                  <span className="text-slate-500">•</span>
+                  <span className="text-slate-400">recruited</span>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                    <FaBullhorn className="text-amber-400 text-xl" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-white">{totalAudience}</p>
+                    <p className="text-amber-400 text-sm font-medium">Audience</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className="flex items-center space-x-1 text-emerald-400">
+                    <FaRocket className="text-xs" />
+                    <span>avg {Math.round(totalAudience / mockEvents.length)}/event</span>
+                  </div>
+                  <span className="text-slate-500">•</span>
+                  <span className="text-slate-400">reached</span>
                 </div>
               </div>
             </div>
 
-            {/* Application Workflows / 申请工作流程 */}
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <FaFileAlt className="text-orange-500" />
-                {language === 'en' ? 'Submit Applications' : '提交申请'}
-                <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded ml-2">
-                  {language === 'en' ? 'Admin Approval Required' : '需要管理员批准'}
-                </span>
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 text-sm">
-                  <FaPaperPlane className="block mx-auto mb-1" />
-                  {language === 'en' ? 'Submit Event Application' : '提交赛事申请'}
+            {/* Application Workflow Center / 申请工作流程中心 */}
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-white flex items-center space-x-2">
+                  <FaPaperPlane className="text-blue-400" />
+                  <span>{language === 'en' ? 'Application Center' : '申请中心'}</span>
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <span className="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-sm font-medium">
+                    {mockAmbassadorProfile.applicationStatuses.pendingEventApplications + 
+                     mockAmbassadorProfile.applicationStatuses.pendingQRRequests} pending
+                  </span>
+                  <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-sm font-medium">
+                    {mockAmbassadorProfile.applicationStatuses.approvedEventApplications + 
+                     mockAmbassadorProfile.applicationStatuses.approvedQRRequests} approved
+                  </span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium py-4 px-4 rounded-xl transition-all duration-300 text-sm group">
+                  <FaFileAlt className="text-xl mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                  <div className="font-bold">{language === 'en' ? 'Event Application' : '赛事申请'}</div>
+                  <div className="text-xs opacity-80">{language === 'en' ? 'Submit new event' : '提交新赛事'}</div>
                 </button>
-                <button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 text-sm">
-                  <FaUserPlus className="block mx-auto mb-1" />
-                  {language === 'en' ? 'Recruit Athlete' : '招募运动员'}
+                
+                <button className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-medium py-4 px-4 rounded-xl transition-all duration-300 text-sm group">
+                  <FaUserPlus className="text-xl mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                  <div className="font-bold">{language === 'en' ? 'Recruit Athlete' : '招募运动员'}</div>
+                  <div className="text-xs opacity-80">{language === 'en' ? 'Add team member' : '添加团队成员'}</div>
                 </button>
-                <button className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 text-sm">
-                  <FaHourglassHalf className="block mx-auto mb-1" />
-                  {language === 'en' ? 'Request QR Code' : '请求二维码'}
+                
+                <button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium py-4 px-4 rounded-xl transition-all duration-300 text-sm group">
+                  <FaHourglassHalf className="text-xl mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                  <div className="font-bold">{language === 'en' ? 'Request QR' : '申请二维码'}</div>
+                  <div className="text-xs opacity-80">{language === 'en' ? 'Generate access codes' : '生成访问码'}</div>
                 </button>
-                <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 text-sm">
-                  <FaHandshake className="block mx-auto mb-1" />
-                  {language === 'en' ? 'Add Partner' : '添加合作伙伴'}
+                
+                <button className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-medium py-4 px-4 rounded-xl transition-all duration-300 text-sm group">
+                  <FaHandshake className="text-xl mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                  <div className="font-bold">{language === 'en' ? 'Add Partner' : '添加合作伙伴'}</div>
+                  <div className="text-xs opacity-80">{language === 'en' ? 'Expand network' : '扩展网络'}</div>
                 </button>
               </div>
             </div>
 
-            {/* Recent Events Preview / 近期赛事预览 */}
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <FaCalendarAlt className="text-blue-500" />
-                  {language === 'en' ? 'Recent Events' : '近期赛事'}
+            {/* Recent Events Showcase / 近期赛事展示 */}
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-white flex items-center space-x-2">
+                  <FaCalendarAlt className="text-emerald-400" />
+                  <span>{language === 'en' ? 'Recent Events' : '近期赛事'}</span>
                 </h3>
                 <button 
                   onClick={() => setActiveTab('events')}
-                  className="text-blue-400 hover:text-blue-300 text-sm"
+                  className="flex items-center space-x-2 text-emerald-400 hover:text-emerald-300 text-sm font-medium"
                 >
-                  {language === 'en' ? 'View All →' : '查看全部 →'}
+                  <span>{language === 'en' ? 'View All' : '查看全部'}</span>
+                  <FaChevronRight className="text-xs" />
                 </button>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {mockEvents.slice(0, 2).map(renderEventCard)}
               </div>
             </div>
@@ -678,76 +760,88 @@ export default function AmbassadorDashboard() {
 
       case 'applications':
         return (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Application Status Overview / 申请状态概览 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <FaHourglassHalf className="text-yellow-400" />
-                  <span className="text-sm text-gray-300">Pending Applications</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                    <FaHourglassHalf className="text-amber-400 text-xl" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-white">
+                      {mockAmbassadorProfile.applicationStatuses.pendingEventApplications + 
+                       mockAmbassadorProfile.applicationStatuses.pendingQRRequests + 
+                       mockAmbassadorProfile.applicationStatuses.pendingVenueRequests}
+                    </p>
+                    <p className="text-amber-400 text-sm font-medium">Pending</p>
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-yellow-400">
-                  {mockAmbassadorProfile.applicationStatuses.pendingEventApplications + 
-                   mockAmbassadorProfile.applicationStatuses.pendingQRRequests + 
-                   mockAmbassadorProfile.applicationStatuses.pendingVenueRequests}
-                </div>
-                <div className="text-xs text-gray-400">
-                  Awaiting admin approval
-                </div>
+                <p className="text-slate-400 text-sm">
+                  {language === 'en' ? 'Awaiting admin approval' : '等待管理员批准'}
+                </p>
               </div>
 
-              <div className="bg-gradient-to-r from-green-600/20 to-blue-600/20 border border-green-500/30 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <FaCheckCircle className="text-green-400" />
-                  <span className="text-sm text-gray-300">Approved Applications</span>
+              <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                    <FaCheckCircle className="text-emerald-400 text-xl" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-white">
+                      {mockAmbassadorProfile.applicationStatuses.approvedEventApplications + 
+                       mockAmbassadorProfile.applicationStatuses.approvedQRRequests}
+                    </p>
+                    <p className="text-emerald-400 text-sm font-medium">Approved</p>
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-green-400">
-                  {mockAmbassadorProfile.applicationStatuses.approvedEventApplications + 
-                   mockAmbassadorProfile.applicationStatuses.approvedQRRequests}
-                </div>
-                <div className="text-xs text-gray-400">
-                  Total approved to date
-                </div>
+                <p className="text-slate-400 text-sm">
+                  {language === 'en' ? 'Total approved to date' : '总计已批准'}
+                </p>
               </div>
 
-              <div className="bg-gradient-to-r from-red-600/20 to-pink-600/20 border border-red-500/30 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <FaExclamationCircle className="text-red-400" />
-                  <span className="text-sm text-gray-300">Rejected Applications</span>
+              <div className="bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/20 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
+                    <FaExclamationCircle className="text-red-400 text-xl" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-white">
+                      {mockAmbassadorProfile.applicationStatuses.rejectedEventApplications}
+                    </p>
+                    <p className="text-red-400 text-sm font-medium">Rejected</p>
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-red-400">
-                  {mockAmbassadorProfile.applicationStatuses.rejectedEventApplications}
-                </div>
-                <div className="text-xs text-gray-400">
-                  Need revision or resubmission
-                </div>
+                <p className="text-slate-400 text-sm">
+                  {language === 'en' ? 'Need revision or resubmission' : '需要修改或重新提交'}
+                </p>
               </div>
             </div>
 
             {/* Application History / 申请历史 */}
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <FaFileAlt className="text-blue-500" />
-                {language === 'en' ? 'Application History' : '申请历史'}
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center space-x-2">
+                <FaFileAlt className="text-blue-400" />
+                <span>{language === 'en' ? 'Application History' : '申请历史'}</span>
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {mockApplicationHistory.map(app => (
-                  <div key={app.id} className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-bold text-white">{app.title}</h4>
-                        <p className="text-xs text-gray-400">
-                          {app.type === 'event' ? '🏆 Event Application' : 
-                           app.type === 'qr' ? '📱 QR Code Request' : '🏟️ Venue Request'} • 
-                          Submitted: {app.submittedDate}
-                        </p>
+                  <div key={app.id} className="bg-slate-900/50 border border-slate-700/30 rounded-xl p-4 hover:border-slate-600/50 transition-colors">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
+                          {app.type === 'event' ? '🏆' : app.type === 'qr' ? '📱' : '🏟️'}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-white">{app.title}</h4>
+                          <p className="text-slate-400 text-sm">
+                            {app.type === 'event' ? 'Event Application' : 
+                             app.type === 'qr' ? 'QR Code Request' : 'Venue Request'} • 
+                            {app.submittedDate}
+                          </p>
+                        </div>
                       </div>
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${
-                        app.status === 'approved' ? 'bg-green-500/20 text-green-400' :
-                        app.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                        app.status === 'under_review' ? 'bg-blue-500/20 text-blue-400' :
-                        'bg-red-500/20 text-red-400'
-                      }`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(app.status)}`}>
                         {app.status === 'approved' ? (language === 'en' ? 'Approved' : '已批准') :
                          app.status === 'pending' ? (language === 'en' ? 'Pending' : '待审批') :
                          app.status === 'under_review' ? (language === 'en' ? 'Under Review' : '审核中') :
@@ -755,25 +849,25 @@ export default function AmbassadorDashboard() {
                       </span>
                     </div>
                     {app.adminComments && (
-                      <div className="bg-gray-800/50 rounded p-2 mt-2">
-                        <p className="text-xs text-gray-300">
-                          <span className="font-bold">Admin Comments:</span> {app.adminComments}
+                      <div className="bg-slate-800/50 border border-slate-700/30 rounded-lg p-3 mt-3">
+                        <p className="text-slate-300 text-sm">
+                          <span className="font-bold text-blue-400">Admin Comments:</span> {app.adminComments}
                         </p>
                       </div>
                     )}
                     {app.priority && (
-                      <div className="mt-2">
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${
-                          app.priority === 'high' ? 'bg-red-500/20 text-red-400' :
-                          app.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                          'bg-green-500/20 text-green-400'
+                      <div className="mt-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                          app.priority === 'high' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                          app.priority === 'medium' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                          'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                         }`}>
                           {app.priority.toUpperCase()} PRIORITY
                         </span>
                       </div>
                     )}
                     {app.estimatedResponse && (
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-slate-400 text-sm mt-2">
                         Estimated response: {app.estimatedResponse}
                       </p>
                     )}
@@ -786,38 +880,43 @@ export default function AmbassadorDashboard() {
 
       case 'events':
         return (
-          <div>
-            {/* Events Filter / 赛事筛选 */}
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">
-                  {language === 'en' ? 'Filter:' : '筛选:'}
-                </span>
-                <select 
-                  value={eventFilter}
-                  onChange={(e) => setEventFilter(e.target.value)}
-                  className="bg-gray-800 border border-gray-600 rounded px-3 py-1 text-sm text-white"
-                >
-                  <option value="all">{language === 'en' ? 'All Events' : '所有赛事'}</option>
-                  <option value="planning">{language === 'en' ? 'Planning' : '规划中'}</option>
-                  <option value="upcoming">{language === 'en' ? 'Upcoming' : '即将开始'}</option>
-                  <option value="live">{language === 'en' ? 'Live' : '进行中'}</option>
-                  <option value="completed">{language === 'en' ? 'Completed' : '已完成'}</option>
-                </select>
+          <div className="space-y-8">
+            {/* Events Filter Header / 赛事筛选标题 */}
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                <h3 className="text-xl font-bold text-white flex items-center space-x-2">
+                  <FaCalendarAlt className="text-blue-400" />
+                  <span>{language === 'en' ? 'Event Management' : '赛事管理'}</span>
+                </h3>
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                  <select 
+                    value={eventFilter}
+                    onChange={(e) => setEventFilter(e.target.value)}
+                    className="bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white text-sm"
+                  >
+                    <option value="all">{language === 'en' ? 'All Events' : '所有赛事'}</option>
+                    <option value="planning">{language === 'en' ? 'Planning' : '规划中'}</option>
+                    <option value="upcoming">{language === 'en' ? 'Upcoming' : '即将开始'}</option>
+                    <option value="live">{language === 'en' ? 'Live' : '进行中'}</option>
+                    <option value="completed">{language === 'en' ? 'Completed' : '已完成'}</option>
+                  </select>
+                  <button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 text-sm flex items-center space-x-2">
+                    <FaPaperPlane />
+                    <span>{language === 'en' ? 'New Application' : '新申请'}</span>
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">
-                  {filteredEvents.length} {language === 'en' ? 'events' : '个赛事'}
-                </span>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 text-sm">
-                  <FaPaperPlane className="inline mr-1" />
-                  {language === 'en' ? 'Submit Event Application' : '提交赛事申请'}
-                </button>
+              <div className="mt-4 flex items-center space-x-4 text-sm text-slate-400">
+                <span>{filteredEvents.length} events found</span>
+                <span>•</span>
+                <span>{mockEvents.filter(e => e.status === 'live').length} live</span>
+                <span>•</span>
+                <span>{mockEvents.filter(e => e.status === 'upcoming').length} upcoming</span>
               </div>
             </div>
 
             {/* Events Grid / 赛事网格 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredEvents.map(renderEventCard)}
             </div>
           </div>
@@ -825,47 +924,49 @@ export default function AmbassadorDashboard() {
 
       case 'athletes':
         return (
-          <div>
-            {/* Athletes Filter / 运动员筛选 */}
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-400">
-                    {language === 'en' ? 'Status:' : '状态:'}
-                  </span>
+          <div className="space-y-8">
+            {/* Athletes Filter Header / 运动员筛选标题 */}
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                <h3 className="text-xl font-bold text-white flex items-center space-x-2">
+                  <FaUsers className="text-purple-400" />
+                  <span>{language === 'en' ? 'Athlete Management' : '运动员管理'}</span>
+                </h3>
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                   <select 
                     value={athleteFilter}
                     onChange={(e) => setAthleteFilter(e.target.value)}
-                    className="bg-gray-800 border border-gray-600 rounded px-3 py-1 text-sm text-white"
+                    className="bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white text-sm"
                   >
                     <option value="all">{language === 'en' ? 'All Athletes' : '所有运动员'}</option>
                     <option value="available">{language === 'en' ? 'Available' : '可用'}</option>
                     <option value="competing">{language === 'en' ? 'Competing' : '比赛中'}</option>
                     <option value="resting">{language === 'en' ? 'Resting' : '休息中'}</option>
                   </select>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <FaSearch className="text-xs" />
-                  <input 
-                    type="text" 
-                    placeholder={language === 'en' ? 'Search athletes...' : '搜索运动员...'}
-                    className="bg-gray-800 border border-gray-600 rounded px-3 py-1 text-sm text-white placeholder-gray-400"
-                  />
+                  <div className="flex items-center space-x-2">
+                    <input 
+                      type="text" 
+                      placeholder={language === 'en' ? 'Search athletes...' : '搜索运动员...'}
+                      className="bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white text-sm placeholder-slate-400"
+                    />
+                    <button className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 text-sm flex items-center space-x-2">
+                      <FaUserPlus />
+                      <span>{language === 'en' ? 'Recruit' : '招募'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">
-                  {filteredAthletes.length} {language === 'en' ? 'athletes' : '名运动员'}
-                </span>
-                <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 text-sm">
-                  <FaUserPlus className="inline mr-1" />
-                  {language === 'en' ? 'Recruit' : '招募'}
-                </button>
+              <div className="mt-4 flex items-center space-x-4 text-sm text-slate-400">
+                <span>{filteredAthletes.length} athletes found</span>
+                <span>•</span>
+                <span>{filteredAthletes.filter(a => a.availability === 'available').length} available</span>
+                <span>•</span>
+                <span>{filteredAthletes.filter(a => a.availability === 'competing').length} competing</span>
               </div>
             </div>
 
             {/* Athletes Grid / 运动员网格 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredAthletes.map(renderAthleteCard)}
             </div>
           </div>
@@ -873,57 +974,72 @@ export default function AmbassadorDashboard() {
 
       case 'partners':
         return (
-          <div>
+          <div className="space-y-8">
             {/* Partners Header / 合作伙伴标题 */}
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-white">
-                {language === 'en' ? 'Partner Merchants' : '合作商家'}
-              </h3>
-              <button className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 text-sm">
-                <FaPlus className="inline mr-1" />
-                {language === 'en' ? 'Add Partner' : '添加合作伙伴'}
-              </button>
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-white flex items-center space-x-2">
+                  <FaHandshake className="text-emerald-400" />
+                  <span>{language === 'en' ? 'Partner Network' : '合作伙伴网络'}</span>
+                </h3>
+                <button className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 text-sm flex items-center space-x-2">
+                  <FaPlus />
+                  <span>{language === 'en' ? 'Add Partner' : '添加合作伙伴'}</span>
+                </button>
+              </div>
+              <div className="mt-4 flex items-center space-x-4 text-sm text-slate-400">
+                <span>{mockMerchants.length} partners</span>
+                <span>•</span>
+                <span>{mockMerchants.filter(m => m.status === 'active').length} active</span>
+                <span>•</span>
+                <span>Total value: ${mockMerchants.reduce((sum, m) => sum + m.value, 0)}</span>
+              </div>
             </div>
 
             {/* Partners Grid / 合作伙伴网格 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {mockMerchants.map(merchant => (
-                <div key={merchant.id} className="bg-gray-800/70 rounded-lg p-4 border border-gray-700">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 className="text-base font-bold text-white">
-                        {language === 'en' ? merchant.name : merchant.nameCn}
-                      </h4>
-                      <p className="text-sm text-gray-400">
-                        {language === 'en' ? merchant.type : merchant.typeCn}
-                      </p>
+                <div key={merchant.id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-slate-600/50 transition-colors">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold">
+                        {merchant.name.split(' ')[0][0]}
+                      </div>
+                      <div>
+                        <h4 className="text-white font-bold">
+                          {language === 'en' ? merchant.name : merchant.nameCn}
+                        </h4>
+                        <p className="text-slate-400 text-sm">
+                          {language === 'en' ? merchant.type : merchant.typeCn}
+                        </p>
+                      </div>
                     </div>
-                    <div className={`px-2 py-1 rounded text-xs font-medium ${
-                      merchant.status === 'active' ? 'bg-green-600/20 text-green-400' :
-                      'bg-yellow-600/20 text-yellow-400'
+                    <div className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                      merchant.status === 'active' 
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
+                        : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
                     }`}>
                       {merchant.status.toUpperCase()}
                     </div>
                   </div>
 
-                  <div className="bg-gray-900/50 rounded p-2 mb-3">
-                    <p className="text-xs text-gray-400 mb-1">Partnership</p>
-                    <p className="text-sm text-blue-400">
+                  <div className="bg-slate-900/50 border border-slate-700/30 rounded-lg p-4 mb-4">
+                    <p className="text-slate-400 text-sm mb-2">Partnership</p>
+                    <p className="text-blue-400 font-medium">
                       {language === 'en' ? merchant.partnership : merchant.partnershipCn}
                     </p>
                   </div>
 
-                  <div className="text-sm text-gray-300 mb-3">
+                  <div className="text-slate-300 text-sm mb-4">
                     {language === 'en' ? merchant.contribution : merchant.contributionCn}
                   </div>
 
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-400">Value:</span>
-                    <span className="font-bold text-green-400">${merchant.value.toFixed(2)}</span>
+                    <span className="text-slate-400">Value:</span>
+                    <span className="font-bold text-emerald-400">${merchant.value.toFixed(2)}</span>
                   </div>
-
-                  <div className="flex justify-between items-center text-sm mt-1">
-                    <span className="text-gray-400">Events:</span>
+                  <div className="flex justify-between items-center text-sm mt-2">
+                    <span className="text-slate-400">Events:</span>
                     <span className="font-bold text-blue-400">{merchant.eventsSupported}</span>
                   </div>
                 </div>
@@ -934,93 +1050,108 @@ export default function AmbassadorDashboard() {
 
       case 'analytics':
         return (
-          <div className="space-y-6">
-            {/* Revenue Chart Placeholder / 收入图表占位符 */}
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <FaChartLine className="text-green-500" />
-                {language === 'en' ? 'Revenue Analytics' : '收入分析'}
-              </h3>
-              <div className="h-64 bg-gray-900/50 rounded-lg flex items-center justify-center">
-                <div className="text-center text-gray-400">
-                  <FaChartLine className="text-4xl mx-auto mb-2 opacity-50" />
-                  <p>{language === 'en' ? 'Revenue Chart Coming Soon' : '收入图表即将推出'}</p>
-                  <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="space-y-8">
+            {/* Performance Overview / 表现概览 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
+                <h3 className="text-xl font-bold text-white mb-6 flex items-center space-x-2">
+                  <FaChartLine className="text-emerald-400" />
+                  <span>{language === 'en' ? 'Revenue Analytics' : '收入分析'}</span>
+                </h3>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
-                      <p className="text-green-400 font-bold text-lg">
-                        {mockRevenueData[mockRevenueData.length - 1].revenue.toFixed(2)}
+                      <p className="text-3xl font-bold text-emerald-400">
+                        {mockRevenueData[mockRevenueData.length - 1].revenue.toFixed(0)}
                       </p>
-                      <p className="text-gray-400">This Month</p>
+                      <p className="text-slate-400 text-sm">This Month CHZ</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-blue-400 font-bold text-lg">
-                        {mockRevenueData.reduce((sum, data) => sum + data.revenue, 0).toFixed(2)}
+                      <p className="text-3xl font-bold text-blue-400">
+                        {mockRevenueData.reduce((sum, data) => sum + data.revenue, 0).toFixed(0)}
                       </p>
-                      <p className="text-gray-400">Total Revenue</p>
+                      <p className="text-slate-400 text-sm">Total CHZ</p>
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
-                      <p className="text-yellow-400 font-bold text-lg">
+                      <p className="text-2xl font-bold text-purple-400">
                         {mockRevenueData.reduce((sum, data) => sum + data.events, 0)}
                       </p>
-                      <p className="text-gray-400">Total Events</p>
+                      <p className="text-slate-400 text-sm">Total Events</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-purple-400 font-bold text-lg">
+                      <p className="text-2xl font-bold text-amber-400">
                         {mockRevenueData.reduce((sum, data) => sum + data.audience, 0)}
                       </p>
-                      <p className="text-gray-400">Total Audience</p>
+                      <p className="text-slate-400 text-sm">Total Audience</p>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
+                <h3 className="text-xl font-bold text-white mb-6 flex items-center space-x-2">
+                  <FaAward className="text-yellow-400" />
+                  <span>{language === 'en' ? 'Achievements' : '成就'}</span>
+                </h3>
+                <div className="space-y-4">
+                  {mockAmbassadorProfile.achievements.map((achievement, idx) => (
+                    <div key={idx} className="flex items-center space-x-3 p-3 bg-slate-900/50 border border-slate-700/30 rounded-lg">
+                      <FaAward className="text-yellow-400" />
+                      <span className="text-white font-medium">{achievement}</span>
+                    </div>
+                  ))}
+                  <div className="mt-6 p-4 bg-gradient-to-r from-yellow-500/10 to-orange-600/10 border border-yellow-500/20 rounded-xl">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <FaStar className="text-yellow-400 text-xl" />
+                      <span className="font-bold text-yellow-400">Ambassador Tier</span>
+                    </div>
+                    <p className="text-3xl font-bold text-white">{mockAmbassadorProfile.tier}</p>
+                    <p className="text-slate-400 text-sm mt-1">
+                      {language === 'en' ? 'Current tier status' : '当前等级状态'}
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Performance Metrics / 表现指标 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <h4 className="text-base font-bold text-white mb-3">
-                  {language === 'en' ? 'Success Metrics' : '成功指标'}
-                </h4>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Event Success Rate</span>
-                    <span className="font-bold text-green-400">{mockAmbassadorProfile.successRate}</span>
+            {/* Success Metrics / 成功指标 */}
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center space-x-2">
+                <FaFire className="text-red-400" />
+                <span>{language === 'en' ? 'Success Metrics' : '成功指标'}</span>
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-emerald-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <FaPercent className="text-emerald-400 text-2xl" />
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Avg. Audience per Event</span>
-                    <span className="font-bold text-blue-400">{Math.round(totalAudience / mockEvents.length)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Active Athletes</span>
-                    <span className="font-bold text-purple-400">
-                      {filteredAthletes.filter(a => a.availability !== 'unavailable').length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Partner Merchants</span>
-                    <span className="font-bold text-yellow-400">{mockAmbassadorProfile.partnerMerchants}</span>
-                  </div>
+                  <p className="text-2xl font-bold text-emerald-400">{mockAmbassadorProfile.successRate}</p>
+                  <p className="text-slate-400 text-sm">Success Rate</p>
                 </div>
-              </div>
-
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <h4 className="text-base font-bold text-white mb-3">
-                  {language === 'en' ? 'Achievements' : '成就'}
-                </h4>
-                <div className="space-y-2">
-                  {mockAmbassadorProfile.achievements.map((achievement, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <FaAward className="text-yellow-400" />
-                      <span className="text-white">{achievement}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 p-3 bg-yellow-600/10 border border-yellow-500/30 rounded">
-                  <div className="flex items-center gap-2 mb-1">
-                    <FaStar className="text-yellow-500" />
-                    <span className="font-medium text-yellow-500">Ambassador Tier</span>
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-blue-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <FaUsers className="text-blue-400 text-2xl" />
                   </div>
-                  <p className="text-2xl font-bold text-yellow-400">{mockAmbassadorProfile.tier}</p>
+                  <p className="text-2xl font-bold text-blue-400">{Math.round(totalAudience / mockEvents.length)}</p>
+                  <p className="text-slate-400 text-sm">Avg. Audience</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-purple-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <FaUserShield className="text-purple-400 text-2xl" />
+                  </div>
+                  <p className="text-2xl font-bold text-purple-400">
+                    {filteredAthletes.filter(a => a.availability !== 'unavailable').length}
+                  </p>
+                  <p className="text-slate-400 text-sm">Active Athletes</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-amber-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <FaStore className="text-amber-400 text-2xl" />
+                  </div>
+                  <p className="text-2xl font-bold text-amber-400">{mockAmbassadorProfile.partnerMerchants}</p>
+                  <p className="text-slate-400 text-sm">Partners</p>
                 </div>
               </div>
             </div>
@@ -1034,63 +1165,134 @@ export default function AmbassadorDashboard() {
 
   return (
     <DashboardLayout
-      title={language === 'en' ? "Ambassador Dashboard" : "大使仪表板"}
-      subtitle={language === 'en' ? "Campus sports event orchestration hub" : "校园体育赛事协调中心"}
+      title={language === 'en' ? "Ambassador Hub" : "大使中心"}
+      subtitle={language === 'en' ? "Campus sports event orchestration with modern design" : "校园体育赛事协调，采用现代化设计"}
     >
-      {/* Ambassador Profile Header / 大使档案标题 */}
-      <div className="bg-gradient-to-r from-blue-900 via-purple-800 to-indigo-900 rounded-lg p-4 mb-6 border border-gray-700">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      {/* Ambassador Profile Hero Section / 大使资料英雄部分 */}
+      <div className="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 rounded-2xl p-6 mb-8 border border-slate-700/50 shadow-2xl">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6">
+          <div className="flex items-center space-x-4 mb-4 lg:mb-0">
             <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-2xl font-bold text-white">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg">
                 {mockAmbassadorProfile.name.split(' ').map(n => n[0]).join('')}
               </div>
-              {mockAmbassadorProfile.verified && (
-                <FaCheckCircle className="absolute -bottom-1 -right-1 text-green-500 bg-gray-800 rounded-full text-sm" />
-              )}
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
+                <FaCheckCircle className="text-white text-sm" />
+              </div>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">{mockAmbassadorProfile.name}</h2>
-              <p className="text-sm text-gray-300">{mockAmbassadorProfile.contact}</p>
-              <p className="text-xs text-gray-400">
-                {mockAmbassadorProfile.university} • {mockAmbassadorProfile.department}
-              </p>
+              <h2 className="text-2xl font-bold text-white">{mockAmbassadorProfile.name}</h2>
+              <p className="text-slate-300 font-medium">{mockAmbassadorProfile.contact}</p>
+              <div className="flex items-center space-x-2 mt-1">
+                <span className={`px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r border ${
+                  mockAmbassadorProfile.tier === 'Platinum' ? 'from-cyan-500/20 to-blue-600/20 text-cyan-400 border-cyan-500/30' :
+                  mockAmbassadorProfile.tier === 'Gold' ? 'from-yellow-500/20 to-orange-600/20 text-yellow-400 border-yellow-500/30' :
+                  mockAmbassadorProfile.tier === 'Silver' ? 'from-slate-400/20 to-slate-600/20 text-slate-400 border-slate-500/30' :
+                  'from-orange-600/20 to-red-600/20 text-orange-400 border-orange-500/30'
+                }`}>
+                  {mockAmbassadorProfile.tier} Ambassador
+                </span>
+              </div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full text-sm font-bold mb-2">
-              {mockAmbassadorProfile.tier} Ambassador
+          <div className="flex items-center space-x-6 text-sm text-slate-300">
+            <div className="flex items-center space-x-2">
+              <FaClock className="text-blue-400" />
+              <span>{currentTime.toLocaleTimeString()}</span>
             </div>
-            <p className="text-xs text-gray-400">
-              {language === 'en' ? 'Joined' : '加入于'}: {mockAmbassadorProfile.joinDate}
-            </p>
+            <div className="flex items-center space-x-2">
+              <FaBuilding className="text-purple-400" />
+              <span>{mockAmbassadorProfile.university}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <FaPercent className="text-emerald-400" />
+              <span>{mockAmbassadorProfile.successRate} Success</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Stats / 快速统计 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-black/20 backdrop-blur-sm rounded-xl p-4 border border-slate-600/30">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                <FaTrophy className="text-blue-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{mockAmbassadorProfile.activeEvents}</p>
+                <p className="text-slate-400 text-sm">Active Events</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-black/20 backdrop-blur-sm rounded-xl p-4 border border-slate-600/30">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                <FaCoins className="text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{mockAmbassadorProfile.monthlyCommission.toFixed(0)}</p>
+                <p className="text-slate-400 text-sm">Monthly CHZ</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-black/20 backdrop-blur-sm rounded-xl p-4 border border-slate-600/30">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                <FaUsers className="text-purple-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{mockAmbassadorProfile.athletesRecruited}</p>
+                <p className="text-slate-400 text-sm">Athletes</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-black/20 backdrop-blur-sm rounded-xl p-4 border border-slate-600/30">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+                <FaBell className="text-amber-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {mockAmbassadorProfile.applicationStatuses.pendingEventApplications + 
+                   mockAmbassadorProfile.applicationStatuses.pendingQRRequests}
+                </p>
+                <p className="text-slate-400 text-sm">Pending</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Navigation Tabs / 导航标签 */}
-      <div className="mb-4">
-        <div className="flex border-b border-gray-700 overflow-x-auto">
+      {/* Navigation Tab Bar / 导航标签栏 */}
+      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-1 mb-8 border border-slate-700/50">
+        <div className="flex overflow-x-auto scrollbar-hide">
           {[
-            { id: 'overview', label: language === 'en' ? '📊 Overview' : '📊 概览' },
-            { id: 'applications', label: language === 'en' ? '📋 Applications' : '📋 申请状态' },
-            { id: 'events', label: language === 'en' ? '🏆 Events' : '🏆 赛事' },
-            { id: 'athletes', label: language === 'en' ? '🏃‍♂️ Athletes' : '🏃‍♂️ 运动员' },
-            { id: 'partners', label: language === 'en' ? '🤝 Partners' : '🤝 合作伙伴' },
-            { id: 'analytics', label: language === 'en' ? '📈 Analytics' : '📈 分析' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-4 text-sm font-medium transition-all duration-300 whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'border-b-2 border-blue-500 text-white bg-blue-500/10'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+            { id: 'overview', label: language === 'en' ? 'Overview' : '概览', icon: FaChartLine },
+            { id: 'applications', label: language === 'en' ? 'Applications' : '申请状态', icon: FaFileAlt },
+            { id: 'events', label: language === 'en' ? 'Events' : '赛事', icon: FaTrophy },
+            { id: 'athletes', label: language === 'en' ? 'Athletes' : '运动员', icon: FaUsers },
+            { id: 'partners', label: language === 'en' ? 'Partners' : '合作伙伴', icon: FaHandshake },
+            { id: 'analytics', label: language === 'en' ? 'Analytics' : '分析', icon: FaChartLine }
+          ].map(tab => {
+            const Icon = tab.icon
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                <Icon className="text-sm" />
+                <span>{tab.label}</span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
