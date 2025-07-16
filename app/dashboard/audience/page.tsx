@@ -6,6 +6,8 @@
 
 import { useLanguage } from '@/app/context/LanguageContext';
 import DashboardLayout from '@/app/components/shared/DashboardLayout';
+import DataTable from '@/app/components/shared/DataTable';
+import StatCard from '@/app/components/shared/StatCard';
 import { useState, useEffect } from 'react';
 import { 
   FaTrophy, 
@@ -15,7 +17,6 @@ import {
   FaBasketballBall,
   FaQrcode,
   FaStar,
-  FaPartyHorn,
   FaCoins,
   FaCheckCircle,
   FaClock,
@@ -88,7 +89,7 @@ const participationTiers = [
     features: ['Match + Party access', 'Guaranteed party entry', 'Maximum rewards'],
     featuresCn: ['比赛+聚会权限', '保证聚会入场', '最高奖励'],
     color: 'from-yellow-500 to-orange-600',
-    icon: <FaPartyHorn className="text-3xl" />,
+    icon: <FaGift className="text-3xl" />,
     requirements: 'CHZ stake + QR check-in + Party application',
     requirementsCn: 'CHZ质押 + 二维码签到 + 聚会申请'
   }
@@ -368,7 +369,7 @@ export default function AudienceDashboard() {
   const getTimeRemaining = (expiryTime) => {
     const now = new Date();
     const expiry = new Date(expiryTime);
-    const diff = expiry - now;
+    const diff = expiry.getTime() - now.getTime();
     
     if (diff <= 0) return 'Expired';
     
@@ -439,7 +440,7 @@ export default function AudienceDashboard() {
       {/* Party Information / 聚会信息 */}
       <div className="bg-yellow-500/10 border border-yellow-500/30 rounded p-3 mb-4">
         <div className="flex items-center gap-2 mb-2">
-          <FaPartyHorn className="text-yellow-500" />
+          <FaGift className="text-yellow-500" />
           <span className="font-medium text-yellow-500">After-Party Available</span>
         </div>
         <p className="text-sm text-gray-300">
@@ -612,16 +613,16 @@ export default function AudienceDashboard() {
 
           {selectedTier === 1 && (
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <FaPartyHorn className="text-yellow-500" />
-                <span className="font-medium text-yellow-500">
-                  {language === 'en' ? 'Party Application Included' : '包含聚会申请'}
-                </span>
-              </div>
+                        <div className="flex items-center gap-2 mb-2">
+            <FaGift className="text-yellow-500" />
+            <span className="font-medium text-yellow-500">
+              {language === 'en' ? 'Party Application Included' : '包含聚会申请'}
+            </span>
+          </div>
               <p className="text-sm text-gray-300">
                 {language === 'en' 
                   ? `Guaranteed entry to after-party at ${selectedEvent.partyVenue}. Limited to ${selectedEvent.partyCapacity} participants.`
-                  : `保证进入${language === 'en' ? selectedEvent.partyVenue : selectedEvent.partyVenueCn}聚会。限制${selectedEvent.partyCapacity}名参与者。`
+                  : `保证进入${selectedEvent.partyVenueCn}聚会。限制${selectedEvent.partyCapacity}名参与者。`
                 }
               </p>
             </div>
@@ -686,7 +687,7 @@ export default function AudienceDashboard() {
                           record.tier === 2 ? 'bg-blue-500/20 text-blue-400' :
                           'bg-gray-500/20 text-gray-400'
                         }`}>
-                          {record.tier === 1 && <FaPartyHorn />}
+                          {record.tier === 1 && <FaGift />}
                           {record.tier === 2 && <FaBasketballBall />}
                           {record.tier === 3 && <FaCoins />}
                           {language === 'en' ? record.tierName : record.tierNameCn}
@@ -876,7 +877,7 @@ export default function AudienceDashboard() {
         {/* Party Attendance / 聚会出席 */}
         <div className="bg-gray-800/50 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
-            <FaPartyHorn className="text-purple-400" />
+            <FaGift className="text-purple-400" />
             <span className="text-sm text-gray-300">Parties</span>
           </div>
           <div className="text-2xl font-bold text-purple-400">
@@ -1010,7 +1011,7 @@ export default function AudienceDashboard() {
             QR expires: {getTimeRemaining(mockUpcomingEvents[0].qrExpiry)}
           </div>
           <div className="flex items-center gap-1">
-            <FaPartyHorn />
+            <FaGift />
             After-party available
           </div>
         </div>
