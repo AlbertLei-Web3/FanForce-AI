@@ -737,18 +737,18 @@ export default function AdminDashboard() {
           ].map(tab => {
             const Icon = tab.icon
             return (
-              <button
-                key={tab.id}
+            <button
+              key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                  activeTab === tab.id
+                activeTab === tab.id
                     ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25'
                     : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-                }`}
-              >
+              }`}
+            >
                 <Icon className="text-sm" />
                 <span>{tab.label}</span>
-              </button>
+            </button>
             )
           })}
         </div>
@@ -760,12 +760,12 @@ export default function AdminDashboard() {
         {activeTab === 'overview' && (
           <>
             {/* 核心业务指标 / Core Business Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
                     <FaTrophy className="text-blue-400 text-xl" />
-                  </div>
+              </div>
                   <div className="text-right">
                     <p className="text-3xl font-bold text-white">{stats?.totalEvents || 0}</p>
                     <p className="text-blue-400 text-sm font-medium">Total Events</p>
@@ -778,14 +778,14 @@ export default function AdminDashboard() {
                   </div>
                   <span className="text-slate-500">•</span>
                   <span className="text-slate-400">{stats?.todayEvents || 0} today</span>
-                </div>
-              </div>
+            </div>
+          </div>
 
               <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
                     <FaUsers className="text-emerald-400 text-xl" />
-                  </div>
+              </div>
                   <div className="text-right">
                     <p className="text-3xl font-bold text-white">{formatNumber(stats?.activeUsers || 0)}</p>
                     <p className="text-emerald-400 text-sm font-medium">Active Users</p>
@@ -798,14 +798,14 @@ export default function AdminDashboard() {
                   </div>
                   <span className="text-slate-500">•</span>
                   <span className="text-slate-400">{formatNumber(stats?.totalUsers || 0)} total</span>
-                </div>
-              </div>
+            </div>
+          </div>
 
               <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
                     <FaCoins className="text-purple-400 text-xl" />
-                  </div>
+              </div>
                   <div className="text-right">
                     <p className="text-3xl font-bold text-white">{formatNumber(stats?.totalStaked || 0)}</p>
                     <p className="text-purple-400 text-sm font-medium">Total Staked</p>
@@ -818,14 +818,14 @@ export default function AdminDashboard() {
                   </div>
                   <span className="text-slate-500">•</span>
                   <span className="text-slate-400">CHZ</span>
-                </div>
-              </div>
+            </div>
+          </div>
 
               <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
                     <FaFire className="text-amber-400 text-xl" />
-                  </div>
+              </div>
                   <div className="text-right">
                     <p className="text-3xl font-bold text-white">{stats?.chzPoolHealth || 0}%</p>
                     <p className="text-amber-400 text-sm font-medium">Pool Health</p>
@@ -838,9 +838,9 @@ export default function AdminDashboard() {
                   </div>
                   <span className="text-slate-500">•</span>
                   <span className="text-slate-400">{stats?.pendingTransactions || 0} pending</span>
-                </div>
-              </div>
             </div>
+          </div>
+        </div>
 
             {/* 地区表现概览 / Regional Performance Overview */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -849,11 +849,11 @@ export default function AdminDashboard() {
                   <h3 className="text-xl font-bold text-white flex items-center space-x-2">
                     <FaGlobe className="text-blue-400" />
                     <span>{language === 'en' ? 'Regional Performance' : '地区表现'}</span>
-                  </h3>
+                </h3>
                   <button className="text-blue-400 hover:text-blue-300 text-sm font-medium">
                     {language === 'en' ? 'View Details' : '查看详情'} →
                   </button>
-                </div>
+                    </div>
                 <div className="space-y-4">
                   {Object.entries(stats?.crossRegionMetrics || {}).map(([region, data]: [string, any]) => (
                     <div key={region} className="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg border border-slate-700/30">
@@ -862,13 +862,13 @@ export default function AdminDashboard() {
                         <div>
                           <p className="text-white font-medium capitalize">{region.replace('Region', ' Region')}</p>
                           <p className="text-slate-400 text-sm">{data.ambassadors} ambassadors</p>
-                        </div>
+                  </div>
                       </div>
                       <div className="text-right">
                         <p className="text-white font-bold">{data.events} events</p>
                         <p className="text-emerald-400 text-sm">{formatNumber(data.revenue)} CHZ</p>
-                      </div>
                     </div>
+                  </div>
                   ))}
                 </div>
               </div>
@@ -878,7 +878,7 @@ export default function AdminDashboard() {
                   <h3 className="text-xl font-bold text-white flex items-center space-x-2">
                     <FaBell className="text-amber-400" />
                     <span>{language === 'en' ? 'Pending Tasks' : '待处理任务'}</span>
-                  </h3>
+            </h3>
                   <span className="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-sm font-medium">
                     {(stats?.pendingEventApplications || 0) + (stats?.pendingQRRequests || 0)} total
                   </span>
@@ -890,12 +890,12 @@ export default function AdminDashboard() {
                       <div>
                         <p className="text-white font-medium">{language === 'en' ? 'Event Applications' : '活动申请'}</p>
                         <p className="text-slate-400 text-sm">{language === 'en' ? 'Awaiting approval' : '等待批准'}</p>
-                      </div>
-                    </div>
+              </div>
+                </div>
                     <span className="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-sm font-bold">
                       {stats?.pendingEventApplications || 0}
-                    </span>
-                  </div>
+                  </span>
+                </div>
 
                   <div className="flex items-center justify-between p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
                     <div className="flex items-center space-x-3">
@@ -903,28 +903,28 @@ export default function AdminDashboard() {
                       <div>
                         <p className="text-white font-medium">{language === 'en' ? 'QR Code Requests' : 'QR码申请'}</p>
                         <p className="text-slate-400 text-sm">{language === 'en' ? 'Ready for generation' : '准备生成'}</p>
-                      </div>
+              </div>
                     </div>
                     <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm font-bold">
                       {stats?.pendingQRRequests || 0}
-                    </span>
-                  </div>
-                </div>
+                  </span>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* 最近活动 / Recent Activities */}
+        {/* 最近活动 / Recent Activities */}
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-white flex items-center space-x-2">
                   <FaClock className="text-green-400" />
                   <span>{language === 'en' ? 'Recent System Activities' : '最近系统活动'}</span>
-                </h3>
+          </h3>
                 <button className="text-green-400 hover:text-green-300 text-sm font-medium">
                   {language === 'en' ? 'View All' : '查看全部'} →
                 </button>
               </div>
-              <div className="space-y-3">
+          <div className="space-y-3">
                 {mockRecentActivities.length > 0 ? (
                   mockRecentActivities.slice(0, 5).map((activity) => (
                     <div key={activity.id} className="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg border border-slate-700/30 hover:border-slate-600/50 transition-colors">
@@ -932,7 +932,7 @@ export default function AdminDashboard() {
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-lg">
                           {getActivityIcon(activity.type)}
                         </div>
-                        <div>
+                    <div>
                           <p className="text-white font-medium">{activity.title}</p>
                           <p className="text-slate-400 text-sm flex items-center space-x-2">
                             <span>{new Date(activity.timestamp).toLocaleString()}</span>
@@ -940,9 +940,9 @@ export default function AdminDashboard() {
                             <span>{activity.university}</span>
                             <span>•</span>
                             <span>{activity.ambassador}</span>
-                          </p>
-                        </div>
-                      </div>
+                      </p>
+                    </div>
+                  </div>
                       <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                         activity.priority === 'high' ? 'bg-red-500/20 text-red-400' :
                         activity.priority === 'medium' ? 'bg-amber-500/20 text-amber-400' :
@@ -950,16 +950,16 @@ export default function AdminDashboard() {
                       }`}>
                         {activity.priority.toUpperCase()}
                       </div>
-                    </div>
-                  ))
-                ) : (
+                </div>
+              ))
+            ) : (
                   <div className="text-center py-12 text-slate-400">
                     <FaClock className="text-4xl mx-auto mb-4 opacity-50" />
                     <p>{language === 'en' ? 'No recent activities' : '暂无最近活动'}</p>
-                  </div>
-                )}
               </div>
-            </div>
+            )}
+          </div>
+        </div>
           </>
         )}
 
@@ -972,7 +972,7 @@ export default function AdminDashboard() {
                 <h3 className="text-xl font-bold text-white flex items-center space-x-2">
                   <FaUserShield className="text-blue-400" />
                   <span>{language === 'en' ? 'Ambassador Management' : '大使管理'}</span>
-                </h3>
+            </h3>
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                   <select className="bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white text-sm">
                     <option value="all">{language === 'en' ? 'All Universities' : '所有大学'}</option>
@@ -1002,11 +1002,11 @@ export default function AdminDashboard() {
                 mockAmbassadorPerformance.map((ambassador) => (
                   <div key={ambassador.id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-slate-600/50 transition-colors">
                     <div className="flex items-start justify-between mb-6">
-                      <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-4">
                         <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                           {ambassador.name.split(' ').map(n => n[0]).join('')}
                         </div>
-                        <div>
+                      <div>
                           <h4 className="text-white font-bold text-lg">{ambassador.name}</h4>
                           <p className="text-slate-300 font-medium">{ambassador.university}</p>
                           <p className="text-slate-400 text-sm">{ambassador.region} Region</p>
@@ -1058,7 +1058,7 @@ export default function AdminDashboard() {
 
                     {/* 操作按钮 / Action Buttons */}
                     <div className="flex space-x-3">
-                      <button 
+                      <button
                         onClick={() => handleAmbassadorAction(ambassador.id, 'review', 'Performance review')}
                         className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors text-sm flex items-center justify-center space-x-2"
                       >
@@ -1320,39 +1320,39 @@ export default function AdminDashboard() {
             <h3 className="text-xl font-bold text-white mb-6 flex items-center space-x-2">
               <FaDatabase className="text-emerald-400" />
               <span>{language === 'en' ? 'CHZ Pool Status' : 'CHZ池状态'}</span>
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white/5 rounded-lg p-4">
-                <p className="text-sm text-gray-300">
-                  {language === 'en' ? 'Total Staked' : '总质押'}
-                </p>
-                <p className="text-xl font-bold text-white">
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white/5 rounded-lg p-4">
+                  <p className="text-sm text-gray-300">
+                    {language === 'en' ? 'Total Staked' : '总质押'}
+                  </p>
+                  <p className="text-xl font-bold text-white">
                   {formatNumber(0)} CHZ {/* Mock data doesn't have CHZ pool status */}
-                </p>
-              </div>
-              <div className="bg-white/5 rounded-lg p-4">
-                <p className="text-sm text-gray-300">
-                  {language === 'en' ? 'Total Fees' : '总手续费'}
-                </p>
-                <p className="text-xl font-bold text-white">
+                  </p>
+                </div>
+                <div className="bg-white/5 rounded-lg p-4">
+                  <p className="text-sm text-gray-300">
+                    {language === 'en' ? 'Total Fees' : '总手续费'}
+                  </p>
+                  <p className="text-xl font-bold text-white">
                   {formatNumber(0)} CHZ {/* Mock data doesn't have CHZ pool status */}
-                </p>
-              </div>
-              <div className="bg-white/5 rounded-lg p-4">
-                <p className="text-sm text-gray-300">
-                  {language === 'en' ? 'Available Withdrawal' : '可提取金额'}
-                </p>
-                <p className="text-xl font-bold text-white">
+                  </p>
+                </div>
+                <div className="bg-white/5 rounded-lg p-4">
+                  <p className="text-sm text-gray-300">
+                    {language === 'en' ? 'Available Withdrawal' : '可提取金额'}
+                  </p>
+                  <p className="text-xl font-bold text-white">
                   {formatNumber(0)} CHZ {/* Mock data doesn't have CHZ pool status */}
-                </p>
-              </div>
-              <div className="bg-white/5 rounded-lg p-4">
-                <p className="text-sm text-gray-300">
-                  {language === 'en' ? 'Pool Health' : '池健康度'}
-                </p>
-                <p className="text-xl font-bold text-white">
+                  </p>
+                </div>
+                <div className="bg-white/5 rounded-lg p-4">
+                  <p className="text-sm text-gray-300">
+                    {language === 'en' ? 'Pool Health' : '池健康度'}
+                  </p>
+                  <p className="text-xl font-bold text-white">
                   0% {/* Mock data doesn't have CHZ pool status */}
-                </p>
+                  </p>
               </div>
             </div>
           </div>
@@ -1369,7 +1369,7 @@ export default function AdminDashboard() {
               {/* Mock data doesn't have system config */}
               <div className="text-center py-8 text-slate-400">
                 {language === 'en' ? 'No system configurations found' : '未找到系统配置'}
-              </div>
+                  </div>
             </div>
           </div>
         )}

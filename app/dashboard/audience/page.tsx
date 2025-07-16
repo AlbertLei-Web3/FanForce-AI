@@ -712,7 +712,7 @@ export default function AudienceDashboard() {
   };
 
   const renderTabContent = () => {
-        switch (activeTab) {
+    switch (activeTab) {
       case 'events':
         return (
           <div>
@@ -760,7 +760,7 @@ export default function AudienceDashboard() {
             }>
               {mockUpcomingEvents.map((event) => renderEventCard(event, eventsLayout))}
             </div>
-          </div>
+            </div>
         );
       
       case 'history':
@@ -1126,7 +1126,7 @@ export default function AudienceDashboard() {
           <div className="flex items-center gap-1">
             <FaGift className="text-xs" />
             After-party available
-          </div>
+            </div>
         </div>
       </div>
       
@@ -1142,7 +1142,7 @@ export default function AudienceDashboard() {
             }`}
           >
             {language === 'en' ? "🏆 All Events" : "🏆 所有赛事"}
-          </button>
+            </button>
           <button 
             onClick={() => setActiveTab('history')} 
             className={`py-2 px-4 text-sm font-medium transition-all duration-300 ${
@@ -1152,7 +1152,7 @@ export default function AudienceDashboard() {
             }`}
           >
             {language === 'en' ? "📊 My History" : "📊 我的历史"}
-          </button>
+            </button>
           <button 
             onClick={() => setActiveTab('leaderboard')} 
             className={`py-2 px-4 text-sm font-medium transition-all duration-300 ${
@@ -1162,7 +1162,7 @@ export default function AudienceDashboard() {
             }`}
           >
             {language === 'en' ? "🏅 Leaderboard" : "🏅 排行榜"}
-          </button>
+            </button>
         </div>
       </div>
 
