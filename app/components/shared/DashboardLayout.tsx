@@ -43,6 +43,7 @@ export default function DashboardLayout({
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [devToolsOpen, setDevToolsOpen] = useState(false) // 新增：开发工具下拉菜单状态 / New: Dev tools dropdown state
 
   // 更新时间 / Update time
   useEffect(() => {
@@ -52,6 +53,18 @@ export default function DashboardLayout({
 
     return () => clearInterval(timer)
   }, [])
+
+  // 点击外部关闭开发工具下拉菜单 / Close dev tools dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (devToolsOpen && !(event.target as Element)?.closest('.dev-tools-dropdown')) {
+        setDevToolsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [devToolsOpen])
 
   // 处理登出 / Handle logout
   const handleLogout = async () => {
@@ -254,6 +267,79 @@ export default function DashboardLayout({
             </div>
             <div className="flex items-center space-x-4">
               {actions}
+              
+              {/* 开发工具下拉菜单 / Dev Tools Dropdown Menu */}
+              {isDevelopmentMode() && (
+                <div className="relative dev-tools-dropdown">
+                  <button
+                    onClick={() => setDevToolsOpen(!devToolsOpen)}
+                    className="flex items-center space-x-2 px-3 py-2 bg-gray-700/50 hover:bg-gray-600/50 text-white rounded-lg transition-colors"
+                  >
+                    <span>🛠️</span>
+                    <span className="text-sm">{language === 'en' ? 'Dev Tools' : '开发工具'}</span>
+                    <span className={`transform transition-transform ${devToolsOpen ? 'rotate-180' : ''}`}>▼</span>
+                  </button>
+                  
+                  {devToolsOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-gray-800/95 backdrop-blur-sm rounded-lg shadow-xl border border-gray-600 z-50">
+                      <div className="py-2">
+                        <button
+                          onClick={() => {
+                            router.push('/dashboard/admin')
+                            setDevToolsOpen(false)
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm bg-red-600/20 hover:bg-red-600/40 text-red-300 transition-colors flex items-center space-x-2"
+                        >
+                          <span>🔧</span>
+                          <span>{language === 'en' ? 'Admin View' : '管理员视图'}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            router.push('/dashboard/ambassador')
+                            setDevToolsOpen(false)
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-300 transition-colors flex items-center space-x-2"
+                        >
+                          <span>🧑‍💼</span>
+                          <span>{language === 'en' ? 'Ambassador View' : '大使视图'}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            router.push('/dashboard/athlete')
+                            setDevToolsOpen(false)
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm bg-green-600/20 hover:bg-green-600/40 text-green-300 transition-colors flex items-center space-x-2"
+                        >
+                          <span>🏃‍♂️</span>
+                          <span>{language === 'en' ? 'Athlete View' : '运动员视图'}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            router.push('/dashboard/audience')
+                            setDevToolsOpen(false)
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 transition-colors flex items-center space-x-2"
+                        >
+                          <span>🙋‍♂️</span>
+                          <span>{language === 'en' ? 'Audience View' : '观众视图'}</span>
+                        </button>
+                        <hr className="border-gray-600 my-2" />
+                        <button
+                          onClick={() => {
+                            localStorage.clear()
+                            window.location.reload()
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm bg-gray-600/20 hover:bg-gray-600/40 text-gray-300 transition-colors flex items-center space-x-2"
+                        >
+                          <span>🔄</span>
+                          <span>{language === 'en' ? 'Reset App' : '重置应用'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* 用户头像和快速菜单 / User Avatar and Quick Menu */}
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-fanforce-primary rounded-full flex items-center justify-center">
@@ -274,52 +360,7 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
-      
-      {/* 简洁开发工具 / Simple Development Tools (Development Mode Only) */}
-      {isDevelopmentMode() && (
-        <div className="fixed bottom-4 right-4 z-50 bg-black/80 backdrop-blur-sm rounded-lg p-4 border border-gray-600 shadow-xl">
-          <h3 className="text-white text-sm font-bold mb-3 flex items-center">
-            🛠️ {language === 'en' ? 'Dev Tools' : '开发工具'}
-          </h3>
-          <div className="space-y-2">
-            <button
-              onClick={() => router.push('/dashboard/admin')}
-              className="w-full text-left px-3 py-2 text-xs bg-red-600/20 hover:bg-red-600/40 text-red-300 rounded transition-colors"
-            >
-              🔧 {language === 'en' ? 'Admin View' : '管理员视图'}
-            </button>
-            <button
-              onClick={() => router.push('/dashboard/ambassador')}
-              className="w-full text-left px-3 py-2 text-xs bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-300 rounded transition-colors"
-            >
-              🧑‍💼 {language === 'en' ? 'Ambassador View' : '大使视图'}
-            </button>
-            <button
-              onClick={() => router.push('/dashboard/athlete')}
-              className="w-full text-left px-3 py-2 text-xs bg-green-600/20 hover:bg-green-600/40 text-green-300 rounded transition-colors"
-            >
-              🏃‍♂️ {language === 'en' ? 'Athlete View' : '运动员视图'}
-            </button>
-            <button
-              onClick={() => router.push('/dashboard/audience')}
-              className="w-full text-left px-3 py-2 text-xs bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 rounded transition-colors"
-            >
-              🙋‍♂️ {language === 'en' ? 'Audience View' : '观众视图'}
-            </button>
-            <hr className="border-gray-600 my-2" />
-            <button
-              onClick={() => {
-                // 简单的重置应用状态 / Simple app state reset
-                localStorage.clear()
-                window.location.reload()
-              }}
-              className="w-full text-left px-3 py-2 text-xs bg-gray-600/20 hover:bg-gray-600/40 text-gray-300 rounded transition-colors"
-            >
-              🔄 {language === 'en' ? 'Reset App' : '重置应用'}
-            </button>
-          </div>
-        </div>
-      )}
+
     </div>
     </>
   )
