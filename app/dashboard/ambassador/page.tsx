@@ -1,6 +1,8 @@
 // FanForce AI - Ambassador Dashboard / 大使仪表板
-// Event orchestration hub for campus sports ambassadors
-// 校园体育大使的赛事协调中心
+// Event orchestration hub for campus sports ambassadors (Limited to single university/region)
+// 校园体育大使的赛事协调中心（限制在单一大学/地区）
+// ROLE SEPARATION: Ambassadors can only submit applications, not directly manage system-level features
+// 角色分离：大使只能提交申请，不能直接管理系统级功能
 
 'use client'
 
@@ -30,7 +32,11 @@ import {
   FaStore,
   FaAward,
   FaSearch,
-  FaFilter
+  FaFilter,
+  FaFileAlt,
+  FaHourglassHalf,
+  FaPaperPlane,
+  FaExclamationCircle
 } from 'react-icons/fa';
 
 // Mock data for ambassador profile / 大使档案模拟数据
@@ -51,8 +57,47 @@ const mockAmbassadorProfile = {
   audienceReached: 1250,
   successRate: '89%',
   tier: 'Gold', // Bronze, Silver, Gold, Platinum
-  achievements: ['Top Recruiter', 'Event Master', 'Community Builder']
+  achievements: ['Top Recruiter', 'Event Master', 'Community Builder'],
+  // NEW: Application status tracking / 新增：申请状态跟踪
+  applicationStatuses: {
+    pendingEventApplications: 2,
+    approvedEventApplications: 15,
+    rejectedEventApplications: 1,
+    pendingQRRequests: 1,
+    approvedQRRequests: 8,
+    pendingVenueRequests: 0
+  }
 };
+
+// Mock data for application history / 申请历史模拟数据
+const mockApplicationHistory = [
+  {
+    id: 'APP001',
+    type: 'event',
+    title: 'Basketball Championship Finals',
+    submittedDate: '2024-01-20',
+    status: 'approved',
+    approvedDate: '2024-01-21',
+    adminComments: 'Great proposal! Approved for March 15th.'
+  },
+  {
+    id: 'APP002',
+    type: 'qr',
+    title: 'QR Code Request for Basketball Championship',
+    submittedDate: '2024-01-22',
+    status: 'pending',
+    priority: 'high',
+    estimatedResponse: '2024-01-24'
+  },
+  {
+    id: 'APP003',
+    type: 'event',
+    title: 'Soccer Tournament Semifinals',
+    submittedDate: '2024-01-18',
+    status: 'under_review',
+    adminComments: 'Need more details about venue capacity.'
+  }
+];
 
 // Athlete recruitment and management / 运动员招募和管理
 const mockAthletes = [
@@ -581,24 +626,27 @@ export default function AmbassadorDashboard() {
               </div>
             </div>
 
-            {/* Quick Actions / 快速操作 */}
+            {/* Application Workflows / 申请工作流程 */}
             <div className="bg-gray-800/50 rounded-lg p-4">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <FaFire className="text-orange-500" />
-                {language === 'en' ? 'Quick Actions' : '快速操作'}
+                <FaFileAlt className="text-orange-500" />
+                {language === 'en' ? 'Submit Applications' : '提交申请'}
+                <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded ml-2">
+                  {language === 'en' ? 'Admin Approval Required' : '需要管理员批准'}
+                </span>
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 text-sm">
-                  <FaPlus className="block mx-auto mb-1" />
-                  {language === 'en' ? 'Create Event' : '创建赛事'}
+                  <FaPaperPlane className="block mx-auto mb-1" />
+                  {language === 'en' ? 'Submit Event Application' : '提交赛事申请'}
                 </button>
                 <button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 text-sm">
                   <FaUserPlus className="block mx-auto mb-1" />
                   {language === 'en' ? 'Recruit Athlete' : '招募运动员'}
                 </button>
                 <button className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 text-sm">
-                  <FaQrcode className="block mx-auto mb-1" />
-                  {language === 'en' ? 'Request QR' : '申请二维码'}
+                  <FaHourglassHalf className="block mx-auto mb-1" />
+                  {language === 'en' ? 'Request QR Code' : '请求二维码'}
                 </button>
                 <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 text-sm">
                   <FaHandshake className="block mx-auto mb-1" />
@@ -623,6 +671,114 @@ export default function AmbassadorDashboard() {
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {mockEvents.slice(0, 2).map(renderEventCard)}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'applications':
+        return (
+          <div className="space-y-6">
+            {/* Application Status Overview / 申请状态概览 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FaHourglassHalf className="text-yellow-400" />
+                  <span className="text-sm text-gray-300">Pending Applications</span>
+                </div>
+                <div className="text-2xl font-bold text-yellow-400">
+                  {mockAmbassadorProfile.applicationStatuses.pendingEventApplications + 
+                   mockAmbassadorProfile.applicationStatuses.pendingQRRequests + 
+                   mockAmbassadorProfile.applicationStatuses.pendingVenueRequests}
+                </div>
+                <div className="text-xs text-gray-400">
+                  Awaiting admin approval
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-green-600/20 to-blue-600/20 border border-green-500/30 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FaCheckCircle className="text-green-400" />
+                  <span className="text-sm text-gray-300">Approved Applications</span>
+                </div>
+                <div className="text-2xl font-bold text-green-400">
+                  {mockAmbassadorProfile.applicationStatuses.approvedEventApplications + 
+                   mockAmbassadorProfile.applicationStatuses.approvedQRRequests}
+                </div>
+                <div className="text-xs text-gray-400">
+                  Total approved to date
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-red-600/20 to-pink-600/20 border border-red-500/30 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FaExclamationCircle className="text-red-400" />
+                  <span className="text-sm text-gray-300">Rejected Applications</span>
+                </div>
+                <div className="text-2xl font-bold text-red-400">
+                  {mockAmbassadorProfile.applicationStatuses.rejectedEventApplications}
+                </div>
+                <div className="text-xs text-gray-400">
+                  Need revision or resubmission
+                </div>
+              </div>
+            </div>
+
+            {/* Application History / 申请历史 */}
+            <div className="bg-gray-800/50 rounded-lg p-4">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <FaFileAlt className="text-blue-500" />
+                {language === 'en' ? 'Application History' : '申请历史'}
+              </h3>
+              <div className="space-y-3">
+                {mockApplicationHistory.map(app => (
+                  <div key={app.id} className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="font-bold text-white">{app.title}</h4>
+                        <p className="text-xs text-gray-400">
+                          {app.type === 'event' ? '🏆 Event Application' : 
+                           app.type === 'qr' ? '📱 QR Code Request' : '🏟️ Venue Request'} • 
+                          Submitted: {app.submittedDate}
+                        </p>
+                      </div>
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${
+                        app.status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                        app.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                        app.status === 'under_review' ? 'bg-blue-500/20 text-blue-400' :
+                        'bg-red-500/20 text-red-400'
+                      }`}>
+                        {app.status === 'approved' ? (language === 'en' ? 'Approved' : '已批准') :
+                         app.status === 'pending' ? (language === 'en' ? 'Pending' : '待审批') :
+                         app.status === 'under_review' ? (language === 'en' ? 'Under Review' : '审核中') :
+                         (language === 'en' ? 'Rejected' : '已拒绝')}
+                      </span>
+                    </div>
+                    {app.adminComments && (
+                      <div className="bg-gray-800/50 rounded p-2 mt-2">
+                        <p className="text-xs text-gray-300">
+                          <span className="font-bold">Admin Comments:</span> {app.adminComments}
+                        </p>
+                      </div>
+                    )}
+                    {app.priority && (
+                      <div className="mt-2">
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${
+                          app.priority === 'high' ? 'bg-red-500/20 text-red-400' :
+                          app.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-green-500/20 text-green-400'
+                        }`}>
+                          {app.priority.toUpperCase()} PRIORITY
+                        </span>
+                      </div>
+                    )}
+                    {app.estimatedResponse && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        Estimated response: {app.estimatedResponse}
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -654,8 +810,8 @@ export default function AmbassadorDashboard() {
                   {filteredEvents.length} {language === 'en' ? 'events' : '个赛事'}
                 </span>
                 <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 text-sm">
-                  <FaPlus className="inline mr-1" />
-                  {language === 'en' ? 'New Event' : '新建赛事'}
+                  <FaPaperPlane className="inline mr-1" />
+                  {language === 'en' ? 'Submit Event Application' : '提交赛事申请'}
                 </button>
               </div>
             </div>
@@ -917,6 +1073,7 @@ export default function AmbassadorDashboard() {
         <div className="flex border-b border-gray-700 overflow-x-auto">
           {[
             { id: 'overview', label: language === 'en' ? '📊 Overview' : '📊 概览' },
+            { id: 'applications', label: language === 'en' ? '📋 Applications' : '📋 申请状态' },
             { id: 'events', label: language === 'en' ? '🏆 Events' : '🏆 赛事' },
             { id: 'athletes', label: language === 'en' ? '🏃‍♂️ Athletes' : '🏃‍♂️ 运动员' },
             { id: 'partners', label: language === 'en' ? '🤝 Partners' : '🤝 合作伙伴' },
