@@ -389,14 +389,14 @@ export default function AudienceDashboard() {
   };
 
   const renderEventCard = (event) => (
-    <div key={event.id} className="bg-gray-800/70 rounded-lg p-6 border border-gray-700 hover:border-blue-500 transition-all duration-300">
+    <div key={event.id} className="bg-gray-800/70 rounded-lg p-4 border border-gray-700 hover:border-blue-500 transition-all duration-300">
       {/* Event Header / 赛事标题 */}
-      <div className="flex justify-between items-start mb-4">
+      <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="text-xl font-bold text-white mb-1">
+          <h3 className="text-lg font-bold text-white mb-1">
             {language === 'en' ? event.title : event.titleCn}
           </h3>
-          <p className="text-sm text-gray-400">
+          <p className="text-xs text-gray-400">
             {language === 'en' ? event.venue : event.venueCn} • {event.date} {event.time}
           </p>
         </div>
@@ -411,39 +411,39 @@ export default function AudienceDashboard() {
       </div>
 
       {/* Teams Battle / 队伍对战 */}
-      <div className="flex justify-around items-center my-6 bg-gray-900/50 rounded-lg p-4">
+      <div className="flex justify-around items-center my-4 bg-gray-900/50 rounded-lg p-3">
         <div className="text-center">
-          <div className="text-4xl mb-2">{event.teamA.icon}</div>
-          <h4 className="font-bold text-white">{event.teamA.name}</h4>
-          <p className="text-sm text-gray-400">Odds: {event.teamA.odds}x</p>
+          <div className="text-3xl mb-1">{event.teamA.icon}</div>
+          <h4 className="font-bold text-white text-sm">{event.teamA.name}</h4>
+          <p className="text-xs text-gray-400">Odds: {event.teamA.odds}x</p>
         </div>
-        <div className="text-4xl font-bold text-gray-500">VS</div>
+        <div className="text-3xl font-bold text-gray-500">VS</div>
         <div className="text-center">
-          <div className="text-4xl mb-2">{event.teamB.icon}</div>
-          <h4 className="font-bold text-white">{event.teamB.name}</h4>
-          <p className="text-sm text-gray-400">Odds: {event.teamB.odds}x</p>
+          <div className="text-3xl mb-1">{event.teamB.icon}</div>
+          <h4 className="font-bold text-white text-sm">{event.teamB.name}</h4>
+          <p className="text-xs text-gray-400">Odds: {event.teamB.odds}x</p>
         </div>
       </div>
 
       {/* Event Stats / 赛事统计 */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="bg-gray-900/50 rounded p-3">
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="bg-gray-900/50 rounded p-2">
           <p className="text-xs text-gray-400">Total Pool</p>
-          <p className="font-bold text-green-400">{event.totalPool.toLocaleString()} CHZ</p>
+          <p className="font-bold text-green-400 text-sm">{event.totalPool.toLocaleString()} CHZ</p>
         </div>
-        <div className="bg-gray-900/50 rounded p-3">
+        <div className="bg-gray-900/50 rounded p-2">
           <p className="text-xs text-gray-400">Stakers</p>
-          <p className="font-bold text-blue-400">{event.currentStakers}/{event.capacity}</p>
+          <p className="font-bold text-blue-400 text-sm">{event.currentStakers}/{event.capacity}</p>
         </div>
       </div>
 
       {/* Party Information / 聚会信息 */}
-      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded p-3 mb-4">
-        <div className="flex items-center gap-2 mb-2">
-          <FaGift className="text-yellow-500" />
-          <span className="font-medium text-yellow-500">After-Party Available</span>
+      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded p-2 mb-3">
+        <div className="flex items-center gap-2 mb-1">
+          <FaGift className="text-yellow-500 text-sm" />
+          <span className="font-medium text-yellow-500 text-sm">After-Party Available</span>
         </div>
-        <p className="text-sm text-gray-300">
+        <p className="text-xs text-gray-300">
           {language === 'en' ? event.partyVenue : event.partyVenueCn} • 
           Capacity: {event.partyCapacity} • 
           Applications: {event.partyApplicants}
@@ -451,8 +451,8 @@ export default function AudienceDashboard() {
       </div>
 
       {/* Ambassador Info / 大使信息 */}
-      <div className="flex items-center gap-2 mb-4 text-sm text-gray-400">
-        <FaUsers />
+      <div className="flex items-center gap-2 mb-3 text-xs text-gray-400">
+        <FaUsers className="text-xs" />
         <span>Ambassador: {event.ambassadorInfo.name} ({event.ambassadorInfo.contact})</span>
       </div>
 
@@ -462,7 +462,7 @@ export default function AudienceDashboard() {
           setSelectedEvent(event);
           setShowStakeModal(true);
         }}
-        className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105"
+        className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm"
       >
         {language === 'en' ? 'Support Team' : '支持队伍'}
       </button>
@@ -647,12 +647,12 @@ export default function AudienceDashboard() {
         return (
           <div className="space-y-6">
             {mockUpcomingEvents.map(renderEventCard)}
-          </div>
+            </div>
         );
       
       case 'history':
         return (
-          <div className="bg-gray-800/50 rounded-lg p-6">
+            <div className="bg-gray-800/50 rounded-lg p-6">
             <h2 className="text-xl font-bold mb-4 text-white">
               {language === 'en' ? "My Support History" : "我的支持历史"}
             </h2>
@@ -721,7 +721,7 @@ export default function AudienceDashboard() {
                 </tbody>
               </table>
             </div>
-          </div>
+            </div>
         );
       
       case 'leaderboard':
@@ -730,8 +730,8 @@ export default function AudienceDashboard() {
             <h2 className="text-xl font-bold mb-4 text-white">
               {language === 'en' ? "Top Supporters Leaderboard" : "顶级支持者排行榜"}
             </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
+             <div className="overflow-x-auto">
+               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-gray-700 text-gray-400">
                     <th className="p-3">{language === 'en' ? 'Rank' : '排名'}</th>
@@ -792,7 +792,7 @@ export default function AudienceDashboard() {
                   ))}
                 </tbody>
               </table>
-            </div>
+             </div>
           </div>
         );
       
@@ -807,24 +807,24 @@ export default function AudienceDashboard() {
       subtitle={language === 'en' ? "Three-tier campus sports prediction platform" : "三层校园体育预测平台"}
     >
       {/* Enhanced User Profile Section / 增强用户资料部分 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         {/* User Avatar & Verification / 用户头像和验证 */}
-        <div className="lg:col-span-1 bg-gray-800/50 rounded-lg p-4">
-          <div className="flex items-center space-x-3 mb-3">
+        <div className="lg:col-span-1 bg-gray-800/50 rounded-lg p-3">
+          <div className="flex items-center space-x-2 mb-2">
             <div className="relative">
               <img 
                 src={mockUserProfile.avatar} 
                 alt="User Avatar" 
-                className="w-16 h-16 rounded-full border-2 border-blue-500"
+                className="w-12 h-12 rounded-full border-2 border-blue-500"
               />
               {mockUserProfile.verified && (
-                <FaCheckCircle className="absolute -bottom-1 -right-1 text-green-500 bg-gray-800 rounded-full text-sm" />
+                <FaCheckCircle className="absolute -bottom-1 -right-1 text-green-500 bg-gray-800 rounded-full text-xs" />
               )}
             </div>
             <div>
-              <h3 className="font-bold text-lg text-white">{mockUserProfile.name}</h3>
+              <h3 className="font-bold text-base text-white">{mockUserProfile.name}</h3>
               <div className="flex items-center gap-1 text-xs text-gray-400">
-                <FaIdCard />
+                <FaIdCard className="text-xs" />
                 <span>{mockUserProfile.studentId}</span>
               </div>
               <div className="text-xs text-blue-400">
@@ -835,12 +835,12 @@ export default function AudienceDashboard() {
         </div>
 
         {/* CHZ Balance / CHZ余额 */}
-        <div className="bg-gradient-to-r from-green-600/20 to-blue-600/20 border border-green-500/30 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <FaCoins className="text-green-400" />
-            <span className="text-sm text-gray-300">CHZ Balance</span>
+        <div className="bg-gradient-to-r from-green-600/20 to-blue-600/20 border border-green-500/30 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <FaCoins className="text-green-400 text-sm" />
+            <span className="text-xs text-gray-300">CHZ Balance</span>
           </div>
-          <div className="text-2xl font-bold text-green-400">
+          <div className="text-xl font-bold text-green-400">
             {mockUserProfile.realChzBalance.toLocaleString()}
           </div>
           <div className="text-xs text-gray-400">
@@ -849,24 +849,24 @@ export default function AudienceDashboard() {
         </div>
 
         {/* Win Rate / 胜率 */}
-        <div className="bg-gray-800/50 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <FaChartLine className="text-blue-400" />
-            <span className="text-sm text-gray-300">Win Rate</span>
+        <div className="bg-gray-800/50 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <FaChartLine className="text-blue-400 text-sm" />
+            <span className="text-xs text-gray-300">Win Rate</span>
           </div>
-          <div className="text-2xl font-bold text-blue-400">{mockUserProfile.winRate}</div>
+          <div className="text-xl font-bold text-blue-400">{mockUserProfile.winRate}</div>
           <div className="text-xs text-gray-400">
             {mockUserProfile.totalSupports} total supports
           </div>
         </div>
 
         {/* Current Tier / 当前等级 */}
-        <div className="bg-gray-800/50 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <FaStar className="text-yellow-400" />
-            <span className="text-sm text-gray-300">Current Tier</span>
+        <div className="bg-gray-800/50 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <FaStar className="text-yellow-400 text-sm" />
+            <span className="text-xs text-gray-300">Current Tier</span>
           </div>
-          <div className="text-2xl font-bold text-yellow-400">
+          <div className="text-xl font-bold text-yellow-400">
             Tier {mockUserProfile.currentTier}
           </div>
           <div className="text-xs text-gray-400">
@@ -875,12 +875,12 @@ export default function AudienceDashboard() {
         </div>
 
         {/* Party Attendance / 聚会出席 */}
-        <div className="bg-gray-800/50 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <FaGift className="text-purple-400" />
-            <span className="text-sm text-gray-300">Parties</span>
+        <div className="bg-gray-800/50 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <FaGift className="text-purple-400 text-sm" />
+            <span className="text-xs text-gray-300">Parties</span>
           </div>
-          <div className="text-2xl font-bold text-purple-400">
+          <div className="text-xl font-bold text-purple-400">
             {mockUserProfile.partyAttendance}
           </div>
           <div className="text-xs text-gray-400">attended</div>
@@ -888,31 +888,31 @@ export default function AudienceDashboard() {
       </div>
 
       {/* Tier Progress Section / 等级进度部分 */}
-      <div className="bg-gray-800/50 rounded-lg p-6 mb-8">
-        <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
-          <FaFire className="text-orange-500" />
+      <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
+        <h2 className="text-lg font-bold mb-3 text-white flex items-center gap-2">
+          <FaFire className="text-orange-500 text-sm" />
           {language === 'en' ? "Tier Progress & Achievements" : "等级进度和成就"}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {Object.entries(mockUserProfile.tierProgress).map(([tier, progress]) => {
             const tierInfo = participationTiers.find(t => t.tier === parseInt(tier.replace('tier', '')));
             const percentage = (progress.completed / progress.required) * 100;
             
             return (
-              <div key={tier} className="bg-gray-900/50 rounded-lg p-4">
+              <div key={tier} className="bg-gray-900/50 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-2">
-                  {tierInfo?.icon}
-                  <span className="font-medium text-white">
+                  <div className="text-lg">{tierInfo?.icon}</div>
+                  <span className="font-medium text-white text-sm">
                     {language === 'en' ? tierInfo?.name : tierInfo?.nameCn}
                   </span>
                 </div>
-                <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
+                <div className="w-full bg-gray-700 rounded-full h-1.5 mb-2">
                   <div 
-                    className={`bg-gradient-to-r ${tierInfo?.color} h-2 rounded-full transition-all duration-500`}
+                    className={`bg-gradient-to-r ${tierInfo?.color} h-1.5 rounded-full transition-all duration-500`}
                     style={{ width: `${Math.min(percentage, 100)}%` }}
                   ></div>
                 </div>
-                <div className="text-sm text-gray-400">
+                <div className="text-xs text-gray-400">
                   {progress.completed}/{progress.required} events completed
                 </div>
               </div>
@@ -922,71 +922,71 @@ export default function AudienceDashboard() {
       </div>
 
       {/* Achievement Badges / 成就徽章 */}
-      <div className="mb-8">
-        <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
-          <FaGift className="text-yellow-500" />
+      <div className="mb-6">
+        <h2 className="text-lg font-bold mb-3 text-white flex items-center gap-2">
+          <FaGift className="text-yellow-500 text-sm" />
           {language === 'en' ? "Achievement Badges" : "成就徽章"}
         </h2>
-        <div className="flex space-x-4 overflow-x-auto pb-4">
+        <div className="flex space-x-3 overflow-x-auto pb-3">
           {mockBadges.map(badge => (
             <div 
               key={badge.id} 
-              className={`flex-shrink-0 w-48 h-40 rounded-lg p-4 flex flex-col items-center justify-center text-center transition-all duration-300 ${
+              className={`flex-shrink-0 w-36 h-32 rounded-lg p-3 flex flex-col items-center justify-center text-center transition-all duration-300 ${
                 badge.unlocked 
                   ? 'bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500' 
                   : 'bg-gray-800/50 border border-gray-600'
               }`}
             >
-              <div className={`text-4xl mb-2 ${!badge.unlocked && 'opacity-30 grayscale'}`}>
+              <div className={`text-3xl mb-1 ${!badge.unlocked && 'opacity-30 grayscale'}`}>
                 {badge.icon}
               </div>
-              <h4 className={`font-bold text-sm ${badge.unlocked ? 'text-white' : 'text-gray-500'}`}>
+              <h4 className={`font-bold text-xs ${badge.unlocked ? 'text-white' : 'text-gray-500'}`}>
                 {language === 'en' ? badge.name : badge.nameCn}
               </h4>
               <p className={`text-xs mt-1 ${badge.unlocked ? 'text-gray-300' : 'text-gray-600'}`}>
                 {language === 'en' ? badge.description : badge.descriptionCn}
               </p>
               {badge.unlocked && (
-                <FaCheckCircle className="text-green-500 mt-2" />
+                <FaCheckCircle className="text-green-500 mt-1 text-xs" />
               )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Featured Event Banner / 焦点赛事横幅 */}
-      <div className="bg-gradient-to-r from-blue-900 via-purple-800 to-red-900 rounded-lg p-6 mb-8 text-center shadow-xl border border-gray-700">
-        <h2 className="text-3xl font-bold text-yellow-400 mb-2 animate-pulse">
+            {/* Featured Event Banner / 焦点赛事横幅 */}
+      <div className="bg-gradient-to-r from-blue-900 via-purple-800 to-red-900 rounded-lg p-4 mb-6 text-center shadow-xl border border-gray-700">
+        <h2 className="text-2xl font-bold text-yellow-400 mb-2 animate-pulse">
           {language === 'en' ? "🔥 Featured Championship 🔥" : "🔥 焦点锦标赛 🔥"}
         </h2>
-        <p className="text-gray-200 mb-4 text-lg">
+        <p className="text-gray-200 mb-3 text-base">
           {language === 'en' ? mockUpcomingEvents[0].title : mockUpcomingEvents[0].titleCn}
         </p>
         
-        <div className="flex justify-around items-center my-6 bg-black/20 rounded-lg p-4">
+        <div className="flex justify-around items-center my-4 bg-black/20 rounded-lg p-3">
           <div className="text-center">
-            <div className="text-6xl mb-2">{mockUpcomingEvents[0].teamA.icon}</div>
-            <span className="font-bold text-xl text-white">{mockUpcomingEvents[0].teamA.name}</span>
-            <div className="text-lg text-yellow-400 font-bold">
+            <div className="text-4xl mb-1">{mockUpcomingEvents[0].teamA.icon}</div>
+            <span className="font-bold text-base text-white">{mockUpcomingEvents[0].teamA.name}</span>
+            <div className="text-sm text-yellow-400 font-bold">
               {mockUpcomingEvents[0].teamA.odds}x odds
             </div>
           </div>
           <div className="text-center">
-            <span className="text-6xl font-bold text-white animate-pulse">VS</span>
-            <div className="text-lg text-gray-300 mt-2">
+            <span className="text-4xl font-bold text-white animate-pulse">VS</span>
+            <div className="text-sm text-gray-300 mt-1">
               Pool: {mockUpcomingEvents[0].totalPool.toLocaleString()} CHZ
             </div>
           </div>
           <div className="text-center">
-            <div className="text-6xl mb-2">{mockUpcomingEvents[0].teamB.icon}</div>
-            <span className="font-bold text-xl text-white">{mockUpcomingEvents[0].teamB.name}</span>
-            <div className="text-lg text-yellow-400 font-bold">
+            <div className="text-4xl mb-1">{mockUpcomingEvents[0].teamB.icon}</div>
+            <span className="font-bold text-base text-white">{mockUpcomingEvents[0].teamB.name}</span>
+            <div className="text-sm text-yellow-400 font-bold">
               {mockUpcomingEvents[0].teamB.odds}x odds
             </div>
           </div>
         </div>
         
-        <div className="text-lg text-gray-300 mb-6">
+        <div className="text-sm text-gray-300 mb-4">
           {mockUpcomingEvents[0].date} {mockUpcomingEvents[0].time} • 
           {language === 'en' ? mockUpcomingEvents[0].venue : mockUpcomingEvents[0].venueCn}
         </div>
@@ -996,33 +996,33 @@ export default function AudienceDashboard() {
             setSelectedEvent(mockUpcomingEvents[0]);
             setShowStakeModal(true);
           }}
-          className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-4 px-12 rounded-lg text-xl transition-all duration-300 transform hover:scale-105 shadow-xl"
+          className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-xl"
         >
           {language === 'en' ? "🚀 Support Now" : "🚀 立即支持"}
         </button>
         
-        <div className="flex justify-center gap-6 mt-4 text-sm text-gray-300">
+        <div className="flex justify-center gap-4 mt-3 text-xs text-gray-300">
           <div className="flex items-center gap-1">
-            <FaUsers />
+            <FaUsers className="text-xs" />
             {mockUpcomingEvents[0].currentStakers} supporters
           </div>
           <div className="flex items-center gap-1">
-            <FaClock />
+            <FaClock className="text-xs" />
             QR expires: {getTimeRemaining(mockUpcomingEvents[0].qrExpiry)}
           </div>
           <div className="flex items-center gap-1">
-            <FaGift />
+            <FaGift className="text-xs" />
             After-party available
           </div>
         </div>
       </div>
-
-      {/* Navigation Tabs / 导航标签 */}
-      <div className="mb-6">
+      
+            {/* Navigation Tabs / 导航标签 */}
+      <div className="mb-4">
         <div className="flex border-b border-gray-700">
           <button 
             onClick={() => setActiveTab('events')} 
-            className={`py-3 px-6 text-sm font-medium transition-all duration-300 ${
+            className={`py-2 px-4 text-sm font-medium transition-all duration-300 ${
               activeTab === 'events' 
                 ? 'border-b-2 border-blue-500 text-white bg-blue-500/10' 
                 : 'text-gray-400 hover:text-gray-200'
@@ -1032,7 +1032,7 @@ export default function AudienceDashboard() {
           </button>
           <button 
             onClick={() => setActiveTab('history')} 
-            className={`py-3 px-6 text-sm font-medium transition-all duration-300 ${
+            className={`py-2 px-4 text-sm font-medium transition-all duration-300 ${
               activeTab === 'history' 
                 ? 'border-b-2 border-blue-500 text-white bg-blue-500/10' 
                 : 'text-gray-400 hover:text-gray-200'
@@ -1042,7 +1042,7 @@ export default function AudienceDashboard() {
           </button>
           <button 
             onClick={() => setActiveTab('leaderboard')} 
-            className={`py-3 px-6 text-sm font-medium transition-all duration-300 ${
+            className={`py-2 px-4 text-sm font-medium transition-all duration-300 ${
               activeTab === 'leaderboard' 
                 ? 'border-b-2 border-blue-500 text-white bg-blue-500/10' 
                 : 'text-gray-400 hover:text-gray-200'

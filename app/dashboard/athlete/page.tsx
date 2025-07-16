@@ -374,7 +374,7 @@ export default function AthleteDashboard() {
             {/* Virtual CHZ Balance & Season Progress / 虚拟CHZ余额和赛季进度 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Virtual CHZ Balance / 虚拟CHZ余额 */}
-              <div className="bg-gray-800/50 rounded-lg p-6">
+            <div className="bg-gray-800/50 rounded-lg p-6">
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center">
                   <FaCoins className="mr-2 text-yellow-400" />
                   {language === 'en' ? "Virtual CHZ Balance" : "虚拟CHZ余额"}
@@ -390,12 +390,12 @@ export default function AthleteDashboard() {
                   </div>
                 </div>
                 <div className="mt-4">
-                  <button 
+                <button 
                     onClick={handleRequestPayout}
                     disabled={!seasonRequirementsMet}
                     className={`w-full px-4 py-2 rounded-lg font-bold transition-all duration-300 ${
                       seasonRequirementsMet 
-                        ? 'bg-green-600 hover:bg-green-700 text-white' 
+                      ? 'bg-green-600 hover:bg-green-700 text-white' 
                         : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                     }`}
                   >
@@ -539,7 +539,7 @@ export default function AthleteDashboard() {
                   ? "Post verification is handled by external API checks. You need 5+ verified posts to complete the season." 
                   : "帖子验证通过外部API检查处理。您需要5+条已验证帖子才能完成赛季。"}
               </p>
-            </div>
+          </div>
             <div className="space-y-4">
               {mockSocialPosts.map((post, index) => (
                 <div key={index} className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg">
