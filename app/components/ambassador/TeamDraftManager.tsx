@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useLanguage } from '../../context/LanguageContext'
+import { useToast } from '../shared/Toast'
 import { 
   FaUsers, 
   FaFootballBall,
@@ -60,6 +61,7 @@ interface TeamDraftManagerProps {
 
 export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelected }: TeamDraftManagerProps) {
   const { language } = useLanguage()
+  const { showToast, ToastContainer } = useToast()
   
   // State management / 状态管理
   const [loading, setLoading] = useState(false)
@@ -104,9 +106,17 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
         setExistingDrafts(data.drafts || [])
       } else {
         console.error('Failed to load data:', data.error)
+        showToast({
+          message: language === 'en' ? 'Failed to load data' : '加载数据失败',
+          type: 'error'
+        })
       }
     } catch (error) {
       console.error('Error loading data:', error)
+      showToast({
+        message: language === 'en' ? 'Error loading data' : '加载数据时出错',
+        type: 'error'
+      })
     } finally {
       setLoading(false)
     }
@@ -115,14 +125,39 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
   // Save current draft / 保存当前草稿
   const saveDraft = async () => {
     if (!currentDraft.draft_name.trim()) {
-      alert(language === 'en' ? 'Please enter a draft name' : '请输入草稿名称')
+      showToast({
+        message: language === 'en' ? 'Please enter a draft name' : '请输入草稿名称',
+        type: 'warning'
+      })
       return
     }
 
-    if (!currentDraft.team_a_name.trim() || !currentDraft.team_b_name.trim()) {
-      alert(language === 'en' ? 'Please enter team names' : '请输入队伍名称')
+    if (!currentDraft.team_a_name?.trim() || !currentDraft.team_b_name?.trim()) {
+      showToast({
+        message: language === 'en' ? 'Please enter team names' : '请输入队伍名称',
+        type: 'warning'
+      })
       return
     }
+
+    // 构造完整的 draft 对象，保证所有字段都存在
+    const draftToSave: any = {
+      ambassador_id: currentDraft.ambassador_id,
+      draft_name: currentDraft.draft_name,
+      sport_type: currentDraft.sport_type || 'soccer',
+      team_a_name: currentDraft.team_a_name,
+      team_a_athletes: Array.isArray(currentDraft.team_a_athletes) ? currentDraft.team_a_athletes : [],
+      team_a_metadata: currentDraft.team_a_metadata || {},
+      team_b_name: currentDraft.team_b_name,
+      team_b_athletes: Array.isArray(currentDraft.team_b_athletes) ? currentDraft.team_b_athletes : [],
+      team_b_metadata: currentDraft.team_b_metadata || {},
+      status: currentDraft.status || 'draft',
+      estimated_duration: typeof currentDraft.estimated_duration === 'number' ? currentDraft.estimated_duration : 90,
+      match_notes: currentDraft.match_notes || ''
+    };
+    if (currentDraft.id) draftToSave.id = currentDraft.id;
+    if (currentDraft.created_at) draftToSave.created_at = currentDraft.created_at;
+    if (currentDraft.updated_at) draftToSave.updated_at = currentDraft.updated_at;
 
     setSaving(true)
     try {
@@ -132,7 +167,7 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(currentDraft)
+        body: JSON.stringify(draftToSave)
       })
 
       const data = await response.json()
@@ -142,13 +177,22 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
           setCurrentDraft(data.draft)
         }
         await loadData() // Reload drafts
-        alert(language === 'en' ? 'Draft saved successfully!' : '草稿保存成功！')
+        showToast({
+          message: language === 'en' ? 'Draft saved successfully!' : '草稿保存成功！',
+          type: 'success'
+        })
       } else {
-        alert(data.error || 'Failed to save draft')
+        showToast({
+          message: data.error || (language === 'en' ? 'Failed to save draft' : '保存草稿失败'),
+          type: 'error'
+        })
       }
     } catch (error) {
       console.error('Error saving draft:', error)
-      alert('Error saving draft')
+      showToast({
+        message: language === 'en' ? 'Error saving draft' : '保存草稿时出错',
+        type: 'error'
+      })
     } finally {
       setSaving(false)
     }
@@ -175,13 +219,22 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
       
       if (data.success) {
         await loadData()
-        alert(language === 'en' ? 'Draft deleted successfully!' : '草稿删除成功！')
+        showToast({
+          message: language === 'en' ? 'Draft deleted successfully!' : '草稿删除成功！',
+          type: 'success'
+        })
       } else {
-        alert(data.error || 'Failed to delete draft')
+        showToast({
+          message: data.error || (language === 'en' ? 'Failed to delete draft' : '删除草稿失败'),
+          type: 'error'
+        })
       }
     } catch (error) {
       console.error('Error deleting draft:', error)
-      alert('Error deleting draft')
+      showToast({
+        message: language === 'en' ? 'Error deleting draft' : '删除草稿时出错',
+        type: 'error'
+      })
     }
   }
 
@@ -215,7 +268,7 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
     })
   }
 
-  // Filter athletes based on search and tier / 根据搜索和等级过滤运动员
+  // Filter athletes based on search, tier, and selection status / 根据搜索、等级和选择状态过滤运动员
   const filteredAthletes = availableAthletes.filter(athlete => {
     const matchesFilter = athleteFilter === '' || 
       athlete.profile_data?.name?.toLowerCase().includes(athleteFilter.toLowerCase()) ||
@@ -223,7 +276,11 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
     
     const matchesTier = tierFilter === 'all' || athlete.tier === tierFilter
     
-    return matchesFilter && matchesTier
+    // Exclude athletes that are already selected in either team / 排除已经在任一队伍中的运动员
+    const isAlreadySelected = currentDraft.team_a_athletes.includes(athlete.id) || 
+                             currentDraft.team_b_athletes.includes(athlete.id)
+    
+    return matchesFilter && matchesTier && !isAlreadySelected
   })
 
   // Get athlete details by ID / 根据ID获取运动员详情
@@ -287,15 +344,13 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
           <>
             <button
               onClick={() => addAthleteToTeam(athlete.id, 'A')}
-              disabled={currentDraft.team_a_athletes.length >= 11}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white text-xs py-2 px-3 rounded-lg transition-colors"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-2 px-3 rounded-lg transition-colors"
             >
               + Team A
             </button>
             <button
               onClick={() => addAthleteToTeam(athlete.id, 'B')}
-              disabled={currentDraft.team_b_athletes.length >= 11}
-              className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white text-xs py-2 px-3 rounded-lg transition-colors"
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs py-2 px-3 rounded-lg transition-colors"
             >
               + Team B
             </button>
@@ -327,8 +382,10 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 rounded-xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <>
+      <ToastContainer />
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div className="bg-slate-800 rounded-xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header / 标题 */}
         <div className="p-6 border-b border-slate-700/50">
           <div className="flex justify-between items-center">
@@ -439,7 +496,7 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
                       <span>{currentDraft.team_a_name}</span>
                     </h3>
                     <span className="text-slate-400 text-sm">
-                      {currentDraft.team_a_athletes.length}/11
+                      {currentDraft.team_a_athletes.length} athletes
                     </span>
                   </div>
                   
@@ -465,7 +522,7 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
                       <span>{currentDraft.team_b_name}</span>
                     </h3>
                     <span className="text-slate-400 text-sm">
-                      {currentDraft.team_b_athletes.length}/11
+                      {currentDraft.team_b_athletes.length} athletes
                     </span>
                   </div>
                   
@@ -634,7 +691,7 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
                   <span>{saving ? (language === 'en' ? 'Saving...' : '保存中...') : (language === 'en' ? 'Save Draft' : '保存草稿')}</span>
                 </button>
                 
-                {onDraftSelected && currentDraft.team_a_athletes.length > 0 && currentDraft.team_b_athletes.length > 0 && (
+                {onDraftSelected && (currentDraft.team_a_athletes.length > 0 || currentDraft.team_b_athletes.length > 0) && (
                   <button
                     onClick={() => onDraftSelected(currentDraft)}
                     className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2"
@@ -649,5 +706,6 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
         )}
       </div>
     </div>
+    </>
   )
 } 

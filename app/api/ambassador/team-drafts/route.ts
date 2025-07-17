@@ -335,14 +335,26 @@ export async function POST(request: NextRequest) {
 
     const draft = newDraft.rows[0]
 
+    // 防御性解析，避免 JSON.parse 报错
+    const safeJsonParse = (value, defaultValue) => {
+      try {
+        if (!value) return defaultValue;
+        if (typeof value === 'object') return value;
+        return JSON.parse(value);
+      } catch (error) {
+        console.error('JSON parse error:', error, 'Value:', value);
+        return defaultValue;
+      }
+    };
+
     return NextResponse.json({
       success: true,
       draft: {
         ...draft,
-        team_a_athletes: JSON.parse(draft.team_a_athletes),
-        team_b_athletes: JSON.parse(draft.team_b_athletes),
-        team_a_metadata: JSON.parse(draft.team_a_metadata),
-        team_b_metadata: JSON.parse(draft.team_b_metadata)
+        team_a_athletes: safeJsonParse(draft.team_a_athletes, []),
+        team_b_athletes: safeJsonParse(draft.team_b_athletes, []),
+        team_a_metadata: safeJsonParse(draft.team_a_metadata, {}),
+        team_b_metadata: safeJsonParse(draft.team_b_metadata, {})
       },
       message: 'Team draft created successfully',
       message_cn: '队伍草稿创建成功'
@@ -512,14 +524,26 @@ export async function PUT(request: NextRequest) {
 
     const draft = updatedDraft.rows[0]
 
+    // 防御性解析，避免 JSON.parse 报错
+    const safeJsonParse = (value, defaultValue) => {
+      try {
+        if (!value) return defaultValue;
+        if (typeof value === 'object') return value;
+        return JSON.parse(value);
+      } catch (error) {
+        console.error('JSON parse error:', error, 'Value:', value);
+        return defaultValue;
+      }
+    };
+
     return NextResponse.json({
       success: true,
       draft: {
         ...draft,
-        team_a_athletes: JSON.parse(draft.team_a_athletes),
-        team_b_athletes: JSON.parse(draft.team_b_athletes),
-        team_a_metadata: JSON.parse(draft.team_a_metadata),
-        team_b_metadata: JSON.parse(draft.team_b_metadata)
+        team_a_athletes: safeJsonParse(draft.team_a_athletes, []),
+        team_b_athletes: safeJsonParse(draft.team_b_athletes, []),
+        team_a_metadata: safeJsonParse(draft.team_a_metadata, {}),
+        team_b_metadata: safeJsonParse(draft.team_b_metadata, {})
       },
       message: 'Team draft updated successfully',
       message_cn: '队伍草稿更新成功'
