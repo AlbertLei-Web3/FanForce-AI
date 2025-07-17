@@ -52,6 +52,8 @@ import {
   FaHeart
 } from 'react-icons/fa';
 
+import TeamDraftManager from '@/app/components/ambassador/TeamDraftManager';
+
 // Mock data for ambassador profile / 大使档案模拟数据
 const mockAmbassadorProfile = {
   name: 'Sarah Chen',
@@ -385,6 +387,8 @@ export default function AmbassadorDashboard() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventModal, setShowEventModal] = useState(false);
   const [showAthleteModal, setShowAthleteModal] = useState(false);
+  const [showTeamDraftManager, setShowTeamDraftManager] = useState(false);
+  const [selectedTeamDraft, setSelectedTeamDraft] = useState(null);
   const [athleteFilter, setAthleteFilter] = useState('all'); // all, available, competing, resting
   const [eventFilter, setEventFilter] = useState('all'); // all, upcoming, live, planning, completed
 
@@ -716,7 +720,10 @@ export default function AmbassadorDashboard() {
                   <div className="text-xs opacity-80">{language === 'en' ? 'Submit new event' : '提交新赛事'}</div>
                 </button>
                 
-                <button className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-medium py-4 px-4 rounded-xl transition-all duration-300 text-sm group">
+                <button 
+                  onClick={() => setShowTeamDraftManager(true)}
+                  className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-medium py-4 px-4 rounded-xl transition-all duration-300 text-sm group"
+                >
                   <FaUserPlus className="text-xl mx-auto mb-2 group-hover:scale-110 transition-transform" />
                   <div className="font-bold">{language === 'en' ? 'Recruit Athlete' : '招募运动员'}</div>
                   <div className="text-xs opacity-80">{language === 'en' ? 'Add team member' : '添加团队成员'}</div>
@@ -1298,6 +1305,20 @@ export default function AmbassadorDashboard() {
 
       {/* Tab Content / 标签内容 */}
       {renderTabContent()}
+
+      {/* Team Draft Manager Modal / 队伍草稿管理器模态框 */}
+      {showTeamDraftManager && (
+        <TeamDraftManager
+          ambassadorId={mockAmbassadorProfile.name} // In real app, use actual ambassador ID
+          onClose={() => setShowTeamDraftManager(false)}
+          onDraftSelected={(draft) => {
+            setSelectedTeamDraft(draft);
+            setShowTeamDraftManager(false);
+            // TODO: Pre-populate Event Application form with draft data
+            console.log('Selected team draft:', draft);
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 } 
