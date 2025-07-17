@@ -1309,7 +1309,7 @@ export default function AmbassadorDashboard() {
       {/* Team Draft Manager Modal / 队伍草稿管理器模态框 */}
       {showTeamDraftManager && (
         <TeamDraftManager
-          ambassadorId={mockAmbassadorProfile.name} // In real app, use actual ambassador ID
+          ambassadorId="1de6110a-f982-4f7f-979e-00e7f7d33bed" // Use actual ambassador ID from database
           onClose={() => setShowTeamDraftManager(false)}
           onDraftSelected={(draft) => {
             setSelectedTeamDraft(draft);

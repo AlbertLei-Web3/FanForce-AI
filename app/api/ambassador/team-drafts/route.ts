@@ -148,21 +148,33 @@ export async function GET(request: NextRequest) {
       LIMIT 50
     `)
 
+    // Safe JSON parsing function
+    const safeJsonParse = (value, defaultValue) => {
+      try {
+        if (!value) return defaultValue;
+        if (typeof value === 'object') return value;
+        return JSON.parse(value);
+      } catch (error) {
+        console.error('JSON parse error:', error, 'Value:', value);
+        return defaultValue;
+      }
+    };
+
     return NextResponse.json({
       success: true,
       drafts: drafts.rows.map(draft => ({
         ...draft,
-        team_a_athletes: JSON.parse(draft.team_a_athletes || '[]'),
-        team_b_athletes: JSON.parse(draft.team_b_athletes || '[]'),
-        team_a_metadata: JSON.parse(draft.team_a_metadata || '{}'),
-        team_b_metadata: JSON.parse(draft.team_b_metadata || '{}'),
+        team_a_athletes: safeJsonParse(draft.team_a_athletes, []),
+        team_b_athletes: safeJsonParse(draft.team_b_athletes, []),
+        team_a_metadata: safeJsonParse(draft.team_a_metadata, {}),
+        team_b_metadata: safeJsonParse(draft.team_b_metadata, {}),
         team_a_athlete_details: draft.team_a_athlete_details || [],
         team_b_athlete_details: draft.team_b_athlete_details || []
       })),
       available_athletes: availableAthletes.rows.map(athlete => ({
         ...athlete,
-        profile_data: JSON.parse(athlete.profile_data || '{}'),
-        performance_stats: JSON.parse(athlete.performance_stats || '{}')
+        profile_data: athlete.profile_data || {},
+        performance_stats: athlete.performance_stats || {}
       })),
       pagination: {
         page,
