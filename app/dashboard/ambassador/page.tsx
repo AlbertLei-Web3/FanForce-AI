@@ -10,6 +10,7 @@
 import { useLanguage } from '@/app/context/LanguageContext';
 import DashboardLayout from '@/app/components/shared/DashboardLayout';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   FaTrophy, 
   FaUsers, 
@@ -382,6 +383,7 @@ const mockRevenueData = [
 ];
 
 export default function AmbassadorDashboard() {
+  const router = useRouter();
   const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -714,7 +716,10 @@ export default function AmbassadorDashboard() {
               </div>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium py-4 px-4 rounded-xl transition-all duration-300 text-sm group">
+                <button 
+                  onClick={() => router.push('/dashboard/ambassador/event-applications')}
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium py-4 px-4 rounded-xl transition-all duration-300 text-sm group"
+                >
                   <FaFileAlt className="text-xl mx-auto mb-2 group-hover:scale-110 transition-transform" />
                   <div className="font-bold">{language === 'en' ? 'Event Application' : '赛事申请'}</div>
                   <div className="text-xs opacity-80">{language === 'en' ? 'Submit new event' : '提交新赛事'}</div>
