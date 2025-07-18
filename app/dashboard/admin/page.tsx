@@ -253,10 +253,28 @@ export default function AdminDashboard() {
 
   // 权限检查 / Permission Check
   useEffect(() => {
-    if (!authState.isAuthenticated || (!isAdmin() && !isSuperAdmin())) {
+    // 开发模式：临时禁用严格权限检查 / Development mode: temporarily disable strict permission check
+    const isDevelopmentMode = process.env.NODE_ENV === 'development'
+    
+    if (!authState.isAuthenticated) {
+      console.log('❌ 用户未认证，跳转到首页 / User not authenticated, redirecting to home')
       router.push('/')
       return
     }
+    
+    // 开发模式下允许所有认证用户访问管理员页面 / In development mode, allow all authenticated users to access admin page
+    if (!isDevelopmentMode && (!isAdmin() && !isSuperAdmin())) {
+      console.log('❌ 生产模式：用户不是管理员，跳转到首页 / Production mode: User is not admin, redirecting to home')
+      router.push('/')
+      return
+    }
+    
+    // 开发模式下的权限警告 / Permission warning in development mode
+    if (isDevelopmentMode && (!isAdmin() && !isSuperAdmin())) {
+      console.warn('⚠️ 开发模式：用户不是管理员，但允许访问管理员页面 / Development mode: User is not admin but allowed to access admin page')
+    }
+    
+    console.log('✅ 权限检查通过，允许访问管理员页面 / Permission check passed, allowing access to admin page')
   }, [authState.isAuthenticated, isAdmin, isSuperAdmin, router])
 
   // 格式化数字 / Format numbers

@@ -114,16 +114,23 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // 初始化时检查已存在的会话 / Check existing session on initialization
   useEffect(() => {
     const initializeAuth = async () => {
+      console.log('🔧 开始初始化认证状态 / Starting auth initialization...')
+      
       const storedToken = localStorage.getItem('fanforce_session_token')
       const storedUser = localStorage.getItem('fanforce_user_info')
+      
+      console.log('🔧 本地存储信息 / Local storage info:')
+      console.log('  - Token:', storedToken ? '存在 / Exists' : '不存在 / Not found')
+      console.log('  - User:', storedUser ? '存在 / Exists' : '不存在 / Not found')
       
       if (storedToken && storedUser) {
         try {
           const user = JSON.parse(storedUser)
+          console.log('🔧 解析用户信息成功 / Successfully parsed user info:', user)
           
-          // 检查是否是开发模式token / Check if it's a development mode token
-          if (storedToken.startsWith('dev-token-')) {
-            // 开发模式：直接使用存储的信息，不验证后端 / Dev mode: directly use stored info, no backend verification
+          // 开发模式：跳过后端验证，直接使用存储的信息 / Development mode: skip backend verification, use stored info directly
+          if (isDevelopmentMode() || storedToken.startsWith('dev-token-')) {
+            console.log('🔧 开发模式：跳过后端验证，直接使用本地存储的用户信息 / Development mode: skipping backend verification, using local stored user info')
             setAuthState({
               isAuthenticated: true,
               isLoading: false,
@@ -131,6 +138,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
               sessionToken: storedToken,
               error: null
             })
+            console.log('✅ 认证状态设置完成 / Auth state set successfully')
           } else {
             // 生产模式：需要验证token / Production mode: need to verify token
             if (isConnected) {
@@ -149,6 +157,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 localStorage.removeItem('fanforce_session_token')
                 localStorage.removeItem('fanforce_user_info')
               }
+            } else {
+              // 生产模式下钱包未连接，清除无效的本地存储 / Production mode wallet not connected, clear invalid local storage
+              console.log('⚠️ 生产模式：钱包未连接，清除本地存储 / Production mode: wallet not connected, clearing local storage')
+              localStorage.removeItem('fanforce_session_token')
+              localStorage.removeItem('fanforce_user_info')
             }
           }
         } catch (error) {
@@ -156,19 +169,27 @@ export function UserProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem('fanforce_session_token')
           localStorage.removeItem('fanforce_user_info')
         }
+      } else {
+        console.log('❌ 本地存储中没有找到用户信息 / No user info found in local storage')
       }
     }
 
     initializeAuth()
-  }, [isConnected])
+  }, []) // 移除isConnected依赖，避免钱包连接状态影响认证初始化 / Remove isConnected dependency to avoid wallet connection affecting auth initialization
 
   // 钱包地址变化时检查用户 / Check user when wallet address changes
   useEffect(() => {
+    // 开发模式下跳过钱包地址检查，避免影响认证状态 / Skip wallet address check in development mode to avoid affecting auth state
+    if (isDevelopmentMode()) {
+      return
+    }
+    
     if (address && authState.user && authState.user.address !== address) {
       // 钱包地址变化，需要重新认证 / Wallet address changed, re-authentication required
+      console.log('🔄 钱包地址变化，重新认证 / Wallet address changed, re-authenticating')
       logout()
     }
-  }, [address, authState.user])
+  }, [address, authState.user, isDevelopmentMode])
 
   // 用户登录方法 / User Login Method
   const login = async (signature: string, message: string): Promise<boolean> => {
@@ -256,8 +277,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // 用户登出方法 / User Logout Method
   const logout = async (): Promise<void> => {
     try {
-      // 通知后端登出 / Notify backend of logout
-      if (authState.sessionToken) {
+      // 开发模式：跳过后端登出调用 / Development mode: skip backend logout call
+      if (!isDevelopmentMode() && authState.sessionToken) {
         await fetch('http://localhost:3001/api/auth/logout', {
           method: 'POST',
           headers: {
