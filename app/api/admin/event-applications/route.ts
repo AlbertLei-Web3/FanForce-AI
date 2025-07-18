@@ -141,114 +141,46 @@ export async function POST(request: NextRequest) {
 
       const application = appResult.rows[0];
 
-      // Update application status
-      // 更新申请状态
-      const updateAppQuery = `
-        UPDATE event_applications 
-        SET status = $1, 
-            reviewed_by = $2, 
-            reviewed_at = CURRENT_TIMESTAMP,
-            admin_review = $3
-        WHERE id = $4
-      `;
-      
-      const adminReview = {
-        decision: action,
-        admin_notes: adminNotes,
-        support_options: supportOptions,
-        injected_chz_amount: injectedChzAmount,
-        fee_rule_id: feeRuleId
-      };
-
-      await client.query(updateAppQuery, [
-        action === 'approve' ? 'approved' : 'rejected',
-        adminId,
-        JSON.stringify(adminReview),
-        applicationId
-      ]);
-
-      // Log the approval action
-      // 记录审批操作
-      const logQuery = `
-        INSERT INTO event_approval_log (
-          application_id, admin_id, action_type, decision,
-          injected_chz_amount, fee_rule_applied, support_options,
-          admin_notes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      `;
-      
-      await client.query(logQuery, [
-        applicationId,
-        adminId,
-        action === 'approve' ? 'approve' : 'reject',
-        action === 'approve' ? 'approved' : 'rejected',
-        injectedChzAmount,
-        feeRuleId,
-        JSON.stringify(supportOptions),
-        adminNotes
-      ]);
-
       let eventId = null;
 
       if (action === 'approve') {
-        // Create event from approved application
-        // 从已批准的申请创建活动
-        const createEventQuery = `
-          SELECT create_event_from_application($1)
+        // Use the complete approval function
+        // 使用完整的批准函数
+        const approvalQuery = `
+          SELECT complete_event_approval($1, $2, $3, $4, $5, $6)
         `;
-        const eventResult = await client.query(createEventQuery, [applicationId]);
-        eventId = eventResult.rows[0].create_event_from_application;
-
-        // Inject CHZ pool if amount specified
-        // 如果指定了金额则注入CHZ池
-        if (injectedChzAmount > 0) {
-          const injectPoolQuery = `
-            SELECT inject_chz_pool($1, $2, $3, $4)
-          `;
-          await client.query(injectPoolQuery, [
-            eventId,
-            injectedChzAmount,
-            adminId,
-            feeRuleId
-          ]);
-
-          // Update total pool amount
-          // 更新总池金额
-          const updatePoolQuery = `
-            UPDATE events 
-            SET total_pool_amount = pool_injected_chz,
-                support_options = $1
-            WHERE id = $2
-          `;
-          await client.query(updatePoolQuery, [
-            JSON.stringify(supportOptions),
-            eventId
-          ]);
-        }
-
-        // Create default support options if specified
-        // 如果指定了则创建默认支持选项
-        if (supportOptions && Object.keys(supportOptions).length > 0) {
-          for (const [teamKey, coefficient] of Object.entries(supportOptions)) {
-            const teamName = teamKey === 'team_a_coefficient' ? 'Team A' : 'Team B';
-            const teamAssociation = teamKey === 'team_a_coefficient' ? 'team_a' : 'team_b';
-            
-            const supportOptionQuery = `
-              INSERT INTO support_options (
-                event_id, option_name, option_description, 
-                coefficient, team_association, is_active
-              ) VALUES ($1, $2, $3, $4, $5, true)
-            `;
-            
-            await client.query(supportOptionQuery, [
-              eventId,
-              `Support ${teamName}`,
-              `Support ${teamName} with ${coefficient}x coefficient`,
-              coefficient,
-              teamAssociation
-            ]);
-          }
-        }
+        
+        const teamACoefficient = supportOptions?.team_a_coefficient || 1.0;
+        const teamBCoefficient = supportOptions?.team_b_coefficient || 1.0;
+        
+        const approvalResult = await client.query(approvalQuery, [
+          applicationId,
+          adminId,
+          injectedChzAmount,
+          teamACoefficient,
+          teamBCoefficient,
+          adminNotes
+        ]);
+        
+        eventId = approvalResult.rows[0].complete_event_approval;
+        
+        console.log(`✅ Event created successfully with ID: ${eventId}`);
+        console.log(`✅ 事件创建成功，ID: ${eventId}`);
+      } else {
+        // Use the rejection function
+        // 使用拒绝函数
+        const rejectionQuery = `
+          SELECT reject_event_application($1, $2, $3)
+        `;
+        
+        await client.query(rejectionQuery, [
+          applicationId,
+          adminId,
+          adminNotes
+        ]);
+        
+        console.log(`✅ Application rejected successfully`);
+        console.log(`✅ 申请拒绝成功`);
       }
 
       await client.query('COMMIT');
