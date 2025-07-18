@@ -242,6 +242,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview')
   const [refreshing, setRefreshing] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [eventApplications, setEventApplications] = useState([])
 
   // 实时时间更新 / Real-time time updates
   useEffect(() => {
@@ -250,6 +251,13 @@ export default function AdminDashboard() {
     }, 1000)
     return () => clearInterval(timer)
   }, [])
+
+  // 当切换到Applications标签页时获取事件申请 / Fetch event applications when Applications tab is active
+  useEffect(() => {
+    if (activeTab === 'applications') {
+      fetchEventApplications()
+    }
+  }, [activeTab])
 
   // 权限检查 / Permission Check
   useEffect(() => {
@@ -330,6 +338,27 @@ export default function AdminDashboard() {
       console.error('Error refreshing data:', err)
     } finally {
       setRefreshing(false)
+    }
+  }
+
+  // 获取事件申请列表 / Fetch Event Applications
+  const fetchEventApplications = async () => {
+    try {
+      const response = await fetch('/api/admin/event-applications?status=pending', {
+        headers: {
+          'Authorization': `Bearer ${authState.sessionToken}`,
+          'Content-Type': 'application/json',
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setEventApplications(data.data || [])
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching event applications:', err)
     }
   }
 
@@ -426,7 +455,7 @@ export default function AdminDashboard() {
   // 处理事件申请 / Handle Event Applications
   const handleEventApplication = async (applicationId: string, action: 'approve' | 'reject', adminNotes?: string) => {
     try {
-      const response = await fetch('/api/admin/event-application-actions', {
+      const response = await fetch('/api/admin/event-applications', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authState.sessionToken}`,
@@ -443,6 +472,7 @@ export default function AdminDashboard() {
       if (response.ok) {
         alert(`Event application ${action}d successfully`)
         refreshData()
+        fetchEventApplications() // Refresh the applications list
       } else {
         const errorData = await response.json()
         alert(`Failed to ${action} event application: ${errorData.error}`)
@@ -1205,10 +1235,75 @@ export default function AdminDashboard() {
                   <span>{language === 'en' ? 'Event Applications' : '活动申请'}</span>
                 </h4>
                 <div className="space-y-4">
-                  {/* Mock data doesn't have event applications */}
-                  <div className="text-center py-8 text-slate-400">
-                    {language === 'en' ? 'No pending event applications' : '无待处理活动申请'}
-                  </div>
+                  {eventApplications.length > 0 ? (
+                    eventApplications.map((app) => (
+                      <div key={app.id} className="bg-slate-800/50 border border-slate-700/30 rounded-lg p-4 hover:border-slate-600/50 transition-colors">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <h5 className="font-bold text-white text-lg mb-2">{app.event_title}</h5>
+                            <p className="text-slate-400 text-sm mb-2">{app.event_description}</p>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="text-slate-500">{language === 'en' ? 'Venue:' : '场馆:'}</span>
+                                <span className="text-white ml-2">{app.venue_name}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-500">{language === 'en' ? 'Capacity:' : '容量:'}</span>
+                                <span className="text-white ml-2">{app.venue_capacity}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-500">{language === 'en' ? 'Start Time:' : '开始时间:'}</span>
+                                <span className="text-white ml-2">{new Date(app.event_start_time).toLocaleString()}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-500">{language === 'en' ? 'Participants:' : '参与者:'}</span>
+                                <span className="text-white ml-2">{app.estimated_participants}</span>
+                              </div>
+                            </div>
+                            <div className="mt-3">
+                              <div className="flex items-center space-x-4 text-sm">
+                                <span className="text-slate-500">{language === 'en' ? 'Team A:' : 'A队:'}</span>
+                                <span className="text-white">{app.team_a_info?.name || 'N/A'}</span>
+                                <span className="text-slate-500">{language === 'en' ? 'Team B:' : 'B队:'}</span>
+                                <span className="text-white">{app.team_b_info?.name || 'N/A'}</span>
+                              </div>
+                            </div>
+                            {app.application_notes && (
+                              <div className="mt-3 p-3 bg-slate-800/50 border border-slate-700/30 rounded">
+                                <span className="text-slate-500 text-sm">{language === 'en' ? 'Notes:' : '备注:'}</span>
+                                <p className="text-white text-sm mt-1">{app.application_notes}</p>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-col space-y-2 ml-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(app.status)}`}>
+                              {app.status === 'pending' ? (language === 'en' ? 'Pending' : '待审批') :
+                               app.status === 'approved' ? (language === 'en' ? 'Approved' : '已批准') :
+                               (language === 'en' ? 'Rejected' : '已拒绝')}
+                            </span>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleEventApplication(app.id, 'approve')}
+                                className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                              >
+                                {language === 'en' ? 'Approve' : '批准'}
+                              </button>
+                              <button
+                                onClick={() => handleEventApplication(app.id, 'reject')}
+                                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                              >
+                                {language === 'en' ? 'Reject' : '拒绝'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-slate-400">
+                      {language === 'en' ? 'No pending event applications' : '无待处理活动申请'}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
