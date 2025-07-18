@@ -30,16 +30,93 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const ambassador_id = searchParams.get('ambassador_id')
+    const draft_id = searchParams.get('draft_id')
     const status = searchParams.get('status') || 'all'
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
     const offset = (page - 1) * limit
 
-    console.log('Fetching ambassador team drafts...', { ambassador_id, status, page, limit })
-    console.log('获取大使队伍草稿...', { ambassador_id, status, page, limit })
+    console.log('Fetching ambassador team drafts...', { ambassador_id, draft_id, status, page, limit })
+    console.log('获取大使队伍草稿...', { ambassador_id, draft_id, status, page, limit })
 
-    // Validate required parameters
-    // 验证必需参数
+    // If draft_id is provided, return single draft
+    // 如果提供了draft_id，返回单个草稿
+    if (draft_id) {
+      const draftQuery = `
+        SELECT 
+          td.*,
+          (
+            SELECT json_agg(
+              json_build_object(
+                'id', u.id,
+                'profile_data', u.profile_data,
+                'virtual_chz_balance', u.virtual_chz_balance
+              )
+            )
+            FROM users u 
+            WHERE u.id = ANY(
+              SELECT jsonb_array_elements_text(td.team_a_athletes)::uuid
+            ) AND u.role = 'athlete'
+          ) as team_a_athlete_details,
+          (
+            SELECT json_agg(
+              json_build_object(
+                'id', u.id,
+                'profile_data', u.profile_data,
+                'virtual_chz_balance', u.virtual_chz_balance
+              )
+            )
+            FROM users u 
+            WHERE u.id = ANY(
+              SELECT jsonb_array_elements_text(td.team_b_athletes)::uuid
+            ) AND u.role = 'athlete'
+          ) as team_b_athlete_details
+        FROM team_drafts td
+        WHERE td.id = $1
+      `
+
+      const draft = await query(draftQuery, [draft_id])
+
+      if (draft.rows.length === 0) {
+        return NextResponse.json({
+          success: false,
+          error: 'Draft not found',
+          error_cn: '草稿未找到'
+        }, { status: 404 })
+      }
+
+      const draftData = draft.rows[0]
+
+      // Safe JSON parsing function
+      const safeJsonParse = (value, defaultValue) => {
+        try {
+          if (!value) return defaultValue;
+          if (typeof value === 'object') return value;
+          return JSON.parse(value);
+        } catch (error) {
+          console.error('JSON parse error:', error, 'Value:', value);
+          return defaultValue;
+        }
+      };
+
+      return NextResponse.json({
+        success: true,
+        draft: {
+          ...draftData,
+          team_a_athletes: safeJsonParse(draftData.team_a_athletes, []),
+          team_b_athletes: safeJsonParse(draftData.team_b_athletes, []),
+          team_a_metadata: safeJsonParse(draftData.team_a_metadata, {}),
+          team_b_metadata: safeJsonParse(draftData.team_b_metadata, {}),
+          team_a_athlete_details: draftData.team_a_athlete_details || [],
+          team_b_athlete_details: draftData.team_b_athlete_details || []
+        },
+        message: 'Draft retrieved successfully',
+        message_cn: '草稿获取成功'
+      })
+    }
+
+    // Validate required parameters for list query
+    // 验证列表查询的必需参数
     if (!ambassador_id) {
       return NextResponse.json({
         success: false,

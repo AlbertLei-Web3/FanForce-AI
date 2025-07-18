@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useLanguage } from '../../context/LanguageContext'
 import { useToast } from '../shared/Toast'
 import { 
@@ -60,6 +61,7 @@ interface TeamDraftManagerProps {
 }
 
 export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelected }: TeamDraftManagerProps) {
+  const router = useRouter()
   const { language } = useLanguage()
   const { showToast, ToastContainer } = useToast()
   
@@ -202,6 +204,16 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
   const loadDraft = (draft: TeamDraft) => {
     setCurrentDraft(draft)
     setActiveTab('create')
+  }
+
+  // Handle draft selection for event application / 处理草稿选择用于赛事申请
+  const handleDraftUse = (draft: TeamDraft) => {
+    if (onDraftSelected) {
+      onDraftSelected(draft)
+    } else {
+      // Navigate to event application page with draft data / 导航到赛事申请页面并携带草稿数据
+      router.push(`/dashboard/ambassador/event-applications?draft_id=${draft.id}`)
+    }
   }
 
   // Delete draft / 删除草稿
@@ -638,15 +650,13 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
                           <FaEdit />
                           <span>{language === 'en' ? 'Edit' : '编辑'}</span>
                         </button>
-                        {onDraftSelected && (
-                          <button
-                            onClick={() => onDraftSelected(draft)}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-3 rounded-lg transition-colors flex items-center justify-center space-x-1"
-                          >
-                            <FaCheckCircle />
-                            <span>{language === 'en' ? 'Use' : '使用'}</span>
-                          </button>
-                        )}
+                        <button
+                          onClick={() => handleDraftUse(draft)}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-3 rounded-lg transition-colors flex items-center justify-center space-x-1"
+                        >
+                          <FaCheckCircle />
+                          <span>{language === 'en' ? 'Use' : '使用'}</span>
+                        </button>
                         <button
                           onClick={() => deleteDraft(draft.id!)}
                           disabled={draft.status === 'approved'}
@@ -691,9 +701,9 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
                   <span>{saving ? (language === 'en' ? 'Saving...' : '保存中...') : (language === 'en' ? 'Save Draft' : '保存草稿')}</span>
                 </button>
                 
-                {onDraftSelected && (currentDraft.team_a_athletes.length > 0 || currentDraft.team_b_athletes.length > 0) && (
+                {(currentDraft.team_a_athletes.length > 0 || currentDraft.team_b_athletes.length > 0) && (
                   <button
-                    onClick={() => onDraftSelected(currentDraft)}
+                    onClick={() => handleDraftUse(currentDraft)}
                     className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2"
                   >
                     <FaCheckCircle />
