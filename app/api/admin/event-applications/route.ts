@@ -136,19 +136,19 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { 
-      applicationId, 
+      application_id, 
       action, // 'approve' or 'reject'
-      adminId,
-      injectedChzAmount = 0,
-      feeRuleId,
-      supportOptions = {},
-      adminNotes = ''
+      admin_id,
+      injected_chz_amount = 0,
+      team_a_coefficient = 1.0,
+      team_b_coefficient = 1.0,
+      admin_notes = ''
     } = body;
 
-    console.log(`Admin: Processing application ${applicationId} with action: ${action}`);
-    console.log(`管理员: 处理申请 ${applicationId}，操作: ${action}`);
+    console.log(`Admin: Processing application ${application_id} with action: ${action}`);
+    console.log(`管理员: 处理申请 ${application_id}，操作: ${action}`);
 
-    if (!applicationId || !action || !adminId) {
+    if (!application_id || !action || !admin_id) {
       return NextResponse.json(
         { success: false, error: 'Missing required parameters' },
         { status: 400 }
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
         SELECT * FROM event_applications 
         WHERE id = $1 AND status = 'pending'
       `;
-      const appResult = await client.query(appQuery, [applicationId]);
+      const appResult = await client.query(appQuery, [application_id]);
       
       if (appResult.rows.length === 0) {
         throw new Error('Application not found or already processed');
@@ -185,16 +185,13 @@ export async function POST(request: NextRequest) {
           SELECT complete_event_approval($1, $2, $3, $4, $5, $6)
         `;
         
-        const teamACoefficient = supportOptions?.team_a_coefficient || 1.0;
-        const teamBCoefficient = supportOptions?.team_b_coefficient || 1.0;
-        
         const approvalResult = await client.query(approvalQuery, [
-          applicationId,
-          adminId,
-          injectedChzAmount,
-          teamACoefficient,
-          teamBCoefficient,
-          adminNotes
+          application_id,
+          admin_id,
+          injected_chz_amount,
+          team_a_coefficient,
+          team_b_coefficient,
+          admin_notes
         ]);
         
         eventId = approvalResult.rows[0].complete_event_approval;
@@ -209,9 +206,9 @@ export async function POST(request: NextRequest) {
         `;
         
         await client.query(rejectionQuery, [
-          applicationId,
-          adminId,
-          adminNotes
+          application_id,
+          admin_id,
+          admin_notes
         ]);
         
         console.log(`✅ Application rejected successfully`);
@@ -220,17 +217,17 @@ export async function POST(request: NextRequest) {
 
       await client.query('COMMIT');
 
-      console.log(`✅ Application ${applicationId} ${action}d successfully`);
-      console.log(`✅ 申请 ${applicationId} ${action === 'approve' ? '批准' : '拒绝'}成功`);
+      console.log(`✅ Application ${application_id} ${action}d successfully`);
+      console.log(`✅ 申请 ${application_id} ${action === 'approve' ? '批准' : '拒绝'}成功`);
 
       return NextResponse.json({
         success: true,
         message: `Application ${action}d successfully`,
         data: {
-          applicationId,
+          applicationId: application_id,
           eventId,
           action,
-          injectedChzAmount
+          injectedChzAmount: injected_chz_amount
         }
       });
 
