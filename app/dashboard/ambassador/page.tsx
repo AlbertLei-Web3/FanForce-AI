@@ -396,6 +396,36 @@ export default function AmbassadorDashboard() {
 
   // Real-time updates simulation / 实时更新模拟
   const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Real data state / 真实数据状态
+  const [realApprovedEvents, setRealApprovedEvents] = useState<any[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+
+  // Fetch real approved events / 获取真实已批准赛事
+  useEffect(() => {
+    const fetchApprovedEvents = async () => {
+      try {
+        setEventsLoading(true);
+        // Use the actual ambassador ID from database / 使用数据库中实际的大使ID
+        const ambassadorId = '1de6110a-f982-4f7f-979e-00e7f7d33bed';
+        
+        const response = await fetch(`/api/ambassador/approved-applications?ambassador_id=${ambassadorId}&limit=3`);
+        const data = await response.json();
+        
+        if (data.success) {
+          setRealApprovedEvents(data.applications);
+        } else {
+          console.error('Failed to fetch approved events:', data.error);
+        }
+      } catch (error) {
+        console.error('Error fetching approved events:', error);
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+
+    fetchApprovedEvents();
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -764,7 +794,26 @@ export default function AmbassadorDashboard() {
                 </button>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {mockEvents.slice(0, 2).map(renderEventCard)}
+                {eventsLoading ? (
+                  <div className="col-span-2 flex items-center justify-center py-8">
+                    <FaSpinner className="animate-spin text-2xl text-emerald-400 mr-3" />
+                    <span className="text-slate-400">
+                      {language === 'en' ? 'Loading approved events...' : '加载已批准赛事中...'}
+                    </span>
+                  </div>
+                ) : realApprovedEvents.length > 0 ? (
+                  realApprovedEvents.slice(0, 2).map(renderEventCard)
+                ) : (
+                  <div className="col-span-2 text-center py-8">
+                    <FaCalendarAlt className="text-4xl text-slate-500 mx-auto mb-4" />
+                    <p className="text-slate-400">
+                      {language === 'en' ? 'No approved events yet' : '暂无已批准赛事'}
+                    </p>
+                    <p className="text-slate-500 text-sm mt-2">
+                      {language === 'en' ? 'Your approved applications will appear here' : '您的已批准申请将显示在这里'}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
