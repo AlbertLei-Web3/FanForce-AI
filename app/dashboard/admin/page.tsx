@@ -344,7 +344,9 @@ export default function AdminDashboard() {
   // 获取事件申请列表 / Fetch Event Applications
   const fetchEventApplications = async () => {
     try {
-      const response = await fetch('/api/admin/event-applications?status=pending', {
+      // Fetch all event applications (not just pending)
+      // 获取所有事件申请（不仅仅是待处理的）
+      const response = await fetch('/api/admin/event-applications?status=all', {
         headers: {
           'Authorization': `Bearer ${authState.sessionToken}`,
           'Content-Type': 'application/json',
@@ -1274,6 +1276,18 @@ export default function AdminDashboard() {
                                 <p className="text-white text-sm mt-1">{app.application_notes}</p>
                               </div>
                             )}
+                            {(app.status === 'approved' || app.status === 'rejected') && app.reviewed_at && (
+                              <div className="mt-3 p-3 bg-slate-800/50 border border-slate-700/30 rounded">
+                                <div className="text-slate-500 text-sm">
+                                  {language === 'en' ? 'Reviewed at:' : '审批时间:'} {new Date(app.reviewed_at).toLocaleString()}
+                                </div>
+                                {app.admin_review && (
+                                  <div className="text-slate-500 text-sm mt-1">
+                                    {language === 'en' ? 'Admin Notes:' : '管理员备注:'} {app.admin_review.admin_notes || 'N/A'}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div className="flex flex-col space-y-2 ml-4">
                             <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(app.status)}`}>
@@ -1281,20 +1295,32 @@ export default function AdminDashboard() {
                                app.status === 'approved' ? (language === 'en' ? 'Approved' : '已批准') :
                                (language === 'en' ? 'Rejected' : '已拒绝')}
                             </span>
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => handleEventApplication(app.id, 'approve')}
-                                className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                              >
-                                {language === 'en' ? 'Approve' : '批准'}
-                              </button>
-                              <button
-                                onClick={() => handleEventApplication(app.id, 'reject')}
-                                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                              >
-                                {language === 'en' ? 'Reject' : '拒绝'}
-                              </button>
-                            </div>
+                            {app.status === 'pending' && (
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleEventApplication(app.id, 'approve')}
+                                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                                >
+                                  {language === 'en' ? 'Approve' : '批准'}
+                                </button>
+                                <button
+                                  onClick={() => handleEventApplication(app.id, 'reject')}
+                                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                                >
+                                  {language === 'en' ? 'Reject' : '拒绝'}
+                                </button>
+                              </div>
+                            )}
+                            {app.status === 'approved' && (
+                              <div className="text-xs text-emerald-400">
+                                {language === 'en' ? 'Approved' : '已批准'}
+                              </div>
+                            )}
+                            {app.status === 'rejected' && (
+                              <div className="text-xs text-red-400">
+                                {language === 'en' ? 'Rejected' : '已拒绝'}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

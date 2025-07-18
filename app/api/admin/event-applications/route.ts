@@ -42,33 +42,68 @@ export async function GET(request: NextRequest) {
 
     // Build query with filters
     // 构建带过滤器的查询
-    let query = `
-      SELECT 
-        ea.*,
-        u.wallet_address as ambassador_wallet,
-        u.student_id as ambassador_student_id,
-        fr.rule_name as fee_rule_name,
-        fr.staking_fee_percent,
-        fr.distribution_fee_percent
-      FROM event_applications ea
-      LEFT JOIN users u ON ea.ambassador_id = u.id
-      LEFT JOIN fee_rules fr ON fr.is_active = true
-      WHERE ea.status = $1
-      ORDER BY ea.created_at DESC
-      LIMIT $2 OFFSET $3
-    `;
+    let query;
+    let countQuery;
+    let queryParams;
+    
+    if (status === 'all') {
+      // Get all applications regardless of status
+      // 获取所有申请，不考虑状态
+      query = `
+        SELECT 
+          ea.*,
+          u.wallet_address as ambassador_wallet,
+          u.student_id as ambassador_student_id,
+          fr.rule_name as fee_rule_name,
+          fr.staking_fee_percent,
+          fr.distribution_fee_percent
+        FROM event_applications ea
+        LEFT JOIN users u ON ea.ambassador_id = u.id
+        LEFT JOIN fee_rules fr ON fr.is_active = true
+        ORDER BY ea.created_at DESC
+        LIMIT $1 OFFSET $2
+      `;
+      
+      countQuery = `
+        SELECT COUNT(*) as total 
+        FROM event_applications
+      `;
+      
+      queryParams = [limit, offset];
+    } else {
+      // Get applications with specific status
+      // 获取特定状态的申请
+      query = `
+        SELECT 
+          ea.*,
+          u.wallet_address as ambassador_wallet,
+          u.student_id as ambassador_student_id,
+          fr.rule_name as fee_rule_name,
+          fr.staking_fee_percent,
+          fr.distribution_fee_percent
+        FROM event_applications ea
+        LEFT JOIN users u ON ea.ambassador_id = u.id
+        LEFT JOIN fee_rules fr ON fr.is_active = true
+        WHERE ea.status = $1
+        ORDER BY ea.created_at DESC
+        LIMIT $2 OFFSET $3
+      `;
+      
+      countQuery = `
+        SELECT COUNT(*) as total 
+        FROM event_applications 
+        WHERE status = $1
+      `;
+      
+      queryParams = [status, limit, offset];
+    }
 
-    const result = await pool.query(query, [status, limit, offset]);
+    const result = await pool.query(query, queryParams);
 
     // Get total count for pagination
     // 获取总数用于分页
-    const countQuery = `
-      SELECT COUNT(*) as total 
-      FROM event_applications 
-      WHERE status = $1
-    `;
-    const countResult = await pool.query(countQuery, [status]);
-    const total = parseInt(countResult.rows[0].total);
+    const countResult = await pool.query(countQuery, status === 'all' ? [] : [status]);
+    const total = parseInt((countResult.rows[0] as any)?.total || '0');
 
     console.log(`Found ${result.rows.length} applications with status: ${status}`);
     console.log(`找到 ${result.rows.length} 个状态为 ${status} 的申请`);
