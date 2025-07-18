@@ -396,8 +396,8 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
   return (
     <>
       <ToastContainer />
-      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-        <div className="bg-slate-800 rounded-xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-800 rounded-xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header / 标题 */}
         <div className="p-6 border-b border-slate-700/50">
           <div className="flex justify-between items-center">
@@ -650,13 +650,13 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
                           <FaEdit />
                           <span>{language === 'en' ? 'Edit' : '编辑'}</span>
                         </button>
-                        <button
+                          <button
                           onClick={() => handleDraftUse(draft)}
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-3 rounded-lg transition-colors flex items-center justify-center space-x-1"
-                        >
-                          <FaCheckCircle />
-                          <span>{language === 'en' ? 'Use' : '使用'}</span>
-                        </button>
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-3 rounded-lg transition-colors flex items-center justify-center space-x-1"
+                          >
+                            <FaCheckCircle />
+                            <span>{language === 'en' ? 'Use' : '使用'}</span>
+                          </button>
                         <button
                           onClick={() => deleteDraft(draft.id!)}
                           disabled={draft.status === 'approved'}

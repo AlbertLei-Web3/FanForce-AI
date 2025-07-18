@@ -50,14 +50,14 @@ export async function GET(request: NextRequest) {
       // Get all applications regardless of status
       // 获取所有申请，不考虑状态
       query = `
-        SELECT 
-          ea.*,
-          u.wallet_address as ambassador_wallet,
+      SELECT 
+        ea.*,
+        u.wallet_address as ambassador_wallet,
           u.student_id as ambassador_student_id,
           fr.rule_name as fee_rule_name,
           fr.staking_fee_percent,
           fr.distribution_fee_percent
-        FROM event_applications ea
+      FROM event_applications ea
         LEFT JOIN users u ON ea.ambassador_id = u.id
         LEFT JOIN fee_rules fr ON fr.is_active = true
         ORDER BY ea.created_at DESC
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       `;
       
       countQuery = `
-        SELECT COUNT(*) as total 
+      SELECT COUNT(*) as total
         FROM event_applications
       `;
       
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       // Get applications with specific status
       // 获取特定状态的申请
       query = `
-        SELECT 
+      SELECT 
           ea.*,
           u.wallet_address as ambassador_wallet,
           u.student_id as ambassador_student_id,
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
       
       countQuery = `
         SELECT COUNT(*) as total 
-        FROM event_applications 
+      FROM event_applications
         WHERE status = $1
       `;
       
@@ -135,8 +135,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { 
-      application_id, 
+    const {
+      application_id,
       action, // 'approve' or 'reject'
       admin_id,
       injected_chz_amount = 0,
@@ -148,9 +148,32 @@ export async function POST(request: NextRequest) {
     console.log(`Admin: Processing application ${application_id} with action: ${action}`);
     console.log(`管理员: 处理申请 ${application_id}，操作: ${action}`);
 
+    // UUID validation function
+    // UUID验证函数
+    const isValidUUID = (uuid: string): boolean => {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(uuid);
+    };
+
     if (!application_id || !action || !admin_id) {
       return NextResponse.json(
         { success: false, error: 'Missing required parameters' },
+        { status: 400 }
+      );
+    }
+
+    // Validate UUID format for application_id and admin_id
+    // 验证application_id和admin_id的UUID格式
+    if (!isValidUUID(application_id)) {
+      return NextResponse.json(
+        { success: false, error: `Invalid application_id format: ${application_id}` },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidUUID(admin_id)) {
+      return NextResponse.json(
+        { success: false, error: `Invalid admin_id format: ${admin_id}` },
         { status: 400 }
       );
     }
@@ -187,7 +210,7 @@ export async function POST(request: NextRequest) {
         
         const approvalResult = await client.query(approvalQuery, [
           application_id,
-          admin_id,
+        admin_id,
           injected_chz_amount,
           team_a_coefficient,
           team_b_coefficient,
@@ -243,7 +266,7 @@ export async function POST(request: NextRequest) {
     console.error('处理活动申请时出错:', error);
     return NextResponse.json(
       { 
-        success: false, 
+      success: false,
         error: error instanceof Error ? error.message : 'Failed to process application' 
       },
       { status: 500 }
@@ -257,7 +280,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { 
+    const {
       applicationId, 
       adminId,
       action,

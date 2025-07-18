@@ -1378,9 +1378,9 @@ export default function AdminDashboard() {
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-8 text-slate-400">
-                      {language === 'en' ? 'No pending event applications' : '无待处理活动申请'}
-                    </div>
+                  <div className="text-center py-8 text-slate-400">
+                    {language === 'en' ? 'No pending event applications' : '无待处理活动申请'}
+                  </div>
                   )}
                 </div>
               </div>
