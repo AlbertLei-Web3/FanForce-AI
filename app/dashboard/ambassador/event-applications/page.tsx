@@ -97,7 +97,6 @@ export default function EventApplicationPage() {
     const ambassadorId = searchParams.get('ambassador_id')
     
     if (draftId) {
-      console.log('Loading draft data for ID:', draftId)
       loadDraftData(draftId, ambassadorId)
     }
   }, [searchParams])

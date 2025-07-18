@@ -1319,8 +1319,9 @@ export default function AmbassadorDashboard() {
           onDraftSelected={(draft) => {
             setSelectedTeamDraft(draft);
             setShowTeamDraftManager(false);
-            // TODO: Pre-populate Event Application form with draft data
+            // Navigate to event application page with draft data
             console.log('Selected team draft:', draft);
+            router.push(`/dashboard/ambassador/event-applications?draft_id=${draft.id}&ambassador_id=${draft.ambassador_id}`);
           }}
         />
       )}
