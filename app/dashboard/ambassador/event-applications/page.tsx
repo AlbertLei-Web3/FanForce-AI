@@ -42,22 +42,20 @@ interface TeamDraft {
 interface EventApplication {
   id?: string
   ambassador_id: string
-  event_name: string
+  event_title: string
   event_description: string
-  event_date: string
-  event_time: string
-  venue: string
-  sport_type: string
-  team_a_name: string
-  team_a_athletes: string[]
-  team_a_metadata: any
-  team_b_name: string
-  team_b_athletes: string[]
-  team_b_metadata: any
-  estimated_duration: number
-  expected_audience: number
-  ticket_price: number
-  application_notes: string
+  event_start_time: string
+  event_end_time?: string
+  venue_name: string
+  venue_address?: string
+  venue_capacity: number
+  party_venue_capacity?: number
+  team_a_info: any
+  team_b_info: any
+  estimated_participants: number
+  expected_revenue?: number
+  application_notes?: string
+  external_sponsors?: any[]
   status: 'pending' | 'approved' | 'rejected'
   admin_notes?: string
   created_at?: string
@@ -76,38 +74,43 @@ export default function EventApplicationPage() {
   const [selectedDraft, setSelectedDraft] = useState<TeamDraft | null>(null)
   const [application, setApplication] = useState<EventApplication>({
     ambassador_id: '',
-    event_name: '',
+    event_title: '',
     event_description: '',
-    event_date: '',
-    event_time: '',
-    venue: '',
-    sport_type: 'soccer',
-    team_a_name: '',
-    team_a_athletes: [],
-    team_a_metadata: {},
-    team_b_name: '',
-    team_b_athletes: [],
-    team_b_metadata: {},
-    estimated_duration: 90,
-    expected_audience: 100,
-    ticket_price: 0,
+    event_start_time: '',
+    event_end_time: '',
+    venue_name: '',
+    venue_address: '',
+    venue_capacity: 100,
+    party_venue_capacity: 0,
+    team_a_info: {},
+    team_b_info: {},
+    estimated_participants: 100,
+    expected_revenue: 0,
     application_notes: '',
+    external_sponsors: [],
     status: 'pending'
   })
 
   // Load draft data from URL parameters / 从URL参数加载草稿数据
   useEffect(() => {
     const draftId = searchParams.get('draft_id')
+    const ambassadorId = searchParams.get('ambassador_id')
+    
     if (draftId) {
-      loadDraftData(draftId)
+      console.log('Loading draft data for ID:', draftId)
+      loadDraftData(draftId, ambassadorId)
     }
   }, [searchParams])
 
   // Load draft data / 加载草稿数据
-  const loadDraftData = async (draftId: string) => {
+  const loadDraftData = async (draftId: string, ambassadorId?: string) => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/ambassador/team-drafts?draft_id=${draftId}`)
+      const url = ambassadorId 
+        ? `/api/ambassador/team-drafts?draft_id=${draftId}&ambassador_id=${ambassadorId}`
+        : `/api/ambassador/team-drafts?draft_id=${draftId}`
+      
+      const response = await fetch(url)
       const data = await response.json()
       
       if (data.success && data.draft) {
@@ -118,16 +121,19 @@ export default function EventApplicationPage() {
         setApplication(prev => ({
           ...prev,
           ambassador_id: draft.ambassador_id,
-          sport_type: draft.sport_type,
-          team_a_name: draft.team_a_name,
-          team_a_athletes: draft.team_a_athletes,
-          team_a_metadata: draft.team_a_metadata,
-          team_b_name: draft.team_b_name,
-          team_b_athletes: draft.team_b_athletes,
-          team_b_metadata: draft.team_b_metadata,
-          estimated_duration: draft.estimated_duration,
+          team_a_info: {
+            name: draft.team_a_name,
+            athletes: draft.team_a_athletes,
+            metadata: draft.team_a_metadata
+          },
+          team_b_info: {
+            name: draft.team_b_name,
+            athletes: draft.team_b_athletes,
+            metadata: draft.team_b_metadata
+          },
+          estimated_participants: draft.estimated_duration || 90,
           application_notes: draft.match_notes || '',
-          event_name: `${draft.team_a_name} vs ${draft.team_b_name}`,
+          event_title: `${draft.team_a_name} vs ${draft.team_b_name}`,
           event_description: `${draft.sport_type} match between ${draft.team_a_name} and ${draft.team_b_name}`
         }))
       } else {
@@ -151,7 +157,7 @@ export default function EventApplicationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!application.event_name.trim() || !application.venue.trim() || !application.event_date) {
+    if (!application.event_title.trim() || !application.venue_name.trim() || !application.event_start_time) {
       showToast({
         message: language === 'en' ? 'Please fill in all required fields' : '请填写所有必填字段',
         type: 'warning'
@@ -266,72 +272,67 @@ export default function EventApplicationPage() {
                 </label>
                 <input
                   type="text"
-                  value={application.event_name}
-                  onChange={(e) => handleInputChange('event_name', e.target.value)}
+                  value={application.event_title}
+                  onChange={(e) => handleInputChange('event_title', e.target.value)}
                   className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none"
-                  placeholder={language === 'en' ? 'Enter event name' : '输入赛事名称'}
+                  placeholder={language === 'en' ? 'Enter event title' : '输入赛事标题'}
                   required
                 />
               </div>
 
-              {/* Sport Type / 运动类型 */}
+              {/* Event Start Time / 赛事开始时间 */}
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  {language === 'en' ? 'Sport Type' : '运动类型'} *
-                </label>
-                <select
-                  value={application.sport_type}
-                  onChange={(e) => handleInputChange('sport_type', e.target.value)}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-emerald-500 focus:outline-none"
-                >
-                  <option value="soccer">Soccer / 足球</option>
-                  <option value="basketball">Basketball / 篮球</option>
-                  <option value="tennis">Tennis / 网球</option>
-                  <option value="volleyball">Volleyball / 排球</option>
-                  <option value="badminton">Badminton / 羽毛球</option>
-                </select>
-              </div>
-
-              {/* Event Date / 赛事日期 */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  {language === 'en' ? 'Event Date' : '赛事日期'} *
+                  {language === 'en' ? 'Event Start Time' : '赛事开始时间'} *
                 </label>
                 <input
-                  type="date"
-                  value={application.event_date}
-                  onChange={(e) => handleInputChange('event_date', e.target.value)}
+                  type="datetime-local"
+                  value={application.event_start_time}
+                  onChange={(e) => handleInputChange('event_start_time', e.target.value)}
                   className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-emerald-500 focus:outline-none"
                   required
                 />
               </div>
 
-              {/* Event Time / 赛事时间 */}
+              {/* Event End Time / 赛事结束时间 */}
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  {language === 'en' ? 'Event Time' : '赛事时间'} *
+                  {language === 'en' ? 'Event End Time' : '赛事结束时间'}
                 </label>
                 <input
-                  type="time"
-                  value={application.event_time}
-                  onChange={(e) => handleInputChange('event_time', e.target.value)}
+                  type="datetime-local"
+                  value={application.event_end_time || ''}
+                  onChange={(e) => handleInputChange('event_end_time', e.target.value)}
                   className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-emerald-500 focus:outline-none"
-                  required
                 />
               </div>
 
-              {/* Venue / 场地 */}
-              <div className="md:col-span-2">
+              {/* Venue Name / 场地名称 */}
+              <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  {language === 'en' ? 'Venue' : '场地'} *
+                  {language === 'en' ? 'Venue Name' : '场地名称'} *
                 </label>
                 <input
                   type="text"
-                  value={application.venue}
-                  onChange={(e) => handleInputChange('venue', e.target.value)}
+                  value={application.venue_name}
+                  onChange={(e) => handleInputChange('venue_name', e.target.value)}
+                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none"
+                  placeholder={language === 'en' ? 'Enter venue name' : '输入场地名称'}
+                  required
+                />
+              </div>
+
+              {/* Venue Address / 场地地址 */}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  {language === 'en' ? 'Venue Address' : '场地地址'}
+                </label>
+                <input
+                  type="text"
+                  value={application.venue_address || ''}
+                  onChange={(e) => handleInputChange('venue_address', e.target.value)}
                   className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none"
                   placeholder={language === 'en' ? 'Enter venue address' : '输入场地地址'}
-                  required
                 />
               </div>
 
@@ -362,12 +363,12 @@ export default function EventApplicationPage() {
               {/* Team A / 队伍A */}
               <div className="bg-slate-700/50 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-blue-400 mb-4">
-                  {application.team_a_name}
+                  {application.team_a_info?.name || 'Team A'}
                 </h3>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">{language === 'en' ? 'Athletes:' : '运动员：'}</span>
-                    <span className="text-blue-400 font-medium">{application.team_a_athletes.length}</span>
+                    <span className="text-blue-400 font-medium">{application.team_a_info?.athletes?.length || 0}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">{language === 'en' ? 'Status:' : '状态：'}</span>
@@ -381,12 +382,12 @@ export default function EventApplicationPage() {
               {/* Team B / 队伍B */}
               <div className="bg-slate-700/50 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-red-400 mb-4">
-                  {application.team_b_name}
+                  {application.team_b_info?.name || 'Team B'}
                 </h3>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">{language === 'en' ? 'Athletes:' : '运动员：'}</span>
-                    <span className="text-red-400 font-medium">{application.team_b_athletes.length}</span>
+                    <span className="text-red-400 font-medium">{application.team_b_info?.athletes?.length || 0}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">{language === 'en' ? 'Status:' : '状态：'}</span>
@@ -398,17 +399,17 @@ export default function EventApplicationPage() {
               </div>
             </div>
 
-            {/* Match Duration / 比赛时长 */}
+            {/* Estimated Participants / 预计参与者 */}
             <div className="mt-6">
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                {language === 'en' ? 'Estimated Duration (minutes)' : '预计时长（分钟）'}
+                {language === 'en' ? 'Estimated Participants' : '预计参与者'}
               </label>
               <input
                 type="number"
-                value={application.estimated_duration}
-                onChange={(e) => handleInputChange('estimated_duration', parseInt(e.target.value) || 90)}
-                min="30"
-                max="180"
+                value={application.estimated_participants}
+                onChange={(e) => handleInputChange('estimated_participants', parseInt(e.target.value) || 100)}
+                min="10"
+                max="10000"
                 className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-emerald-500 focus:outline-none"
               />
             </div>
@@ -422,30 +423,30 @@ export default function EventApplicationPage() {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Expected Audience / 预期观众 */}
+              {/* Venue Capacity / 场地容量 */}
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  {language === 'en' ? 'Expected Audience Size' : '预期观众人数'}
+                  {language === 'en' ? 'Venue Capacity' : '场地容量'}
                 </label>
                 <input
                   type="number"
-                  value={application.expected_audience}
-                  onChange={(e) => handleInputChange('expected_audience', parseInt(e.target.value) || 100)}
+                  value={application.venue_capacity}
+                  onChange={(e) => handleInputChange('venue_capacity', parseInt(e.target.value) || 100)}
                   min="10"
-                  max="10000"
+                  max="100000"
                   className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
-              {/* Ticket Price / 票价 */}
+              {/* Expected Revenue / 预期收入 */}
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  {language === 'en' ? 'Ticket Price (CHZ)' : '票价（CHZ）'}
+                  {language === 'en' ? 'Expected Revenue (CHZ)' : '预期收入（CHZ）'}
                 </label>
                 <input
                   type="number"
-                  value={application.ticket_price}
-                  onChange={(e) => handleInputChange('ticket_price', parseFloat(e.target.value) || 0)}
+                  value={application.expected_revenue || 0}
+                  onChange={(e) => handleInputChange('expected_revenue', parseFloat(e.target.value) || 0)}
                   min="0"
                   step="0.01"
                   className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-emerald-500 focus:outline-none"

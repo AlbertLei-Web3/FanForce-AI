@@ -212,7 +212,7 @@ export default function TeamDraftManager({ ambassadorId, onClose, onDraftSelecte
       onDraftSelected(draft)
     } else {
       // Navigate to event application page with draft data / 导航到赛事申请页面并携带草稿数据
-      router.push(`/dashboard/ambassador/event-applications?draft_id=${draft.id}`)
+      router.push(`/dashboard/ambassador/event-applications?draft_id=${draft.id}&ambassador_id=${ambassadorId}`)
     }
   }
 
