@@ -7,6 +7,8 @@
 
 import { useState, useEffect } from 'react'
 import { FaTimes, FaCheck, FaTimes as FaX, FaCoins, FaUsers, FaEdit, FaInfoCircle } from 'react-icons/fa'
+import { toast } from 'react-hot-toast'
+import { toastStyles } from '../../utils/toastStyles'
 
 // Event Application Interface
 // 事件申请接口
@@ -101,12 +103,12 @@ export default function EventApprovalModal({
     if (!application) return
 
     if (approvalData.injectedChzAmount <= 0) {
-      alert(language === 'en' ? 'Please enter a valid CHZ amount' : '请输入有效的CHZ金额')
+      toast.error(language === 'en' ? 'Please enter a valid CHZ amount' : '请输入有效的CHZ金额', toastStyles.error)
       return
     }
 
     if (approvalData.teamACoefficient <= 0 || approvalData.teamBCoefficient <= 0) {
-      alert(language === 'en' ? 'Please enter valid coefficients' : '请输入有效的系数')
+      toast.error(language === 'en' ? 'Please enter valid coefficients' : '请输入有效的系数', toastStyles.error)
       return
     }
 
@@ -140,28 +142,31 @@ export default function EventApprovalModal({
   if (!isOpen || !application) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-800/95 border border-slate-700/50 rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl backdrop-blur-sm">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-white flex items-center space-x-2">
-            <FaEdit className="text-blue-400" />
+        <div className="flex justify-between items-center mb-8">
+          <h3 className="text-2xl font-bold text-white flex items-center space-x-3">
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <FaEdit className="text-blue-400 text-xl" />
+            </div>
             <span>
               {language === 'en' ? 'Event Application Review' : '事件申请审核'}
             </span>
           </h3>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors"
+            className="text-slate-400 hover:text-white transition-colors p-2 hover:bg-slate-700/50 rounded-lg"
           >
             <FaTimes size={20} />
           </button>
         </div>
 
         {/* Application Details */}
-        <div className="bg-slate-900/50 border border-slate-700/30 rounded-lg p-4 mb-6">
-          <h4 className="text-lg font-semibold text-white mb-3">
-            {application.event_title}
+        <div className="bg-slate-900/50 border border-slate-700/30 rounded-xl p-6 mb-8 shadow-lg">
+          <h4 className="text-xl font-semibold text-white mb-4 flex items-center space-x-2">
+            <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+            <span>{application.event_title}</span>
           </h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -204,9 +209,11 @@ export default function EventApprovalModal({
 
         {/* Approval Form */}
         <div className="space-y-6">
-          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
-            <h4 className="text-lg font-semibold text-emerald-400 mb-4 flex items-center space-x-2">
-              <FaCheck />
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6 shadow-lg">
+            <h4 className="text-lg font-semibold text-emerald-400 mb-6 flex items-center space-x-3">
+              <div className="p-2 bg-emerald-500/20 rounded-lg">
+                <FaCheck className="text-emerald-400" />
+              </div>
               <span>{language === 'en' ? 'Approve Application' : '批准申请'}</span>
             </h4>
             
@@ -226,7 +233,7 @@ export default function EventApprovalModal({
                     ...prev,
                     injectedChzAmount: parseFloat(e.target.value) || 0
                   }))}
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
+                  className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-200"
                   placeholder={language === 'en' ? 'Enter CHZ amount' : '输入CHZ金额'}
                 />
               </div>
@@ -246,7 +253,7 @@ export default function EventApprovalModal({
                       ...prev,
                       teamACoefficient: parseFloat(e.target.value) || 1.0
                     }))}
-                    className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
+                    className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-200"
                     placeholder="1.0"
                   />
                 </div>
@@ -263,7 +270,7 @@ export default function EventApprovalModal({
                       ...prev,
                       teamBCoefficient: parseFloat(e.target.value) || 1.0
                     }))}
-                    className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
+                    className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-200"
                     placeholder="1.0"
                   />
                 </div>
@@ -281,7 +288,7 @@ export default function EventApprovalModal({
                     adminNotes: e.target.value
                   }))}
                   rows={3}
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
+                  className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-200 resize-none"
                   placeholder={language === 'en' ? 'Enter approval notes...' : '输入批准备注...'}
                 />
               </div>
@@ -289,17 +296,17 @@ export default function EventApprovalModal({
               <button
                 onClick={handleApprove}
                 disabled={isApproving}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center space-x-2 transition-colors"
+                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-semibold flex items-center justify-center space-x-3 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl border border-emerald-400/20"
               >
                 {isApproving ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    <span>{language === 'en' ? 'Approving...' : '批准中...'}</span>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    <span className="text-sm">{language === 'en' ? 'Approving...' : '批准中...'}</span>
                   </>
                 ) : (
                   <>
-                    <FaCheck />
-                    <span>{language === 'en' ? 'Approve Application' : '批准申请'}</span>
+                    <FaCheck className="text-lg" />
+                    <span className="text-sm">{language === 'en' ? 'Approve Application' : '批准申请'}</span>
                   </>
                 )}
               </button>
@@ -307,9 +314,11 @@ export default function EventApprovalModal({
           </div>
 
           {/* Rejection Form */}
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-            <h4 className="text-lg font-semibold text-red-400 mb-4 flex items-center space-x-2">
-              <FaX />
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 shadow-lg">
+            <h4 className="text-lg font-semibold text-red-400 mb-6 flex items-center space-x-3">
+              <div className="p-2 bg-red-500/20 rounded-lg">
+                <FaX className="text-red-400" />
+              </div>
               <span>{language === 'en' ? 'Reject Application' : '拒绝申请'}</span>
             </h4>
             
@@ -326,7 +335,7 @@ export default function EventApprovalModal({
                     adminNotes: e.target.value
                   }))}
                   rows={3}
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
+                  className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all duration-200 resize-none"
                   placeholder={language === 'en' ? 'Enter rejection reason...' : '输入拒绝原因...'}
                 />
               </div>
@@ -334,17 +343,17 @@ export default function EventApprovalModal({
               <button
                 onClick={handleReject}
                 disabled={isRejecting}
-                className="w-full bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center space-x-2 transition-colors"
+                className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-semibold flex items-center justify-center space-x-3 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl border border-red-400/20"
               >
                 {isRejecting ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    <span>{language === 'en' ? 'Rejecting...' : '拒绝中...'}</span>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    <span className="text-sm">{language === 'en' ? 'Rejecting...' : '拒绝中...'}</span>
                   </>
                 ) : (
                   <>
-                    <FaX />
-                    <span>{language === 'en' ? 'Reject Application' : '拒绝申请'}</span>
+                    <FaX className="text-lg" />
+                    <span className="text-sm">{language === 'en' ? 'Reject Application' : '拒绝申请'}</span>
                   </>
                 )}
               </button>
@@ -353,9 +362,11 @@ export default function EventApprovalModal({
         </div>
 
         {/* Info Section */}
-        <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-          <div className="flex items-start space-x-2">
-            <FaInfoCircle className="text-blue-400 mt-1 flex-shrink-0" />
+        <div className="mt-8 p-6 bg-blue-500/10 border border-blue-500/30 rounded-xl shadow-lg">
+          <div className="flex items-start space-x-3">
+            <div className="p-2 bg-blue-500/20 rounded-lg flex-shrink-0">
+              <FaInfoCircle className="text-blue-400" />
+            </div>
             <div className="text-sm text-blue-300">
               <p className="font-medium mb-1">
                 {language === 'en' ? 'Approval Process' : '审批流程'}

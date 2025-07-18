@@ -19,6 +19,8 @@ import { useLanguage } from '../../context/LanguageContext'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '../../components/shared/DashboardLayout'
 import EventApprovalModal from '../../components/shared/EventApprovalModal'
+import { toast } from 'react-hot-toast'
+import { toastStyles } from '../../utils/toastStyles'
 import { 
   FaTrophy, 
   FaUsers, 
@@ -390,15 +392,15 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        alert(`Ambassador ${action} successfully`)
+        toast.success(`Ambassador ${action} successfully`, toastStyles.success)
         refreshData()
       } else {
         const errorData = await response.json()
-        alert(`Failed to ${action} ambassador: ${errorData.error}`)
+        toast.error(`Failed to ${action} ambassador: ${errorData.error}`, toastStyles.error)
       }
     } catch (error) {
       console.error(`Error ${action} ambassador:`, error)
-      alert(`Error ${action} ambassador`)
+      toast.error(`Error ${action} ambassador`, toastStyles.error)
     }
   }
 
@@ -420,15 +422,15 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        alert(`Venue request ${action}d successfully`)
+        toast.success(`Venue request ${action}d successfully`, toastStyles.success)
         refreshData()
       } else {
         const errorData = await response.json()
-        alert(`Failed to ${action} venue request: ${errorData.error}`)
+        toast.error(`Failed to ${action} venue request: ${errorData.error}`, toastStyles.error)
       }
     } catch (error) {
       console.error(`Error ${action} venue request:`, error)
-      alert(`Error ${action} venue request`)
+      toast.error(`Error ${action} venue request`, toastStyles.error)
     }
   }
 
@@ -450,15 +452,15 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        alert(`QR request ${action}d successfully`)
+        toast.success(`QR request ${action}d successfully`, toastStyles.success)
         refreshData()
       } else {
         const errorData = await response.json()
-        alert(`Failed to ${action} QR request: ${errorData.error}`)
+        toast.error(`Failed to ${action} QR request: ${errorData.error}`, toastStyles.error)
       }
     } catch (error) {
       console.error(`Error ${action} QR request:`, error)
-      alert(`Error ${action} QR request`)
+      toast.error(`Error ${action} QR request`, toastStyles.error)
     }
   }
 
@@ -499,16 +501,16 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        alert(language === 'en' ? 'Event application approved successfully' : '事件申请批准成功')
+        toast.success(language === 'en' ? 'Event application approved successfully' : '事件申请批准成功', toastStyles.success)
         refreshData()
         fetchEventApplications()
       } else {
         const errorData = await response.json()
-        alert(language === 'en' ? `Failed to approve application: ${errorData.error}` : `批准申请失败: ${errorData.error}`)
+        toast.error(language === 'en' ? `Failed to approve application: ${errorData.error}` : `批准申请失败: ${errorData.error}`, toastStyles.error)
       }
     } catch (error) {
       console.error('Error approving application:', error)
-      alert(language === 'en' ? 'Error approving application' : '批准申请时出错')
+      toast.error(language === 'en' ? 'Error approving application' : '批准申请时出错', toastStyles.error)
     }
   }
 
@@ -530,16 +532,16 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        alert(language === 'en' ? 'Event application rejected successfully' : '事件申请拒绝成功')
+        toast.success(language === 'en' ? 'Event application rejected successfully' : '事件申请拒绝成功', toastStyles.success)
         refreshData()
         fetchEventApplications()
       } else {
         const errorData = await response.json()
-        alert(language === 'en' ? `Failed to reject application: ${errorData.error}` : `拒绝申请失败: ${errorData.error}`)
+        toast.error(language === 'en' ? `Failed to reject application: ${errorData.error}` : `拒绝申请失败: ${errorData.error}`, toastStyles.error)
       }
     } catch (error) {
       console.error('Error rejecting application:', error)
-      alert(language === 'en' ? 'Error rejecting application' : '拒绝申请时出错')
+      toast.error(language === 'en' ? 'Error rejecting application' : '拒绝申请时出错', toastStyles.error)
     }
   }
 
@@ -559,14 +561,14 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        alert(`${action} executed successfully`)
+        toast.success(`${action} executed successfully`, toastStyles.success)
         refreshData()
       } else {
-        alert(`Failed to execute ${action}`)
+        toast.error(`Failed to execute ${action}`, toastStyles.error)
       }
     } catch (error) {
       console.error(`Error executing ${action}:`, error)
-      alert(`Error executing ${action}`)
+      toast.error(`Error executing ${action}`, toastStyles.error)
     }
   }
 
@@ -575,7 +577,7 @@ export default function AdminDashboard() {
     try {
       const adminId = authState.user?.id
       if (!adminId) {
-        alert('Admin ID not found')
+        toast.error('Admin ID not found', toastStyles.error)
         return
       }
 
@@ -594,14 +596,14 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        alert(`User ${action} successfully`)
+        toast.success(`User ${action} successfully`, toastStyles.success)
       } else {
         const errorData = await response.json()
-        alert(`Failed to ${action} user: ${errorData.error}`)
+        toast.error(`Failed to ${action} user: ${errorData.error}`, toastStyles.error)
       }
     } catch (error) {
       console.error(`Error ${action} user:`, error)
-      alert(`Error ${action} user`)
+      toast.error(`Error ${action} user`, toastStyles.error)
     }
   }
 
@@ -610,7 +612,7 @@ export default function AdminDashboard() {
     try {
       const adminId = authState.user?.id
       if (!adminId) {
-        alert('Admin ID not found')
+        toast.error('Admin ID not found', toastStyles.error)
         return
       }
 
@@ -629,15 +631,15 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        alert(language === 'en' ? 'System configuration updated successfully' : '系统配置更新成功')
+        toast.success(language === 'en' ? 'System configuration updated successfully' : '系统配置更新成功', toastStyles.success)
         refreshData()
       } else {
         const errorData = await response.json()
-        alert(`Failed to update system configuration: ${errorData.error}`)
+        toast.error(`Failed to update system configuration: ${errorData.error}`, toastStyles.error)
       }
     } catch (error) {
       console.error('Error updating system configuration:', error)
-      alert('Error updating system configuration')
+      toast.error('Error updating system configuration', toastStyles.error)
     }
   }
 
