@@ -18,6 +18,7 @@ import { useUser } from '../../context/UserContext'
 import { useLanguage } from '../../context/LanguageContext'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '../../components/shared/DashboardLayout'
+import EventApprovalModal from '../../components/shared/EventApprovalModal'
 import { 
   FaTrophy, 
   FaUsers, 
@@ -243,6 +244,13 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [eventApplications, setEventApplications] = useState([])
+  const [approvalModal, setApprovalModal] = useState<{
+    isOpen: boolean
+    application: any | null
+  }>({
+    isOpen: false,
+    application: null
+  })
 
   // 实时时间更新 / Real-time time updates
   useEffect(() => {
@@ -454,8 +462,24 @@ export default function AdminDashboard() {
     }
   }
 
-  // 处理事件申请 / Handle Event Applications
-  const handleEventApplication = async (applicationId: string, action: 'approve' | 'reject', adminNotes?: string) => {
+  // 打开审批模态框 / Open Approval Modal
+  const openApprovalModal = (application: any) => {
+    setApprovalModal({
+      isOpen: true,
+      application
+    })
+  }
+
+  // 关闭审批模态框 / Close Approval Modal
+  const closeApprovalModal = () => {
+    setApprovalModal({
+      isOpen: false,
+      application: null
+    })
+  }
+
+  // 处理批准申请 / Handle Approve Application
+  const handleApproveApplication = async (applicationId: string, data: any) => {
     try {
       const response = await fetch('/api/admin/event-applications', {
         method: 'POST',
@@ -465,23 +489,57 @@ export default function AdminDashboard() {
         },
         body: JSON.stringify({
           application_id: applicationId,
-          action,
-          admin_notes: adminNotes,
-          admin_id: authState.user?.id
+          action: 'approve',
+          admin_id: authState.user?.id,
+          injected_chz_amount: data.injectedChzAmount,
+          team_a_coefficient: data.teamACoefficient,
+          team_b_coefficient: data.teamBCoefficient,
+          admin_notes: data.adminNotes
         })
       })
 
       if (response.ok) {
-        alert(`Event application ${action}d successfully`)
+        alert(language === 'en' ? 'Event application approved successfully' : '事件申请批准成功')
         refreshData()
-        fetchEventApplications() // Refresh the applications list
+        fetchEventApplications()
       } else {
         const errorData = await response.json()
-        alert(`Failed to ${action} event application: ${errorData.error}`)
+        alert(language === 'en' ? `Failed to approve application: ${errorData.error}` : `批准申请失败: ${errorData.error}`)
       }
     } catch (error) {
-      console.error(`Error ${action} event application:`, error)
-      alert(`Error ${action} event application`)
+      console.error('Error approving application:', error)
+      alert(language === 'en' ? 'Error approving application' : '批准申请时出错')
+    }
+  }
+
+  // 处理拒绝申请 / Handle Reject Application
+  const handleRejectApplication = async (applicationId: string, data: any) => {
+    try {
+      const response = await fetch('/api/admin/event-applications', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authState.sessionToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          application_id: applicationId,
+          action: 'reject',
+          admin_id: authState.user?.id,
+          admin_notes: data.adminNotes
+        })
+      })
+
+      if (response.ok) {
+        alert(language === 'en' ? 'Event application rejected successfully' : '事件申请拒绝成功')
+        refreshData()
+        fetchEventApplications()
+      } else {
+        const errorData = await response.json()
+        alert(language === 'en' ? `Failed to reject application: ${errorData.error}` : `拒绝申请失败: ${errorData.error}`)
+      }
+    } catch (error) {
+      console.error('Error rejecting application:', error)
+      alert(language === 'en' ? 'Error rejecting application' : '拒绝申请时出错')
     }
   }
 
@@ -1298,16 +1356,10 @@ export default function AdminDashboard() {
                             {app.status === 'pending' && (
                               <div className="flex space-x-2">
                                 <button
-                                  onClick={() => handleEventApplication(app.id, 'approve')}
+                                  onClick={() => openApprovalModal(app)}
                                   className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
                                 >
-                                  {language === 'en' ? 'Approve' : '批准'}
-                                </button>
-                                <button
-                                  onClick={() => handleEventApplication(app.id, 'reject')}
-                                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                                >
-                                  {language === 'en' ? 'Reject' : '拒绝'}
+                                  {language === 'en' ? 'Review' : '审核'}
                                 </button>
                               </div>
                             )}
@@ -1512,6 +1564,16 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* Event Approval Modal */}
+        <EventApprovalModal
+          isOpen={approvalModal.isOpen}
+          onClose={closeApprovalModal}
+          application={approvalModal.application}
+          onApprove={handleApproveApplication}
+          onReject={handleRejectApplication}
+          language={language}
+        />
       </div>
     </DashboardLayout>
   )
