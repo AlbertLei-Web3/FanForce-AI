@@ -361,11 +361,47 @@ export default function AudienceDashboard() {
   // Real-time updates simulation / 实时更新模拟
   const [currentTime, setCurrentTime] = useState(new Date());
 
+  // Real data state for featured event / 焦点赛事的真实数据状态
+  const [featuredEvent, setFeaturedEvent] = useState(null);
+  const [featuredEventLoading, setFeaturedEventLoading] = useState(true);
+  const [featuredEventError, setFeaturedEventError] = useState(null);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Fetch real featured event from database / 从数据库获取真实焦点赛事
+  useEffect(() => {
+    const fetchFeaturedEvent = async () => {
+      try {
+        setFeaturedEventLoading(true);
+        setFeaturedEventError(null);
+        
+        const response = await fetch('/api/audience/featured-events');
+        const data = await response.json();
+        
+        if (data.success) {
+          setFeaturedEvent(data.featuredEvent);
+          console.log('✅ Featured event loaded from database:', data.featuredEvent.title);
+          console.log('✅ 从数据库加载焦点赛事:', data.featuredEvent.title);
+        } else {
+          setFeaturedEventError(data.error || 'Failed to fetch featured event');
+          console.error('❌ Failed to fetch featured event:', data.error);
+          console.error('❌ 获取焦点赛事失败:', data.error);
+        }
+      } catch (error) {
+        setFeaturedEventError('Network error while fetching featured event');
+        console.error('❌ Network error fetching featured event:', error);
+        console.error('❌ 获取焦点赛事网络错误:', error);
+      } finally {
+        setFeaturedEventLoading(false);
+      }
+    };
+
+    fetchFeaturedEvent();
   }, []);
 
   // Calculate time remaining for QR expiry / 计算二维码过期剩余时间
@@ -1067,70 +1103,93 @@ export default function AudienceDashboard() {
         </div>
       </div>
 
-            {/* Featured Event Banner / 焦点赛事横幅 */}
-      <div className="bg-gradient-to-r from-blue-900 via-purple-800 to-red-900 rounded-lg p-4 mb-6 text-center shadow-xl border border-gray-700">
-        <h2 className="text-2xl font-bold text-yellow-400 mb-2 animate-pulse">
-          {language === 'en' ? "🔥 Featured Championship 🔥" : "🔥 焦点锦标赛 🔥"}
-        </h2>
-        <p className="text-gray-200 mb-3 text-base">
-          {language === 'en' ? mockUpcomingEvents[0].title : mockUpcomingEvents[0].titleCn}
-        </p>
-        
-        <div className="flex justify-around items-center my-4 bg-black/20 rounded-lg p-3">
-          <div className="text-center">
-            <div className="text-4xl mb-1">{mockUpcomingEvents[0].teamA.icon}</div>
-            <span className="font-bold text-base text-white">{mockUpcomingEvents[0].teamA.name}</span>
-            <div className="text-sm text-yellow-400 font-bold">
-              {mockUpcomingEvents[0].teamA.odds}x odds
+      {/* Featured Event Banner - Now with Real Data / 焦点赛事横幅 - 现在使用真实数据 */}
+      {featuredEventLoading ? (
+        <div className="bg-gradient-to-r from-blue-900 via-purple-800 to-red-900 rounded-lg p-4 mb-6 text-center shadow-xl border border-gray-700">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-700 rounded mb-4"></div>
+            <div className="h-6 bg-gray-700 rounded mb-4"></div>
+            <div className="h-12 bg-gray-700 rounded mb-4"></div>
+            <div className="h-10 bg-gray-700 rounded"></div>
+          </div>
+        </div>
+      ) : featuredEventError ? (
+        <div className="bg-gradient-to-r from-red-900 to-red-800 rounded-lg p-4 mb-6 text-center shadow-xl border border-red-700">
+          <h2 className="text-2xl font-bold text-red-400 mb-2">
+            {language === 'en' ? "⚠️ Featured Event Unavailable" : "⚠️ 焦点赛事不可用"}
+          </h2>
+          <p className="text-gray-300 mb-4">
+            {language === 'en' ? "Unable to load featured championship" : "无法加载焦点锦标赛"}
+          </p>
+          <div className="text-sm text-gray-400">
+            {featuredEventError}
+          </div>
+        </div>
+      ) : featuredEvent ? (
+        <div className="bg-gradient-to-r from-blue-900 via-purple-800 to-red-900 rounded-lg p-4 mb-6 text-center shadow-xl border border-gray-700">
+          <h2 className="text-2xl font-bold text-yellow-400 mb-2 animate-pulse">
+            {language === 'en' ? "🔥 Featured Championship 🔥" : "🔥 焦点锦标赛 🔥"}
+          </h2>
+          <p className="text-gray-200 mb-3 text-base">
+            {language === 'en' ? featuredEvent.title : featuredEvent.titleCn}
+          </p>
+          
+          <div className="flex justify-around items-center my-4 bg-black/20 rounded-lg p-3">
+            <div className="text-center">
+              <div className="text-4xl mb-1">{featuredEvent.teamA.icon}</div>
+              <span className="font-bold text-base text-white">{featuredEvent.teamA.name}</span>
+              <div className="text-sm text-yellow-400 font-bold">
+                {featuredEvent.teamA.odds}x odds
+              </div>
+            </div>
+            <div className="text-center">
+              <span className="text-4xl font-bold text-white animate-pulse">VS</span>
+              <div className="text-sm text-gray-300 mt-1">
+                Pool: {featuredEvent.totalPool.toLocaleString()} CHZ
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl mb-1">{featuredEvent.teamB.icon}</div>
+              <span className="font-bold text-base text-white">{featuredEvent.teamB.name}</span>
+              <div className="text-sm text-yellow-400 font-bold">
+                {featuredEvent.teamB.odds}x odds
+              </div>
             </div>
           </div>
-          <div className="text-center">
-            <span className="text-4xl font-bold text-white animate-pulse">VS</span>
-            <div className="text-sm text-gray-300 mt-1">
-              Pool: {mockUpcomingEvents[0].totalPool.toLocaleString()} CHZ
-            </div>
+          
+          <div className="text-sm text-gray-300 mb-4">
+            {featuredEvent.date} {featuredEvent.time} • 
+            {language === 'en' ? featuredEvent.venue : featuredEvent.venueCn}
           </div>
-          <div className="text-center">
-            <div className="text-4xl mb-1">{mockUpcomingEvents[0].teamB.icon}</div>
-            <span className="font-bold text-base text-white">{mockUpcomingEvents[0].teamB.name}</span>
-            <div className="text-sm text-yellow-400 font-bold">
-              {mockUpcomingEvents[0].teamB.odds}x odds
+          
+          <button 
+            onClick={() => {
+              setSelectedEvent(featuredEvent);
+              setShowStakeModal(true);
+            }}
+            className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-xl"
+          >
+            {language === 'en' ? "🚀 Support Now" : "🚀 立即支持"}
+          </button>
+          
+          <div className="flex justify-center gap-4 mt-3 text-xs text-gray-300">
+            <div className="flex items-center gap-1">
+              <FaUsers className="text-xs" />
+              {featuredEvent.currentStakers} supporters
+            </div>
+            <div className="flex items-center gap-1">
+              <FaClock className="text-xs" />
+              QR expires: {getTimeRemaining(featuredEvent.qrExpiry)}
+            </div>
+            <div className="flex items-center gap-1">
+              <FaGift className="text-xs" />
+              After-party available
             </div>
           </div>
         </div>
-        
-        <div className="text-sm text-gray-300 mb-4">
-          {mockUpcomingEvents[0].date} {mockUpcomingEvents[0].time} • 
-          {language === 'en' ? mockUpcomingEvents[0].venue : mockUpcomingEvents[0].venueCn}
-        </div>
-        
-        <button 
-          onClick={() => {
-            setSelectedEvent(mockUpcomingEvents[0]);
-            setShowStakeModal(true);
-          }}
-          className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-xl"
-        >
-          {language === 'en' ? "🚀 Support Now" : "🚀 立即支持"}
-        </button>
-        
-        <div className="flex justify-center gap-4 mt-3 text-xs text-gray-300">
-          <div className="flex items-center gap-1">
-            <FaUsers className="text-xs" />
-            {mockUpcomingEvents[0].currentStakers} supporters
-          </div>
-          <div className="flex items-center gap-1">
-            <FaClock className="text-xs" />
-            QR expires: {getTimeRemaining(mockUpcomingEvents[0].qrExpiry)}
-          </div>
-          <div className="flex items-center gap-1">
-            <FaGift className="text-xs" />
-            After-party available
-            </div>
-        </div>
-      </div>
+      ) : null}
       
-            {/* Navigation Tabs / 导航标签 */}
+      {/* Navigation Tabs / 导航标签 */}
       <div className="mb-4">
         <div className="flex border-b border-gray-700">
           <button 
