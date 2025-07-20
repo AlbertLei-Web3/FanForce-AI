@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
     console.log('Audience: Fetching featured event for championship display');
     console.log('观众: 获取用于锦标赛显示的焦点赛事');
 
-    // Fixed query to properly关联event_applications with chz_pool_management through events table
-    // 修复查询以通过events表正确关联event_applications与chz_pool_management
+    // Query to get the most recent approved event with team info from event_applications
+    // 查询从event_applications获取最新的已批准赛事及队伍信息
     const query = `
       SELECT 
         ea.id,
@@ -46,29 +46,27 @@ export async function GET(request: NextRequest) {
         -- Calculate QR expiry time (4 hours before event)
         -- 计算QR码过期时间（赛事前4小时）
         (ea.event_start_time - INTERVAL '4 hours') as qr_expiry_time,
-        -- Get current stakers count from audience_stakes_extended
-        -- 从audience_stakes_extended获取当前质押者数量
+        -- Get current stakers count from user_stake_records through events table
+        -- 通过events表从user_stake_records获取当前质押者数量
         COALESCE((
-          SELECT COUNT(DISTINCT user_id) 
-          FROM audience_stakes_extended 
-          WHERE event_id = ea.id AND stake_status = 'active'
+          SELECT COUNT(DISTINCT usr.user_id) 
+          FROM user_stake_records usr
+          JOIN events e ON usr.event_id = e.id
+          WHERE e.application_id = ea.id AND usr.status = 'active'
         ), 0) as current_stakers,
-        -- Get total pool amount from audience_stakes_extended
-        -- 从audience_stakes_extended获取总奖池金额
+        -- Get total pool amount from user_stake_records through events table
+        -- 通过events表从user_stake_records获取总奖池金额
         COALESCE((
-          SELECT SUM(stake_amount) 
-          FROM audience_stakes_extended 
-          WHERE event_id = ea.id AND stake_status = 'active'
+          SELECT SUM(usr.stake_amount) 
+          FROM user_stake_records usr
+          JOIN events e ON usr.event_id = e.id
+          WHERE e.application_id = ea.id AND usr.status = 'active'
         ), 0) as total_pool_amount,
-        -- Get party applicants count from event_participations
-        -- 从event_participations获取聚会申请者数量
-        COALESCE((
-          SELECT COUNT(*) 
-          FROM event_participations 
-          WHERE application_id = ea.id AND participation_type = 'watch_and_party'
-        ), 0) as party_applicants,
-        -- Fixed: Get the latest pool balance after from chz_pool_management through events table
-        -- 修复: 通过events表从chz_pool_management获取最新的pool_balance_after
+        -- Get party applicants count (placeholder for now)
+        -- 获取聚会申请者数量（暂时占位符）
+        0 as party_applicants,
+        -- Get the latest pool balance after from chz_pool_management through events table
+        -- 通过events表从chz_pool_management获取最新的pool_balance_after
         COALESCE((
           SELECT cpm.pool_balance_after 
           FROM chz_pool_management cpm
@@ -99,15 +97,20 @@ export async function GET(request: NextRequest) {
 
     const event = result.rows[0];
 
-    // Parse JSON fields safely
-    // 安全解析JSON字段
-    const safeJsonParse = (value: any, defaultValue: any) => {
+    // Parse team info fields safely
+    // 安全解析队伍信息字段
+    const safeTeamInfoParse = (value: any, defaultValue: any) => {
       try {
         if (!value) return defaultValue;
         if (typeof value === 'object') return value;
-        return JSON.parse(value);
+        if (typeof value === 'string') {
+          // Try to parse as JSON string
+          // 尝试解析为JSON字符串
+          return JSON.parse(value);
+        }
+        return defaultValue;
       } catch (error) {
-        console.error('JSON parse error:', error, 'Value:', value);
+        console.error('Team info parse error:', error, 'Value:', value);
         return defaultValue;
       }
     };
@@ -136,17 +139,17 @@ export async function GET(request: NextRequest) {
       status: 'open', // Default status for approved events
       qrExpiry: event.qr_expiry_time,
       ambassadorInfo: {
-        name: safeJsonParse(event.ambassador_profile, {}).name || 'Ambassador',
+        name: safeTeamInfoParse(event.ambassador_profile, {}).name || 'Ambassador',
         contact: `@${event.ambassador_student_id || 'ambassador'}`
       },
       // Extract real team information from JSON with gladiator helmet emojis
       // 从JSON中提取真实队伍信息，使用角斗士头盔emoji
       teamA: {
-        name: safeJsonParse(event.team_a_info, {}).name || 'Team A',
+        name: safeTeamInfoParse(event.team_a_info, {}).name || 'Team A',
         icon: '🛡️', // Gladiator helmet emoji for team A
       },
       teamB: {
-        name: safeJsonParse(event.team_b_info, {}).name || 'Team B',
+        name: safeTeamInfoParse(event.team_b_info, {}).name || 'Team B',
         icon: '⚔️', // Different gladiator helmet emoji for team B
       }
     };

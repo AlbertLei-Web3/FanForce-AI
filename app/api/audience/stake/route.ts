@@ -35,7 +35,8 @@ import { query, transaction } from '../../../../lib/database';
 // 质押请求接口
 interface StakingRequest {
   user_id: string;
-  event_id: string;
+  event_id?: string;
+  application_id?: string;
   stake_amount: number;
   participation_tier: 1 | 2 | 3; // 1=Full, 2=Stake+Match, 3=Stake Only
   team_choice: 'team_a' | 'team_b';
@@ -63,20 +64,32 @@ interface StakingResponse {
 export async function POST(request: NextRequest): Promise<NextResponse<StakingResponse>> {
   try {
     const body: StakingRequest = await request.json();
-    const { user_id, event_id, stake_amount, participation_tier, team_choice } = body;
+    const { user_id, event_id, application_id, stake_amount, participation_tier, team_choice } = body;
 
-    console.log('Processing staking request...', { user_id, event_id, stake_amount, participation_tier, team_choice });
-    console.log('处理质押请求...', { user_id, event_id, stake_amount, participation_tier, team_choice });
+    console.log('Processing staking request...', { user_id, event_id, application_id, stake_amount, participation_tier, team_choice });
+    console.log('处理质押请求...', { user_id, event_id, application_id, stake_amount, participation_tier, team_choice });
 
     // Validate required parameters
     // 验证必需参数
-    if (!user_id || !event_id || !stake_amount || !participation_tier || !team_choice) {
+    if (!user_id || !stake_amount || !participation_tier || !team_choice) {
       return NextResponse.json({
         success: false,
         error: 'Missing required parameters',
         error_cn: '缺少必需参数',
-        message: 'All parameters are required: user_id, event_id, stake_amount, participation_tier, team_choice',
-        message_cn: '所有参数都是必需的：user_id, event_id, stake_amount, participation_tier, team_choice'
+        message: 'All parameters are required: user_id, stake_amount, participation_tier, team_choice',
+        message_cn: '所有参数都是必需的：user_id, stake_amount, participation_tier, team_choice'
+      }, { status: 400 });
+    }
+
+    // Check if we have either event_id or application_id
+    // 检查是否有event_id或application_id
+    if (!event_id && !application_id) {
+      return NextResponse.json({
+        success: false,
+        error: 'Missing required parameter: event_id or application_id',
+        error_cn: '缺少必需参数：event_id或application_id',
+        message: 'Please provide either event_id or application_id',
+        message_cn: '请提供event_id或application_id'
       }, { status: 400 });
     }
 
@@ -142,17 +155,39 @@ export async function POST(request: NextRequest): Promise<NextResponse<StakingRe
 
       // 2. Verify event exists and is active
       // 2. 验证赛事存在且活跃
-      const eventCheck = await client.query(`
-        SELECT id, status, start_time
-        FROM events 
-        WHERE id = $1
-      `, [event_id]);
+      let actualEventId = event_id;
+      let event;
 
-      if (eventCheck.rows.length === 0) {
-        throw new Error('Event not found');
+      if (application_id) {
+        // If application_id is provided, find the corresponding event_id
+        // 如果提供了application_id，找到对应的event_id
+        const eventMapping = await client.query(`
+          SELECT id, status, start_time
+          FROM events 
+          WHERE application_id = $1
+        `, [application_id]);
+
+        if (eventMapping.rows.length === 0) {
+          throw new Error('Event not found for the provided application_id');
+        }
+
+        actualEventId = eventMapping.rows[0].id;
+        event = eventMapping.rows[0];
+      } else {
+        // If event_id is provided directly, use it
+        // 如果直接提供了event_id，使用它
+        const eventCheck = await client.query(`
+          SELECT id, status, start_time
+          FROM events 
+          WHERE id = $1
+        `, [event_id]);
+
+        if (eventCheck.rows.length === 0) {
+          throw new Error('Event not found');
+        }
+
+        event = eventCheck.rows[0];
       }
-
-      const event = eventCheck.rows[0];
       
       // Check if event is still accepting stakes
       // 检查赛事是否仍在接受质押
@@ -175,7 +210,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<StakingRe
         SELECT id, stake_amount, participation_tier, team_choice
         FROM user_stake_records 
         WHERE user_id = $1 AND event_id = $2 AND status = 'active'
-      `, [user_id, event_id]);
+      `, [user_id, actualEventId]);
 
       if (existingStake.rows.length > 0) {
         throw new Error('User has already staked for this event');
@@ -188,7 +223,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<StakingRe
           user_id, event_id, stake_amount, participation_tier, team_choice, status
         ) VALUES ($1, $2, $3, $4, $5, 'active')
         RETURNING id, stake_amount, participation_tier, team_choice, stake_time
-      `, [user_id, event_id, stake_amount, participation_tier, team_choice]);
+      `, [user_id, actualEventId, stake_amount, participation_tier, team_choice]);
 
       // 5. Deduct stake amount from user balance
       // 5. 从用户余额中扣除质押金额

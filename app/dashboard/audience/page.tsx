@@ -421,7 +421,9 @@ export default function AudienceDashboard() {
   // Fetch user stake status for featured event / 获取用户在焦点赛事的质押状态
   const fetchUserStakeStatus = async (eventId) => {
     try {
-      const response = await fetch(`/api/audience/user-stake-status?user_id=${mockUserProfile.id}&event_id=${eventId}`);
+      // Use application_id instead of event_id for featured events
+      // 对焦点赛事使用application_id而不是event_id
+      const response = await fetch(`/api/audience/user-stake-status?user_id=${mockUserProfile.id}&application_id=${eventId}`);
       const data = await response.json();
       
       if (data.success) {
@@ -465,7 +467,7 @@ export default function AudienceDashboard() {
 
     try {
       console.log('Submitting stake:', {
-        event_id: selectedEvent.id,
+        application_id: selectedEvent.id, // Use application_id for featured events
         stake_amount: parseFloat(stakeAmount),
         participation_tier: selectedTier,
         team_choice: selectedTeam
@@ -478,7 +480,7 @@ export default function AudienceDashboard() {
         },
         body: JSON.stringify({
           user_id: mockUserProfile.id,
-          event_id: selectedEvent.id,
+          application_id: selectedEvent.id, // Use application_id for featured events
           stake_amount: parseFloat(stakeAmount),
           participation_tier: selectedTier,
           team_choice: selectedTeam

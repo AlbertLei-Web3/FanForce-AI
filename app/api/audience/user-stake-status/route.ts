@@ -61,9 +61,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserStakeS
     const { searchParams } = new URL(request.url);
     const user_id = searchParams.get('user_id');
     const event_id = searchParams.get('event_id');
+    const application_id = searchParams.get('application_id');
 
-    console.log('Getting user stake status...', { user_id, event_id });
-    console.log('获取用户质押状态...', { user_id, event_id });
+    console.log('Getting user stake status...', { user_id, event_id, application_id });
+    console.log('获取用户质押状态...', { user_id, event_id, application_id });
 
     // Validate required parameters
     // 验证必需参数
@@ -77,13 +78,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserStakeS
       }, { status: 400 });
     }
 
-    if (!event_id) {
+    // Check if we have either event_id or application_id
+    // 检查是否有event_id或application_id
+    if (!event_id && !application_id) {
       return NextResponse.json({
         success: false,
-        error: 'Missing required parameter: event_id',
-        error_cn: '缺少必需参数：event_id',
-        message: 'Please provide event_id parameter',
-        message_cn: '请提供event_id参数'
+        error: 'Missing required parameter: event_id or application_id',
+        error_cn: '缺少必需参数：event_id或application_id',
+        message: 'Please provide either event_id or application_id parameter',
+        message_cn: '请提供event_id或application_id参数'
       }, { status: 400 });
     }
 
@@ -105,22 +108,50 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserStakeS
       }, { status: 404 });
     }
 
-    // Get event information
-    // 获取赛事信息
-    const eventInfo = await query(`
-      SELECT id, title, start_time, status
-      FROM events 
-      WHERE id = $1
-    `, [event_id]);
+    // Determine the actual event_id to use for queries
+    // 确定用于查询的实际event_id
+    let actualEventId = event_id;
+    let eventInfo;
 
-    if (eventInfo.rows.length === 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'Event not found',
-        error_cn: '赛事未找到',
-        message: 'The specified event does not exist',
-        message_cn: '指定的赛事不存在'
-      }, { status: 404 });
+    if (application_id) {
+      // If application_id is provided, find the corresponding event_id
+      // 如果提供了application_id，找到对应的event_id
+      const eventMapping = await query(`
+        SELECT id, title, start_time, status
+        FROM events 
+        WHERE application_id = $1
+      `, [application_id]);
+
+      if (eventMapping.rows.length === 0) {
+        return NextResponse.json({
+          success: false,
+          error: 'Event not found for the provided application_id',
+          error_cn: '未找到对应application_id的赛事',
+          message: 'The specified application does not have a corresponding event',
+          message_cn: '指定的申请没有对应的赛事'
+        }, { status: 404 });
+      }
+
+      actualEventId = eventMapping.rows[0].id;
+      eventInfo = eventMapping;
+    } else {
+      // If event_id is provided directly, use it
+      // 如果直接提供了event_id，使用它
+      eventInfo = await query(`
+        SELECT id, title, start_time, status
+        FROM events 
+        WHERE id = $1
+      `, [event_id]);
+
+      if (eventInfo.rows.length === 0) {
+        return NextResponse.json({
+          success: false,
+          error: 'Event not found',
+          error_cn: '赛事未找到',
+          message: 'The specified event does not exist',
+          message_cn: '指定的赛事不存在'
+        }, { status: 404 });
+      }
     }
 
     // Get user's stake record for this event
@@ -139,7 +170,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserStakeS
       WHERE usr.user_id = $1 
         AND usr.event_id = $2 
         AND usr.status = 'active'
-    `, [user_id, event_id]);
+    `, [user_id, actualEventId]);
 
     const hasStaked = stakeRecord.rows.length > 0;
     const stakeInfo = hasStaked ? stakeRecord.rows[0] : null;
@@ -157,7 +188,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserStakeS
         COUNT(CASE WHEN team_choice = 'team_b' THEN 1 END) as team_b_count
       FROM user_stake_records
       WHERE event_id = $1 AND status = 'active'
-    `, [event_id]);
+    `, [actualEventId]);
 
     // Get platform fee configuration
     // 获取平台手续费配置
@@ -188,7 +219,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserStakeS
         WHERE e.id = $1
         ORDER BY cpm.created_at DESC
         LIMIT 1
-      `, [event_id]);
+      `, [actualEventId]);
 
       const poolAmount = adminPool.rows.length > 0 ? parseFloat(adminPool.rows[0].pool_balance_after) : 0;
       
