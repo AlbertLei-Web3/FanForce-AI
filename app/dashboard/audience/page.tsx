@@ -421,9 +421,9 @@ export default function AudienceDashboard() {
   // Fetch user stake status for featured event / 获取用户在焦点赛事的质押状态
   const fetchUserStakeStatus = async (eventId) => {
     try {
-      // Use application_id instead of event_id for featured events
-      // 对焦点赛事使用application_id而不是event_id
-      const response = await fetch(`/api/audience/user-stake-status?user_id=${mockUserProfile.id}&application_id=${eventId}`);
+      // Use event_id for featured events (now from events table)
+      // 对焦点赛事使用event_id（现在来自events表）
+      const response = await fetch(`/api/audience/user-stake-status?user_id=${mockUserProfile.id}&event_id=${eventId}`);
       const data = await response.json();
       
       if (data.success) {
@@ -454,6 +454,42 @@ export default function AudienceDashboard() {
     return `${hours}h ${minutes}m`;
   };
 
+  // Parse team names from event title / 从赛事标题解析队伍名称
+  const parseTeamNamesFromTitle = (title) => {
+    if (!title) return { teamA: 'Team A', teamB: 'Team B' };
+    
+    // Common separators for team names / 队伍名称的常见分隔符
+    const separators = [' vs ', ' VS ', ' v ', ' V ', ' - ', ' vs. ', ' VS. '];
+    
+    for (const separator of separators) {
+      if (title.includes(separator)) {
+        const parts = title.split(separator);
+        if (parts.length === 2) {
+          return {
+            teamA: parts[0].trim(),
+            teamB: parts[1].trim()
+          };
+        }
+      }
+    }
+    
+    // If no separator found, try to split by space / 如果没有找到分隔符，尝试按空格分割
+    const words = title.trim().split(' ');
+    if (words.length >= 2) {
+      // Try to find a middle word that could be a separator / 尝试找到可能是分隔符的中间词
+      const middleIndex = Math.floor(words.length / 2);
+      const teamA = words.slice(0, middleIndex).join(' ');
+      const teamB = words.slice(middleIndex + 1).join(' ');
+      
+      if (teamA && teamB) {
+        return { teamA, teamB };
+      }
+    }
+    
+    // Fallback / 备用方案
+    return { teamA: 'Team A', teamB: 'Team B' };
+  };
+
   // Handle stake submission / 处理质押提交
   const handleStakeSubmission = async () => {
     if (!selectedEvent || !stakeAmount || parseFloat(stakeAmount) <= 0 || !selectedTeam) {
@@ -467,7 +503,7 @@ export default function AudienceDashboard() {
 
     try {
       console.log('Submitting stake:', {
-        application_id: selectedEvent.id, // Use application_id for featured events
+        event_id: selectedEvent.id, // Use event_id for featured events (now from events table)
         stake_amount: parseFloat(stakeAmount),
         participation_tier: selectedTier,
         team_choice: selectedTeam
@@ -480,7 +516,7 @@ export default function AudienceDashboard() {
         },
         body: JSON.stringify({
           user_id: mockUserProfile.id,
-          application_id: selectedEvent.id, // Use application_id for featured events
+          event_id: selectedEvent.id, // Use event_id for featured events (now from events table)
           stake_amount: parseFloat(stakeAmount),
           participation_tier: selectedTier,
           team_choice: selectedTeam
@@ -1281,15 +1317,19 @@ export default function AudienceDashboard() {
           
           <div className="flex justify-around items-center my-4 bg-black/20 rounded-lg p-3">
             <div className="text-center">
-              <div className="text-4xl mb-1">{featuredEvent.teamA.icon}</div>
-              <span className="font-bold text-base text-white">{featuredEvent.teamA.name}</span>
+              <div className="text-4xl mb-1">🛡️</div>
+              <span className="font-bold text-base text-white">
+                {parseTeamNamesFromTitle(featuredEvent.title).teamA}
+              </span>
             </div>
             <div className="text-center">
               <span className="text-4xl font-bold text-white animate-pulse">VS</span>
             </div>
             <div className="text-center">
-              <div className="text-4xl mb-1">{featuredEvent.teamB.icon}</div>
-              <span className="font-bold text-base text-white">{featuredEvent.teamB.name}</span>
+              <div className="text-4xl mb-1">⚔️</div>
+              <span className="font-bold text-base text-white">
+                {parseTeamNamesFromTitle(featuredEvent.title).teamB}
+              </span>
             </div>
           </div>
           

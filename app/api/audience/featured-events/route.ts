@@ -24,61 +24,59 @@ export async function GET(request: NextRequest) {
     console.log('Audience: Fetching featured event for championship display');
     console.log('观众: 获取用于锦标赛显示的焦点赛事');
 
-    // Query to get the most recent approved event with team info from event_applications
-    // 查询从event_applications获取最新的已批准赛事及队伍信息
+    // Query to get the event closest to start time from events table
+    // 查询从events表获取离开始时间最近的赛事
     const query = `
       SELECT 
-        ea.id,
-        ea.event_title,
-        ea.event_description,
-        ea.event_start_time,
-        ea.venue_name,
-        ea.venue_capacity,
-        ea.party_venue_capacity,
+        e.id,
+        e.title as event_title,
+        e.description as event_description,
+        e.event_date as event_start_time,
+        e.venue_name,
+        e.venue_capacity,
+        e.party_venue_capacity,
         ea.team_a_info,
         ea.team_b_info,
-        ea.estimated_participants,
-        ea.expected_revenue,
-        ea.status,
-        ea.created_at,
+        e.estimated_participants,
+        e.expected_revenue,
+        e.status,
+        e.created_at,
         u.student_id as ambassador_student_id,
         u.profile_data as ambassador_profile,
         -- Calculate QR expiry time (4 hours before event)
         -- 计算QR码过期时间（赛事前4小时）
-        (ea.event_start_time - INTERVAL '4 hours') as qr_expiry_time,
-        -- Get current stakers count from user_stake_records through events table
-        -- 通过events表从user_stake_records获取当前质押者数量
+        (e.event_date - INTERVAL '4 hours') as qr_expiry_time,
+        -- Get current stakers count from user_stake_records
+        -- 从user_stake_records获取当前质押者数量
         COALESCE((
           SELECT COUNT(DISTINCT usr.user_id) 
           FROM user_stake_records usr
-          JOIN events e ON usr.event_id = e.id
-          WHERE e.application_id = ea.id AND usr.status = 'active'
+          WHERE usr.event_id = e.id AND usr.status = 'active'
         ), 0) as current_stakers,
-        -- Get total pool amount from user_stake_records through events table
-        -- 通过events表从user_stake_records获取总奖池金额
+        -- Get total pool amount from user_stake_records
+        -- 从user_stake_records获取总奖池金额
         COALESCE((
           SELECT SUM(usr.stake_amount) 
           FROM user_stake_records usr
-          JOIN events e ON usr.event_id = e.id
-          WHERE e.application_id = ea.id AND usr.status = 'active'
+          WHERE usr.event_id = e.id AND usr.status = 'active'
         ), 0) as total_pool_amount,
         -- Get party applicants count (placeholder for now)
         -- 获取聚会申请者数量（暂时占位符）
         0 as party_applicants,
-        -- Get the latest pool balance after from chz_pool_management through events table
-        -- 通过events表从chz_pool_management获取最新的pool_balance_after
+        -- Get the latest pool balance after from chz_pool_management
+        -- 从chz_pool_management获取最新的pool_balance_after
         COALESCE((
           SELECT cpm.pool_balance_after 
           FROM chz_pool_management cpm
-          JOIN events e ON cpm.event_id = e.id
-          WHERE e.application_id = ea.id 
+          WHERE cpm.event_id = e.id 
           ORDER BY cpm.created_at DESC 
           LIMIT 1
         ), 0) as pool_balance_after
-      FROM event_applications ea
-      LEFT JOIN users u ON ea.ambassador_id = u.id
-      WHERE ea.status = 'approved'
-      ORDER BY ea.created_at DESC
+      FROM events e
+      LEFT JOIN event_applications ea ON e.application_id = ea.id
+      LEFT JOIN users u ON e.ambassador_id = u.id
+      WHERE e.status = 'active' AND e.event_date IS NOT NULL
+      ORDER BY ABS(EXTRACT(EPOCH FROM (e.event_date - NOW())))
       LIMIT 1
     `;
 
@@ -102,7 +100,11 @@ export async function GET(request: NextRequest) {
     const safeTeamInfoParse = (value: any, defaultValue: any) => {
       try {
         if (!value) return defaultValue;
-        if (typeof value === 'object') return value;
+        if (typeof value === 'object') {
+          // If it's already an object, return it directly
+          // 如果已经是对象，直接返回
+          return value;
+        }
         if (typeof value === 'string') {
           // Try to parse as JSON string
           // 尝试解析为JSON字符串
@@ -158,6 +160,15 @@ export async function GET(request: NextRequest) {
     console.log(`找到焦点赛事: ${formattedEvent.title}`);
     console.log(`Pool balance after: ${formattedEvent.poolBalanceAfter} CHZ`);
     console.log(`奖池余额: ${formattedEvent.poolBalanceAfter} CHZ`);
+    
+    // Debug team information
+    // 调试队伍信息
+    console.log('Debug team information:');
+    console.log('调试队伍信息:');
+    console.log(`Raw team_a_info: ${event.team_a_info}`);
+    console.log(`Raw team_b_info: ${event.team_b_info}`);
+    console.log(`Parsed teamA: ${JSON.stringify(formattedEvent.teamA)}`);
+    console.log(`Parsed teamB: ${JSON.stringify(formattedEvent.teamB)}`);
 
     return NextResponse.json({
       success: true,
