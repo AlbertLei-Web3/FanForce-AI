@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
     console.log('Audience: Fetching featured event for championship display');
     console.log('观众: 获取用于锦标赛显示的焦点赛事');
 
-    // Query to get the most recent approved event with all necessary details
-    // 查询获取最新的已批准赛事及其所有必要详情
+    // Fixed query to properly关联event_applications with chz_pool_management through events table
+    // 修复查询以通过events表正确关联event_applications与chz_pool_management
     const query = `
       SELECT 
         ea.id,
@@ -66,7 +66,17 @@ export async function GET(request: NextRequest) {
           SELECT COUNT(*) 
           FROM event_participations 
           WHERE application_id = ea.id AND participation_type = 'watch_and_party'
-        ), 0) as party_applicants
+        ), 0) as party_applicants,
+        -- Fixed: Get the latest pool balance after from chz_pool_management through events table
+        -- 修复: 通过events表从chz_pool_management获取最新的pool_balance_after
+        COALESCE((
+          SELECT cpm.pool_balance_after 
+          FROM chz_pool_management cpm
+          JOIN events e ON cpm.event_id = e.id
+          WHERE e.application_id = ea.id 
+          ORDER BY cpm.created_at DESC 
+          LIMIT 1
+        ), 0) as pool_balance_after
       FROM event_applications ea
       LEFT JOIN users u ON ea.ambassador_id = u.id
       WHERE ea.status = 'approved'
@@ -116,6 +126,9 @@ export async function GET(request: NextRequest) {
       capacity: event.venue_capacity,
       currentStakers: parseInt(event.current_stakers) || 0,
       totalPool: parseFloat(event.total_pool_amount) || 0,
+      // Add the pool balance after from chz_pool_management (now properly关联)
+      // 添加来自chz_pool_management的pool_balance_after（现在正确关联）
+      poolBalanceAfter: parseFloat(event.pool_balance_after) || 0,
       partyVenue: 'Student Center', // Default value
       partyVenueCn: '学生中心', // Default value
       partyCapacity: event.party_venue_capacity || 0,
@@ -142,6 +155,8 @@ export async function GET(request: NextRequest) {
 
     console.log(`Found featured event: ${formattedEvent.title}`);
     console.log(`找到焦点赛事: ${formattedEvent.title}`);
+    console.log(`Pool balance after: ${formattedEvent.poolBalanceAfter} CHZ`);
+    console.log(`奖池余额: ${formattedEvent.poolBalanceAfter} CHZ`);
 
     return NextResponse.json({
       success: true,

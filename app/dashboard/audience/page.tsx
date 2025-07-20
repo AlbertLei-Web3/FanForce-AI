@@ -112,6 +112,7 @@ const mockUpcomingEvents = [
     capacity: 500,
     currentStakers: 128,
     totalPool: 2450.75,
+    poolBalanceAfter: 3200.50, // Real pool balance from chz_pool_management
     partyVenue: 'Student Center',
     partyVenueCn: '学生中心',
     partyCapacity: 80,
@@ -136,6 +137,7 @@ const mockUpcomingEvents = [
     capacity: 300,
     currentStakers: 89,
     totalPool: 1890.25,
+    poolBalanceAfter: 2450.75, // Real pool balance from chz_pool_management
     partyVenue: 'Rooftop Lounge',
     partyVenueCn: '屋顶休息室',
     partyCapacity: 50,
@@ -160,6 +162,7 @@ const mockUpcomingEvents = [
     capacity: 200,
     currentStakers: 67,
     totalPool: 1456.80,
+    poolBalanceAfter: 1890.25, // Real pool balance from chz_pool_management
     partyVenue: 'Innovation Lab',
     partyVenueCn: '创新实验室',
     partyCapacity: 40,
@@ -1154,6 +1157,22 @@ export default function AudienceDashboard() {
               <div className="text-sm text-yellow-400 font-bold">
                 {featuredEvent.teamB.odds}x odds
               </div>
+            </div>
+          </div>
+          
+          {/* New Pool Balance After Display / 新增奖池余额显示 */}
+          <div className="bg-gradient-to-r from-green-600/20 to-blue-600/20 border border-green-500/30 rounded-lg p-3 mb-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <FaCoins className="text-green-400 text-lg" />
+              <span className="text-lg font-bold text-green-400">
+                {language === 'en' ? "Current Pool Balance" : "当前奖池余额"}
+              </span>
+            </div>
+            <div className="text-2xl font-bold text-white">
+              {featuredEvent.poolBalanceAfter.toLocaleString()} CHZ
+            </div>
+            <div className="text-xs text-gray-300 mt-1">
+              {language === 'en' ? "Real-time pool balance from blockchain" : "来自区块链的实时奖池余额"}
             </div>
           </div>
           
