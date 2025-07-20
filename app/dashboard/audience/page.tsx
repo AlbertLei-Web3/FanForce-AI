@@ -32,6 +32,7 @@ import {
 
 // Enhanced Mock Data based on documentation / 基于文档的增强模拟数据
 const mockUserProfile = {
+  id: '550e8400-e29b-41d4-a716-446655440001', // User ID for API calls
   name: 'Alex "The Oracle"',
   studentId: 'CS2021001',
   verified: true,
@@ -357,9 +358,15 @@ export default function AudienceDashboard() {
   const [activeTab, setActiveTab] = useState('events');
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedTier, setSelectedTier] = useState(2);
+  const [selectedTeam, setSelectedTeam] = useState(null);
   const [stakeAmount, setStakeAmount] = useState('');
   const [showStakeModal, setShowStakeModal] = useState(false);
   const [eventsLayout, setEventsLayout] = useState('grid'); // 'grid' or 'list'
+
+  // Stake submission states / 质押提交状态
+  const [stakeSuccess, setStakeSuccess] = useState({ show: false, stakeAmount: 0, participationTier: 2, teamChoice: '', eventTitle: '' });
+  const [stakeError, setStakeError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Real-time updates simulation / 实时更新模拟
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -368,6 +375,7 @@ export default function AudienceDashboard() {
   const [featuredEvent, setFeaturedEvent] = useState(null);
   const [featuredEventLoading, setFeaturedEventLoading] = useState(true);
   const [featuredEventError, setFeaturedEventError] = useState(null);
+  const [userStakeStatus, setUserStakeStatus] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -390,6 +398,9 @@ export default function AudienceDashboard() {
           setFeaturedEvent(data.featuredEvent);
           console.log('✅ Featured event loaded from database:', data.featuredEvent.title);
           console.log('✅ 从数据库加载焦点赛事:', data.featuredEvent.title);
+          
+          // Fetch user stake status for this event / 获取用户在此赛事的质押状态
+          await fetchUserStakeStatus(data.featuredEvent.id);
         } else {
           setFeaturedEventError(data.error || 'Failed to fetch featured event');
           console.error('❌ Failed to fetch featured event:', data.error);
@@ -407,6 +418,26 @@ export default function AudienceDashboard() {
     fetchFeaturedEvent();
   }, []);
 
+  // Fetch user stake status for featured event / 获取用户在焦点赛事的质押状态
+  const fetchUserStakeStatus = async (eventId) => {
+    try {
+      const response = await fetch(`/api/audience/user-stake-status?user_id=${mockUserProfile.id}&event_id=${eventId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setUserStakeStatus(data);
+        console.log('✅ User stake status loaded:', data.has_staked);
+        console.log('✅ 用户质押状态已加载:', data.has_staked);
+      } else {
+        console.error('❌ Failed to fetch user stake status:', data.error);
+        console.error('❌ 获取用户质押状态失败:', data.error);
+      }
+    } catch (error) {
+      console.error('❌ Network error fetching user stake status:', error);
+      console.error('❌ 获取用户质押状态网络错误:', error);
+    }
+  };
+
   // Calculate time remaining for QR expiry / 计算二维码过期剩余时间
   const getTimeRemaining = (expiryTime) => {
     const now = new Date();
@@ -422,12 +453,81 @@ export default function AudienceDashboard() {
   };
 
   // Handle stake submission / 处理质押提交
-  const handleStakeSubmission = () => {
-    // This would integrate with the ultra-simple contract
-    // 这将与超简化合约集成
-    console.log('Staking:', stakeAmount, 'CHZ for event:', selectedEvent.id, 'at tier:', selectedTier);
-    setShowStakeModal(false);
-    setStakeAmount('');
+  const handleStakeSubmission = async () => {
+    if (!selectedEvent || !stakeAmount || parseFloat(stakeAmount) <= 0 || !selectedTeam) {
+      console.error('Invalid stake submission parameters');
+      console.error('无效的质押提交参数');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStakeError(null);
+
+    try {
+      console.log('Submitting stake:', {
+        event_id: selectedEvent.id,
+        stake_amount: parseFloat(stakeAmount),
+        participation_tier: selectedTier,
+        team_choice: selectedTeam
+      });
+
+      const response = await fetch('/api/audience/stake', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: mockUserProfile.id,
+          event_id: selectedEvent.id,
+          stake_amount: parseFloat(stakeAmount),
+          participation_tier: selectedTier,
+          team_choice: selectedTeam
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log('✅ Stake submitted successfully:', data);
+        console.log('✅ 质押提交成功:', data);
+        
+        // Show success message
+        // 显示成功消息
+        setStakeSuccess({
+          show: true,
+          stakeAmount: parseFloat(stakeAmount),
+          participationTier: selectedTier,
+          teamChoice: selectedTeam,
+          eventTitle: selectedEvent.title
+        });
+        
+        // Reset form
+        // 重置表单
+        setShowStakeModal(false);
+        setStakeAmount('');
+        setSelectedTier(2);
+        setSelectedTeam(null);
+        
+        // Refresh user stake status to show updated status
+        // 刷新用户质押状态以显示更新状态
+        if (selectedEvent) {
+          await fetchUserStakeStatus(selectedEvent.id);
+        }
+        
+      } else {
+        console.error('❌ Stake submission failed:', data.error);
+        console.error('❌ 质押提交失败:', data.error);
+        // Show error message
+        // 显示错误消息
+        setStakeError(data.error || 'Stake submission failed');
+      }
+    } catch (error) {
+      console.error('❌ Network error during stake submission:', error);
+      console.error('❌ 质押提交网络错误:', error);
+      setStakeError('Network error during stake submission');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderEventCard = (event, layout = 'list') => {
@@ -659,15 +759,29 @@ export default function AudienceDashboard() {
               {language === 'en' ? 'Select Team to Support' : '选择支持的队伍'}
             </h4>
             <div className="grid grid-cols-2 gap-4">
-              <button className="bg-gray-900/50 hover:bg-blue-600/30 border border-gray-600 hover:border-blue-500 rounded-lg p-4 transition-all duration-300">
+              <button 
+                onClick={() => setSelectedTeam('team_a')}
+                className={`rounded-lg p-4 transition-all duration-300 ${
+                  selectedTeam === 'team_a'
+                    ? 'bg-blue-600/30 border-blue-500'
+                    : 'bg-gray-900/50 hover:bg-blue-600/30 border-gray-600 hover:border-blue-500'
+                } border`}
+              >
                 <div className="text-3xl mb-2">{selectedEvent.teamA.icon}</div>
                 <div className="font-bold text-white">{selectedEvent.teamA.name}</div>
-                <div className="text-sm text-gray-400">Odds: {selectedEvent.teamA.odds}x</div>
+                <div className="text-sm text-gray-400">Team A</div>
               </button>
-              <button className="bg-gray-900/50 hover:bg-blue-600/30 border border-gray-600 hover:border-blue-500 rounded-lg p-4 transition-all duration-300">
+              <button 
+                onClick={() => setSelectedTeam('team_b')}
+                className={`rounded-lg p-4 transition-all duration-300 ${
+                  selectedTeam === 'team_b'
+                    ? 'bg-blue-600/30 border-blue-500'
+                    : 'bg-gray-900/50 hover:bg-blue-600/30 border-gray-600 hover:border-blue-500'
+                } border`}
+              >
                 <div className="text-3xl mb-2">{selectedEvent.teamB.icon}</div>
                 <div className="font-bold text-white">{selectedEvent.teamB.name}</div>
-                <div className="text-sm text-gray-400">Odds: {selectedEvent.teamB.odds}x</div>
+                <div className="text-sm text-gray-400">Team B</div>
               </button>
             </div>
           </div>
@@ -740,11 +854,37 @@ export default function AudienceDashboard() {
           {/* Submit Button / 提交按钮 */}
           <button
             onClick={handleStakeSubmission}
-            disabled={!stakeAmount || parseFloat(stakeAmount) <= 0 || parseFloat(stakeAmount) > mockUserProfile.realChzBalance}
+            disabled={
+              !stakeAmount || 
+              parseFloat(stakeAmount) <= 0 || 
+              parseFloat(stakeAmount) > mockUserProfile.realChzBalance ||
+              !selectedTeam ||
+              isSubmitting
+            }
             className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300"
           >
-            {language === 'en' ? 'Confirm Stake & Participation' : '确认质押和参与'}
+            {isSubmitting ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                {language === 'en' ? 'Processing...' : '处理中...'}
+              </div>
+            ) : (
+              language === 'en' ? 'Confirm Stake & Participation' : '确认质押和参与'
+            )}
           </button>
+
+          {/* Error Message / 错误消息 */}
+          {stakeError && (
+            <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <FaExclamationTriangle className="text-red-500" />
+                <span className="font-medium text-red-500">
+                  {language === 'en' ? 'Error' : '错误'}
+                </span>
+              </div>
+              <p className="text-sm text-red-300">{stakeError}</p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1172,15 +1312,32 @@ export default function AudienceDashboard() {
             {language === 'en' ? featuredEvent.venue : featuredEvent.venueCn}
           </div>
           
-          <button 
-            onClick={() => {
-              setSelectedEvent(featuredEvent);
-              setShowStakeModal(true);
-            }}
-            className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-xl"
-          >
-            {language === 'en' ? "🚀 Support Now" : "🚀 立即支持"}
-          </button>
+          {userStakeStatus && userStakeStatus.has_staked ? (
+            // User has already staked - show supported status / 用户已质押 - 显示已支持状态
+            <div className="inline-block bg-gradient-to-r from-green-600 to-green-700 text-white font-bold py-3 px-8 rounded-lg text-lg shadow-xl">
+              <div className="flex items-center gap-2">
+                <FaCheckCircle className="text-xl" />
+                {language === 'en' ? "✅ Supported" : "✅ 已支持"}
+              </div>
+              <div className="text-sm mt-1 opacity-90">
+                {language === 'en' 
+                  ? `${userStakeStatus.stake_info.stake_amount} CHZ • ${participationTiers.find(t => t.tier === userStakeStatus.stake_info.participation_tier)?.name}`
+                  : `${userStakeStatus.stake_info.stake_amount} CHZ • ${participationTiers.find(t => t.tier === userStakeStatus.stake_info.participation_tier)?.nameCn}`
+                }
+              </div>
+            </div>
+          ) : (
+            // User hasn't staked - show support button / 用户未质押 - 显示支持按钮
+            <button 
+              onClick={() => {
+                setSelectedEvent(featuredEvent);
+                setShowStakeModal(true);
+              }}
+              className="inline-block bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-xl"
+            >
+              {language === 'en' ? "🚀 Support Now" : "🚀 立即支持"}
+            </button>
+          )}
           
           <div className="flex justify-center gap-4 mt-3 text-xs text-gray-300">
             <div className="flex items-center gap-1">
@@ -1240,6 +1397,61 @@ export default function AudienceDashboard() {
 
       {/* Stake Modal / 质押模态框 */}
       {renderStakeModal()}
+
+      {/* Success Modal / 成功弹窗 */}
+      {stakeSuccess.show && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full">
+            <div className="text-center">
+              <div className="text-6xl mb-4">🎉</div>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                {language === 'en' ? 'Congratulations!' : '恭喜！'}
+              </h2>
+              <p className="text-green-400 font-medium mb-4">
+                {language === 'en' ? 'Stake Submitted Successfully' : '质押提交成功'}
+              </p>
+              
+              <div className="bg-gray-900/50 rounded-lg p-4 mb-6">
+                <h3 className="font-bold text-white mb-3">
+                  {language === 'en' ? 'Stake Details' : '质押详情'}
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{language === 'en' ? 'Event:' : '赛事:'}</span>
+                    <span className="text-white">{stakeSuccess.eventTitle}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{language === 'en' ? 'Amount:' : '金额:'}</span>
+                    <span className="text-green-400 font-bold">{stakeSuccess.stakeAmount} CHZ</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{language === 'en' ? 'Tier:' : '档位:'}</span>
+                    <span className="text-blue-400">
+                      {language === 'en' 
+                        ? participationTiers.find(t => t.tier === stakeSuccess.participationTier)?.name
+                        : participationTiers.find(t => t.tier === stakeSuccess.participationTier)?.nameCn
+                      }
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{language === 'en' ? 'Team:' : '队伍:'}</span>
+                    <span className="text-white">
+                      {stakeSuccess.teamChoice === 'team_a' ? 'Team A' : 'Team B'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setStakeSuccess({ ...stakeSuccess, show: false })}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300"
+              >
+                {language === 'en' ? 'Return to Dashboard' : '返回仪表板'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 } 
