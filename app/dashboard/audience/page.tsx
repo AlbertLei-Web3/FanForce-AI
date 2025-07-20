@@ -364,7 +364,15 @@ export default function AudienceDashboard() {
   const [eventsLayout, setEventsLayout] = useState('grid'); // 'grid' or 'list'
 
   // Stake submission states / 质押提交状态
-  const [stakeSuccess, setStakeSuccess] = useState({ show: false, stakeAmount: 0, participationTier: 2, teamChoice: '', eventTitle: '' });
+  const [stakeSuccess, setStakeSuccess] = useState({ 
+    show: false, 
+    stakeAmount: 0, 
+    participationTier: 2, 
+    teamChoice: '', 
+    eventTitle: '',
+    teamAName: '',
+    teamBName: ''
+  });
   const [stakeError, setStakeError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -376,6 +384,11 @@ export default function AudienceDashboard() {
   const [featuredEventLoading, setFeaturedEventLoading] = useState(true);
   const [featuredEventError, setFeaturedEventError] = useState(null);
   const [userStakeStatus, setUserStakeStatus] = useState(null);
+  
+  // Real data state for all events / 所有赛事的真实数据状态
+  const [allEvents, setAllEvents] = useState([]);
+  const [allEventsLoading, setAllEventsLoading] = useState(false);
+  const [allEventsError, setAllEventsError] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -418,6 +431,11 @@ export default function AudienceDashboard() {
     fetchFeaturedEvent();
   }, []);
 
+  // Fetch all events from database on component mount / 组件挂载时从数据库获取所有赛事
+  useEffect(() => {
+    fetchAllEvents();
+  }, []);
+
   // Fetch user stake status for featured event / 获取用户在焦点赛事的质押状态
   const fetchUserStakeStatus = async (eventId) => {
     try {
@@ -437,6 +455,33 @@ export default function AudienceDashboard() {
     } catch (error) {
       console.error('❌ Network error fetching user stake status:', error);
       console.error('❌ 获取用户质押状态网络错误:', error);
+    }
+  };
+
+  // Fetch all events from database / 从数据库获取所有赛事
+  const fetchAllEvents = async () => {
+    try {
+      setAllEventsLoading(true);
+      setAllEventsError(null);
+      
+      const response = await fetch('/api/audience/all-events');
+      const data = await response.json();
+      
+      if (data.success) {
+        setAllEvents(data.events);
+        console.log('✅ All events loaded from database:', data.events.length, 'events');
+        console.log('✅ 从数据库加载所有赛事:', data.events.length, '个赛事');
+      } else {
+        setAllEventsError(data.error || 'Failed to fetch all events');
+        console.error('❌ Failed to fetch all events:', data.error);
+        console.error('❌ 获取所有赛事失败:', data.error);
+      }
+    } catch (error) {
+      setAllEventsError('Network error while fetching all events');
+      console.error('❌ Network error fetching all events:', error);
+      console.error('❌ 获取所有赛事网络错误:', error);
+    } finally {
+      setAllEventsLoading(false);
     }
   };
 
@@ -531,12 +576,15 @@ export default function AudienceDashboard() {
         
         // Show success message
         // 显示成功消息
+        const parsedTeams = parseTeamNamesFromTitle(selectedEvent.title);
         setStakeSuccess({
           show: true,
           stakeAmount: parseFloat(stakeAmount),
           participationTier: selectedTier,
           teamChoice: selectedTeam,
-          eventTitle: selectedEvent.title
+          eventTitle: selectedEvent.title,
+          teamAName: parsedTeams.teamA,
+          teamBName: parsedTeams.teamB
         });
         
         // Reset form
@@ -591,15 +639,17 @@ export default function AudienceDashboard() {
           {/* Compact Teams Battle / 紧凑队伍对战 */}
           <div className="flex justify-around items-center my-3 bg-gray-900/50 rounded-lg p-2">
             <div className="text-center">
-              <div className="text-2xl mb-1">{event.teamA.icon}</div>
-              <h4 className="font-bold text-white text-xs truncate">{event.teamA.name}</h4>
-              <p className="text-xs text-gray-400">{event.teamA.odds}x</p>
+              <div className="text-2xl mb-1">🛡️</div>
+              <h4 className="font-bold text-white text-xs truncate">
+                {parseTeamNamesFromTitle(event.title).teamA}
+              </h4>
             </div>
             <div className="text-2xl font-bold text-gray-500">VS</div>
             <div className="text-center">
-              <div className="text-2xl mb-1">{event.teamB.icon}</div>
-              <h4 className="font-bold text-white text-xs truncate">{event.teamB.name}</h4>
-              <p className="text-xs text-gray-400">{event.teamB.odds}x</p>
+              <div className="text-2xl mb-1">⚔️</div>
+              <h4 className="font-bold text-white text-xs truncate">
+                {parseTeamNamesFromTitle(event.title).teamB}
+              </h4>
             </div>
           </div>
 
@@ -659,15 +709,17 @@ export default function AudienceDashboard() {
         {/* Teams Battle / 队伍对战 */}
         <div className="flex justify-around items-center my-4 bg-gray-900/50 rounded-lg p-3">
           <div className="text-center">
-            <div className="text-3xl mb-1">{event.teamA.icon}</div>
-            <h4 className="font-bold text-white text-sm">{event.teamA.name}</h4>
-            <p className="text-xs text-gray-400">Odds: {event.teamA.odds}x</p>
+            <div className="text-3xl mb-1">🛡️</div>
+            <h4 className="font-bold text-white text-sm">
+              {parseTeamNamesFromTitle(event.title).teamA}
+            </h4>
           </div>
           <div className="text-3xl font-bold text-gray-500">VS</div>
           <div className="text-center">
-            <div className="text-3xl mb-1">{event.teamB.icon}</div>
-            <h4 className="font-bold text-white text-sm">{event.teamB.name}</h4>
-            <p className="text-xs text-gray-400">Odds: {event.teamB.odds}x</p>
+            <div className="text-3xl mb-1">⚔️</div>
+            <h4 className="font-bold text-white text-sm">
+              {parseTeamNamesFromTitle(event.title).teamB}
+            </h4>
           </div>
         </div>
 
@@ -805,8 +857,10 @@ export default function AudienceDashboard() {
                     : 'bg-gray-900/50 hover:bg-blue-600/30 border-gray-600 hover:border-blue-500'
                 } border`}
               >
-                <div className="text-3xl mb-2">{selectedEvent.teamA.icon}</div>
-                <div className="font-bold text-white">{selectedEvent.teamA.name}</div>
+                <div className="text-3xl mb-2">🛡️</div>
+                <div className="font-bold text-white">
+                  {parseTeamNamesFromTitle(selectedEvent.title).teamA}
+                </div>
                 <div className="text-sm text-gray-400">Team A</div>
               </button>
               <button 
@@ -817,8 +871,10 @@ export default function AudienceDashboard() {
                     : 'bg-gray-900/50 hover:bg-blue-600/30 border-gray-600 hover:border-blue-500'
                 } border`}
               >
-                <div className="text-3xl mb-2">{selectedEvent.teamB.icon}</div>
-                <div className="font-bold text-white">{selectedEvent.teamB.name}</div>
+                <div className="text-3xl mb-2">⚔️</div>
+                <div className="font-bold text-white">
+                  {parseTeamNamesFromTitle(selectedEvent.title).teamB}
+                </div>
                 <div className="text-sm text-gray-400">Team B</div>
               </button>
             </div>
@@ -965,18 +1021,47 @@ export default function AudienceDashboard() {
                 </div>
               </div>
               <div className="text-sm text-gray-400">
-                {mockUpcomingEvents.length} {language === 'en' ? 'events available' : '个可用赛事'}
+                {allEventsLoading ? '...' : allEvents.length} {language === 'en' ? 'events available' : '个可用赛事'}
               </div>
             </div>
 
             {/* Events Display / 赛事显示 */}
-            <div className={
-              eventsLayout === 'grid' 
-                ? "grid grid-cols-1 lg:grid-cols-2 gap-4" 
-                : "space-y-4"
-            }>
-              {mockUpcomingEvents.map((event) => renderEventCard(event, eventsLayout))}
-            </div>
+            {allEventsLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <span className="ml-3 text-gray-400">
+                  {language === 'en' ? 'Loading events...' : '加载赛事中...'}
+                </span>
+              </div>
+            ) : allEventsError ? (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FaExclamationTriangle className="text-red-500" />
+                  <span className="font-medium text-red-500">
+                    {language === 'en' ? 'Error' : '错误'}
+                  </span>
+                </div>
+                <p className="text-sm text-red-300">{allEventsError}</p>
+              </div>
+            ) : allEvents.length === 0 ? (
+              <div className="bg-gray-800/50 rounded-lg p-8 text-center">
+                <div className="text-4xl mb-4">📅</div>
+                <h3 className="text-lg font-bold text-white mb-2">
+                  {language === 'en' ? 'No Events Available' : '暂无可用赛事'}
+                </h3>
+                <p className="text-gray-400">
+                  {language === 'en' ? 'Check back later for new events' : '稍后再来查看新赛事'}
+                </p>
+              </div>
+            ) : (
+              <div className={
+                eventsLayout === 'grid' 
+                  ? "grid grid-cols-1 lg:grid-cols-2 gap-4" 
+                  : "space-y-4"
+              }>
+                {allEvents.map((event) => renderEventCard(event, eventsLayout))}
+              </div>
+            )}
             </div>
         );
       
@@ -1478,7 +1563,7 @@ export default function AudienceDashboard() {
                   <div className="flex justify-between">
                     <span className="text-gray-400">{language === 'en' ? 'Team:' : '队伍:'}</span>
                     <span className="text-white">
-                      {stakeSuccess.teamChoice === 'team_a' ? 'Team A' : 'Team B'}
+                      {stakeSuccess.teamChoice === 'team_a' ? stakeSuccess.teamAName : stakeSuccess.teamBName}
                     </span>
                   </div>
                 </div>
