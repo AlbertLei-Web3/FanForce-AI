@@ -1172,7 +1172,7 @@ export default function AudienceDashboard() {
               {featuredEvent.poolBalanceAfter.toLocaleString()} CHZ
             </div>
             <div className="text-xs text-gray-300 mt-1">
-              {language === 'en' ? "Real-time pool balance from blockchain" : "来自区块链的实时奖池余额"}
+              {language === 'en' ? "Pool balance available for all participants to share" : "每个参与用户可实际分享的奖池"}
             </div>
           </div>
           
