@@ -139,17 +139,15 @@ export async function GET(request: NextRequest) {
         name: safeJsonParse(event.ambassador_profile, {}).name || 'Ambassador',
         contact: `@${event.ambassador_student_id || 'ambassador'}`
       },
-      // Extract team information from JSON
-      // 从JSON中提取队伍信息
+      // Extract real team information from JSON with gladiator helmet emojis
+      // 从JSON中提取真实队伍信息，使用角斗士头盔emoji
       teamA: {
         name: safeJsonParse(event.team_a_info, {}).name || 'Team A',
-        icon: '🐺', // Default icon
-        odds: 1.8 // Default odds
+        icon: '🛡️', // Gladiator helmet emoji for team A
       },
       teamB: {
         name: safeJsonParse(event.team_b_info, {}).name || 'Team B',
-        icon: '🦅', // Default icon
-        odds: 2.2 // Default odds
+        icon: '⚔️', // Different gladiator helmet emoji for team B
       }
     };
 

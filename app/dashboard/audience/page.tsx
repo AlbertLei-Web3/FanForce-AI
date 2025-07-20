@@ -103,8 +103,8 @@ const mockUpcomingEvents = [
     id: 'evt1',
     title: 'Campus Basketball Championship',
     titleCn: '校园篮球锦标赛',
-    teamA: { name: 'Thunder Wolves', icon: '🐺', odds: 1.8 },
-    teamB: { name: 'Lightning Hawks', icon: '🦅', odds: 2.2 },
+    teamA: { name: 'Thunder Wolves', icon: '🛡️' },
+    teamB: { name: 'Lightning Hawks', icon: '⚔️' },
     date: '2024-11-15',
     time: '19:00',
     venue: 'Main Sports Arena',
@@ -128,8 +128,8 @@ const mockUpcomingEvents = [
     id: 'evt2',
     title: 'University Soccer Derby',
     titleCn: '大学足球德比',
-    teamA: { name: 'Campus United', icon: '⚽', odds: 1.5 },
-    teamB: { name: 'Student FC', icon: '🏆', odds: 2.8 },
+    teamA: { name: 'Campus United', icon: '🛡️' },
+    teamB: { name: 'Student FC', icon: '⚔️' },
     date: '2024-11-18',
     time: '16:00',
     venue: 'Soccer Field Complex',
@@ -153,8 +153,8 @@ const mockUpcomingEvents = [
     id: 'evt3',
     title: 'Annual Innovation Hackathon',
     titleCn: '年度创新黑客马拉松',
-    teamA: { name: 'CodeCrafters', icon: '💻', odds: 2.1 },
-    teamB: { name: 'InnovateU', icon: '🚀', odds: 1.9 },
+    teamA: { name: 'CodeCrafters', icon: '🛡️' },
+    teamB: { name: 'InnovateU', icon: '⚔️' },
     date: '2024-11-20',
     time: '10:00',
     venue: 'Tech Hub Auditorium',
@@ -1141,22 +1141,13 @@ export default function AudienceDashboard() {
             <div className="text-center">
               <div className="text-4xl mb-1">{featuredEvent.teamA.icon}</div>
               <span className="font-bold text-base text-white">{featuredEvent.teamA.name}</span>
-              <div className="text-sm text-yellow-400 font-bold">
-                {featuredEvent.teamA.odds}x odds
-              </div>
             </div>
             <div className="text-center">
               <span className="text-4xl font-bold text-white animate-pulse">VS</span>
-              <div className="text-sm text-gray-300 mt-1">
-                Pool: {featuredEvent.totalPool.toLocaleString()} CHZ
-              </div>
             </div>
             <div className="text-center">
               <div className="text-4xl mb-1">{featuredEvent.teamB.icon}</div>
               <span className="font-bold text-base text-white">{featuredEvent.teamB.name}</span>
-              <div className="text-sm text-yellow-400 font-bold">
-                {featuredEvent.teamB.odds}x odds
-              </div>
             </div>
           </div>
           
