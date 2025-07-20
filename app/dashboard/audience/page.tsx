@@ -32,7 +32,7 @@ import {
 
 // Enhanced Mock Data based on documentation / 基于文档的增强模拟数据
 const mockUserProfile = {
-  id: '550e8400-e29b-41d4-a716-446655440001', // User ID for API calls
+  id: 'fb7554e2-e6e5-48f2-ade0-d9510703e8de', // Real user ID from database
   name: 'Alex "The Oracle"',
   studentId: 'CS2021001',
   verified: true,

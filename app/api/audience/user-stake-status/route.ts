@@ -90,7 +90,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserStakeS
     // Verify user exists
     // 验证用户存在
     const userCheck = await query(`
-      SELECT id, username, role, virtual_chz_balance
+      SELECT id, wallet_address, role, virtual_chz_balance
       FROM users 
       WHERE id = $1
     `, [user_id]);
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserStakeS
     // Get event information
     // 获取赛事信息
     const eventInfo = await query(`
-      SELECT id, event_title, event_start_time, status
+      SELECT id, title, start_time, status
       FROM events 
       WHERE id = $1
     `, [event_id]);
@@ -214,8 +214,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserStakeS
       } : null,
       event_info: {
         id: eventInfo.rows[0].id,
-        event_title: eventInfo.rows[0].event_title,
-        event_start_time: eventInfo.rows[0].event_start_time,
+        event_title: eventInfo.rows[0].title,
+        event_start_time: eventInfo.rows[0].start_time,
         status: eventInfo.rows[0].status
       },
       event_statistics: {
@@ -231,7 +231,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserStakeS
       potential_reward: potentialReward,
       user_info: {
         id: userCheck.rows[0].id,
-        username: userCheck.rows[0].username,
+        username: userCheck.rows[0].wallet_address,
         role: userCheck.rows[0].role,
         balance: parseFloat(userCheck.rows[0].virtual_chz_balance || '0')
       }

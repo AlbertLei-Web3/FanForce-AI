@@ -143,7 +143,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<StakingRe
       // 2. Verify event exists and is active
       // 2. 验证赛事存在且活跃
       const eventCheck = await client.query(`
-        SELECT id, status, event_start_time
+        SELECT id, status, start_time
         FROM events 
         WHERE id = $1
       `, [event_id]);
@@ -160,11 +160,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<StakingRe
         throw new Error(`Event is not accepting stakes. Current status: ${event.status}`);
       }
 
-      // Check if event has started
-      // 检查赛事是否已开始
-      const eventStartTime = new Date(event.event_start_time);
-      if (eventStartTime <= new Date()) {
-        throw new Error('Event has already started. Staking is closed.');
+      // Check if event has started (only if start_time is not null)
+      // 检查赛事是否已开始（仅当start_time不为null时）
+      if (event.start_time) {
+        const eventStartTime = new Date(event.start_time);
+        if (eventStartTime <= new Date()) {
+          throw new Error('Event has already started. Staking is closed.');
+        }
       }
 
       // 3. Check if user already staked for this event
