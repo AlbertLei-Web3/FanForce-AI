@@ -397,6 +397,10 @@ export default function AudienceDashboard() {
   const [featuredChampionship, setFeaturedChampionship] = useState(null);
   const [userStats, setUserStats] = useState(null);
 
+  // Quick reward overview states / 快速奖励概览状态
+  const [quickRewardOverview, setQuickRewardOverview] = useState(null);
+  const [recentRewardStatus, setRecentRewardStatus] = useState(null);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -510,10 +514,27 @@ export default function AudienceDashboard() {
         setClaimableRewards(data.data.claimableRewards || []);
         setFeaturedChampionship(data.data.featuredChampionship);
         setUserStats(data.data.userStats);
+        
+        // Process quick reward overview data / 处理快速奖励概览数据
+        const claimableCount = data.data.claimableRewards?.length || 0;
+        const totalRewards = data.data.userStats?.total_rewards_earned || 0;
+        const recentReward = data.data.featuredChampionship?.userReward;
+        
+        setQuickRewardOverview({
+          claimableCount,
+          totalRewards,
+          recentReward,
+          hasRewards: claimableCount > 0 || totalRewards > 0
+        });
+        
+        setRecentRewardStatus(recentReward);
+        
         console.log('✅ Claimable rewards loaded:', data.data.claimableRewards?.length || 0, 'rewards');
         console.log('✅ 可领取奖励已加载:', data.data.claimableRewards?.length || 0, '个奖励');
         console.log('✅ Featured championship:', data.data.featuredChampionship?.title);
         console.log('✅ 焦点锦标赛:', data.data.featuredChampionship?.title);
+        console.log('✅ Quick reward overview processed:', { claimableCount, totalRewards });
+        console.log('✅ 快速奖励概览已处理:', { claimableCount, totalRewards });
       } else {
         setRewardsError(data.error || 'Failed to fetch claimable rewards');
         console.error('❌ Failed to fetch claimable rewards:', data.error);
@@ -691,6 +712,108 @@ export default function AudienceDashboard() {
       console.error('❌ 领取奖励网络错误:', error);
       alert(language === 'en' ? 'Network error while claiming reward' : '领取奖励时网络错误');
     }
+  };
+
+  // Render quick reward overview / 渲染快速奖励概览
+  const renderQuickRewardOverview = () => {
+    if (rewardsLoading) {
+      return (
+        <div className="bg-gradient-to-r from-green-600/20 via-blue-600/20 to-purple-600/20 rounded-lg p-4 mb-4 border border-green-500/30 shadow-lg">
+          <div className="flex justify-center items-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
+            <span className="ml-3 text-gray-400 text-sm">
+              {language === 'en' ? 'Loading rewards...' : '加载奖励中...'}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    if (!quickRewardOverview) return null;
+
+    const { claimableCount, totalRewards, recentReward, hasRewards } = quickRewardOverview;
+
+    return (
+      <div className="bg-gradient-to-r from-green-600/20 via-blue-600/20 to-purple-600/20 rounded-lg p-4 mb-4 border border-green-500/30 shadow-lg">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          {/* 左侧：最近奖励状态 */}
+          <div className="flex items-center gap-3">
+            <div className="text-center">
+              <div className="text-2xl mb-1">
+                {hasRewards ? '💰' : '💤'}
+              </div>
+              <div className="text-xs text-gray-400">
+                {language === 'en' ? 'Rewards' : '奖励'}
+              </div>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-white">
+                {recentReward ? `${recentReward.amount} CHZ` : '0 CHZ'}
+              </div>
+              <div className="text-xs text-gray-400">
+                {language === 'en' ? 'Recent Reward' : '最近奖励'}
+              </div>
+            </div>
+          </div>
+
+          {/* 中间：统计信息 */}
+          <div className="text-center">
+            <div className="text-lg font-bold text-yellow-400">
+              {claimableCount}
+            </div>
+            <div className="text-xs text-gray-400">
+              {language === 'en' ? 'Claimable' : '可领取'}
+            </div>
+            <div className="text-xs text-green-400 mt-1">
+              {totalRewards.toFixed(2)} CHZ {language === 'en' ? 'Total' : '总计'}
+            </div>
+          </div>
+
+          {/* 右侧：操作按钮 */}
+          <div className="flex flex-row md:flex-col gap-2">
+            <button
+              onClick={() => setActiveTab('rewards')}
+              className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 text-sm flex items-center gap-2"
+            >
+              <FaGift className="text-xs" />
+              {language === 'en' ? 'View Rewards' : '查看奖励'}
+            </button>
+            {claimableCount > 0 && (
+              <button
+                onClick={() => {
+                  setActiveTab('rewards');
+                  // 可以添加滚动到奖励列表的逻辑
+                }}
+                className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium py-2 px-4 rounded text-sm transition-all duration-300"
+              >
+                {language === 'en' ? 'Claim All' : '全部领取'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 奖励状态指示器 */}
+        {recentReward && (
+          <div className="mt-3 pt-3 border-t border-gray-600/30">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-400">
+                {language === 'en' ? 'Status:' : '状态:'}
+              </span>
+              <span className={`font-medium ${
+                recentReward.distributionStatus === 'calculated' 
+                  ? 'text-green-400' 
+                  : 'text-yellow-400'
+              }`}>
+                {language === 'en' 
+                  ? (recentReward.distributionStatus === 'calculated' ? '✅ Ready to Claim' : '⏳ Processing')
+                  : (recentReward.distributionStatus === 'calculated' ? '✅ 可领取' : '⏳ 处理中')
+                }
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const renderEventCard = (event, layout = 'list') => {
@@ -1695,6 +1818,9 @@ export default function AudienceDashboard() {
           ))}
         </div>
       </div>
+
+      {/* Quick Reward Overview Panel / 快速奖励概览板块 */}
+      {renderQuickRewardOverview()}
 
       {/* Featured Event Banner - Now with Real Data / 焦点赛事横幅 - 现在使用真实数据 */}
       {featuredEventLoading ? (
