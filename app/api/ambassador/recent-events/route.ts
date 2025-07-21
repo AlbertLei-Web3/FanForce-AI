@@ -1,15 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
-
-// Database connection pool
-// 数据库连接池
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'fanforce_ai',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'your_password'
-});
+import { query } from '@/lib/database';
 
 // GET /api/ambassador/recent-events
 // Get recent events for ambassador
@@ -30,35 +20,42 @@ export async function GET(request: NextRequest) {
       statusFilter = `AND e.match_status = '${filter}'`;
     }
 
-    const query = `
+    const sqlQuery = `
       SELECT 
         e.id as event_id,
         e.title as event_title,
         e.description as event_description,
         e.event_date,
-        e.match_status,
+        e.status as match_status,
         e.pool_injected_chz,
         e.total_pool_amount,
         e.match_result,
+        e.team_a_score,
+        e.team_b_score,
+        e.result_announced_at,
         ea.team_a_info,
         ea.team_b_info,
         ea.venue_name,
         ea.venue_capacity,
         u.wallet_address as ambassador_wallet,
         COUNT(DISTINCT ep.id) as total_participants,
-        COUNT(DISTINCT assr.id) as total_supporters
+        COUNT(DISTINCT usr.id) as total_stakes,
+        SUM(usr.stake_amount) as total_stakes_amount,
+        e.rewards_distributed,
+        e.rewards_distributed_at
       FROM events e
       LEFT JOIN event_applications ea ON e.application_id = ea.id
       LEFT JOIN users u ON e.ambassador_id = u.id
       LEFT JOIN event_participants ep ON e.id = ep.event_id
-      LEFT JOIN audience_support_records assr ON e.id = assr.event_id
+      LEFT JOIN user_stake_records usr ON e.id = usr.event_id
       WHERE e.ambassador_id = $1 
-        AND e.match_status IN ('pre_match', 'active', 'completed')
+        AND e.status IN ('active', 'completed')
         ${statusFilter}
-      GROUP BY e.id, e.title, e.description, e.event_date, e.match_status, 
+      GROUP BY e.id, e.title, e.description, e.event_date, e.status, 
                e.pool_injected_chz, e.total_pool_amount, e.match_result,
+               e.team_a_score, e.team_b_score, e.result_announced_at,
                ea.team_a_info, ea.team_b_info, ea.venue_name, ea.venue_capacity,
-               u.wallet_address
+               u.wallet_address, e.rewards_distributed, e.rewards_distributed_at
       ORDER BY e.event_date DESC
     `;
 
@@ -66,7 +63,7 @@ export async function GET(request: NextRequest) {
     // 出于演示目的，如果未提供则使用默认大使ID
     const ambassadorIdToUse = ambassadorId || '1de6110a-f982-4f7f-979e-00e7f7d33bed';
 
-    const result = await pool.query(query, [ambassadorIdToUse]);
+    const result = await query(sqlQuery, [ambassadorIdToUse]);
 
     console.log(`Found ${result.rows.length} recent events for ambassador`);
     console.log(`为大使找到 ${result.rows.length} 个最近活动`);
