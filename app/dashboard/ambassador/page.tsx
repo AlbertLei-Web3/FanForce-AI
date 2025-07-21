@@ -50,7 +50,8 @@ import {
   FaCalendar,
   FaPercent,
   FaRocket,
-  FaHeart
+  FaHeart,
+  FaTimes
 } from 'react-icons/fa';
 
 import TeamDraftManager from '@/app/components/ambassador/TeamDraftManager';
@@ -393,6 +394,69 @@ export default function AmbassadorDashboard() {
   const [selectedTeamDraft, setSelectedTeamDraft] = useState(null);
   const [athleteFilter, setAthleteFilter] = useState('all'); // all, available, competing, resting
   const [eventFilter, setEventFilter] = useState('all'); // all, upcoming, live, planning, completed
+  
+  // Match management modal states / 比赛管理弹窗状态
+  const [showMatchManagementModal, setShowMatchManagementModal] = useState(false);
+  const [selectedMatchEvent, setSelectedMatchEvent] = useState(null);
+  const [matchResult, setMatchResult] = useState({
+    teamAScore: '',
+    teamBScore: '',
+    winner: '', // 'team_a', 'team_b', 'draw'
+    notes: ''
+  });
+
+  // Handle match result submission / 处理比赛结果提交
+  const handleMatchResultSubmission = async () => {
+    try {
+      const teamAScore = parseInt(matchResult.teamAScore) || 0;
+      const teamBScore = parseInt(matchResult.teamBScore) || 0;
+      
+      console.log('Submitting match result:', {
+        eventId: selectedMatchEvent.event_id,
+        teamAScore: teamAScore,
+        teamBScore: teamBScore,
+        winner: matchResult.winner,
+        notes: matchResult.notes
+      });
+
+      // Make API call to update the database
+      // 调用API来更新数据库
+      const response = await fetch('/api/events/update-match-result', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: selectedMatchEvent.event_id,
+          teamAScore: teamAScore,
+          teamBScore: teamBScore,
+          winner: matchResult.winner,
+          notes: matchResult.notes,
+          announcedBy: 'ambassador' // You can get this from user context
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(language === 'en' ? 'Match result announced successfully!' : '比赛结果宣布成功！');
+        
+        // Close modal and reset form
+        // 关闭弹窗并重置表单
+        setShowMatchManagementModal(false);
+        setSelectedMatchEvent(null);
+        setMatchResult({ teamAScore: '', teamBScore: '', winner: '', notes: '' });
+        
+        // Refresh the events list to show updated status
+        // 刷新活动列表以显示更新状态
+        fetchRecentEvents();
+      } else {
+        throw new Error(result.error || 'Failed to announce match result');
+      }
+      
+    } catch (error) {
+      console.error('Error submitting match result:', error);
+      alert(language === 'en' ? 'Error announcing match result. Please try again.' : '宣布比赛结果时出错。请重试。');
+    }
+  };
 
   // Real-time updates simulation / 实时更新模拟
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -402,29 +466,29 @@ export default function AmbassadorDashboard() {
   const [eventsLoading, setEventsLoading] = useState(false);
 
   // Fetch real recent events from database / 从数据库获取真实最近活动
-  useEffect(() => {
-    const fetchRecentEvents = async () => {
-      try {
-        setEventsLoading(true);
-        // Use the actual ambassador ID from database / 使用数据库中实际的大使ID
-        const ambassadorId = '1de6110a-f982-4f7f-979e-00e7f7d33bed';
-        
-        const response = await fetch(`/api/ambassador/recent-events?ambassador_id=${ambassadorId}`);
-        const data = await response.json();
-        
-        if (data.success) {
-          setRecentEvents(data.data);
-          console.log('Fetched recent events:', data.data);
-        } else {
-          console.error('Failed to fetch recent events:', data.error);
-        }
-      } catch (error) {
-        console.error('Error fetching recent events:', error);
-      } finally {
-        setEventsLoading(false);
+  const fetchRecentEvents = async () => {
+    try {
+      setEventsLoading(true);
+      // Use the actual ambassador ID from database / 使用数据库中实际的大使ID
+      const ambassadorId = '1de6110a-f982-4f7f-979e-00e7f7d33bed';
+      
+      const response = await fetch(`/api/ambassador/recent-events?ambassador_id=${ambassadorId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setRecentEvents(data.data);
+        console.log('Fetched recent events:', data.data);
+      } else {
+        console.error('Failed to fetch recent events:', data.error);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching recent events:', error);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchRecentEvents();
   }, []);
 
@@ -676,13 +740,13 @@ export default function AmbassadorDashboard() {
         {/* Action Button / 操作按钮 */}
         <button 
           onClick={() => {
-            setSelectedEvent(event);
-            setShowEventModal(true);
+            setSelectedMatchEvent(event);
+            setShowMatchManagementModal(true);
           }}
-          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2"
+          className="w-full bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2"
         >
-          <FaEye />
-          <span>{language === 'en' ? 'View Details' : '查看详情'}</span>
+          <FaTrophy />
+          <span>{language === 'en' ? 'Manage Match' : '管理比赛'}</span>
         </button>
       </div>
     );
@@ -1493,6 +1557,181 @@ export default function AmbassadorDashboard() {
 
       {/* Tab Content / 标签内容 */}
       {renderTabContent()}
+
+      {/* Match Management Modal / 比赛管理弹窗 */}
+      {showMatchManagementModal && selectedMatchEvent && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header / 弹窗标题 */}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center space-x-2">
+                <FaTrophy className="text-emerald-400" />
+                <span>{language === 'en' ? 'Match Management' : '比赛管理'}</span>
+              </h3>
+              <button
+                onClick={() => {
+                  setShowMatchManagementModal(false);
+                  setSelectedMatchEvent(null);
+                  setMatchResult({ teamAScore: '', teamBScore: '', winner: '', notes: '' });
+                }}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <FaTimes className="text-xl" />
+              </button>
+            </div>
+
+            {/* Event Information / 活动信息 */}
+            <div className="bg-slate-900/50 border border-slate-700/30 rounded-xl p-4 mb-6">
+              <h4 className="text-lg font-bold text-white mb-3">{selectedMatchEvent.event_title}</h4>
+              
+              {/* Teams Display / 队伍显示 */}
+              {selectedMatchEvent.team_a_info && selectedMatchEvent.team_b_info && (
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span className="text-blue-400 font-medium">{selectedMatchEvent.team_a_info.name}</span>
+                  </div>
+                  <span className="text-slate-500 font-bold">VS</span>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-red-400 font-medium">{selectedMatchEvent.team_b_info.name}</span>
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Event Details / 活动详情 */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-slate-400">{language === 'en' ? 'Date:' : '日期:'}</span>
+                  <p className="text-white">{new Date(selectedMatchEvent.event_date).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <span className="text-slate-400">{language === 'en' ? 'Time:' : '时间:'}</span>
+                  <p className="text-white">{new Date(selectedMatchEvent.event_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+                <div>
+                  <span className="text-slate-400">{language === 'en' ? 'Venue:' : '场地:'}</span>
+                  <p className="text-white">{selectedMatchEvent.venue_name || 'TBD'}</p>
+                </div>
+                <div>
+                  <span className="text-slate-400">{language === 'en' ? 'Status:' : '状态:'}</span>
+                  <p className="text-white">{selectedMatchEvent.match_status}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Score Input Form / 分数输入表单 */}
+            <div className="space-y-6">
+              <h5 className="text-lg font-bold text-white">{language === 'en' ? 'Enter Match Results' : '录入比赛结果'}</h5>
+              
+              {/* Score Inputs / 分数输入 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    {selectedMatchEvent.team_a_info?.name || 'Team A'} {language === 'en' ? 'Score' : '分数'}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={matchResult.teamAScore}
+                    onChange={(e) => setMatchResult(prev => ({ ...prev, teamAScore: e.target.value }))}
+                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    {selectedMatchEvent.team_b_info?.name || 'Team B'} {language === 'en' ? 'Score' : '分数'}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={matchResult.teamBScore}
+                    onChange={(e) => setMatchResult(prev => ({ ...prev, teamBScore: e.target.value }))}
+                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              {/* Winner Selection / 获胜者选择 */}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  {language === 'en' ? 'Match Result' : '比赛结果'}
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => setMatchResult(prev => ({ ...prev, winner: 'team_a' }))}
+                    className={`p-3 rounded-lg border transition-all duration-200 ${
+                      matchResult.winner === 'team_a'
+                        ? 'bg-blue-500/20 border-blue-500 text-blue-400'
+                        : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-blue-500'
+                    }`}
+                  >
+                    {selectedMatchEvent.team_a_info?.name || 'Team A'} {language === 'en' ? 'Wins' : '获胜'}
+                  </button>
+                  <button
+                    onClick={() => setMatchResult(prev => ({ ...prev, winner: 'team_b' }))}
+                    className={`p-3 rounded-lg border transition-all duration-200 ${
+                      matchResult.winner === 'team_b'
+                        ? 'bg-red-500/20 border-red-500 text-red-400'
+                        : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-red-500'
+                    }`}
+                  >
+                    {selectedMatchEvent.team_b_info?.name || 'Team B'} {language === 'en' ? 'Wins' : '获胜'}
+                  </button>
+                  <button
+                    onClick={() => setMatchResult(prev => ({ ...prev, winner: 'draw' }))}
+                    className={`p-3 rounded-lg border transition-all duration-200 ${
+                      matchResult.winner === 'draw'
+                        ? 'bg-amber-500/20 border-amber-500 text-amber-400'
+                        : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-amber-500'
+                    }`}
+                  >
+                    {language === 'en' ? 'Draw' : '平局'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Notes Input / 备注输入 */}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  {language === 'en' ? 'Match Notes' : '比赛备注'}
+                </label>
+                <textarea
+                  value={matchResult.notes}
+                  onChange={(e) => setMatchResult(prev => ({ ...prev, notes: e.target.value }))}
+                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  rows={3}
+                  placeholder={language === 'en' ? 'Enter any additional notes about the match...' : '输入关于比赛的任何额外备注...'}
+                />
+              </div>
+
+              {/* Action Buttons / 操作按钮 */}
+              <div className="flex space-x-4 pt-4">
+                <button
+                  onClick={() => {
+                    setShowMatchManagementModal(false);
+                    setSelectedMatchEvent(null);
+                    setMatchResult({ teamAScore: '', teamBScore: '', winner: '', notes: '' });
+                  }}
+                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200"
+                >
+                  {language === 'en' ? 'Cancel' : '取消'}
+                </button>
+                <button
+                  onClick={() => handleMatchResultSubmission()}
+                  disabled={!matchResult.teamAScore || !matchResult.teamBScore || !matchResult.winner}
+                  className="flex-1 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
+                >
+                  <FaCheckCircle />
+                  <span>{language === 'en' ? 'Announce Result' : '宣布结果'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Team Draft Manager Modal / 队伍草稿管理器模态框 */}
       {showTeamDraftManager && (
