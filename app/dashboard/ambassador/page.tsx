@@ -398,33 +398,34 @@ export default function AmbassadorDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   
   // Real data state / 真实数据状态
-  const [realApprovedEvents, setRealApprovedEvents] = useState<any[]>([]);
+  const [recentEvents, setRecentEvents] = useState<any[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
 
-  // Fetch real approved events / 获取真实已批准赛事
+  // Fetch real recent events from database / 从数据库获取真实最近活动
   useEffect(() => {
-    const fetchApprovedEvents = async () => {
+    const fetchRecentEvents = async () => {
       try {
         setEventsLoading(true);
         // Use the actual ambassador ID from database / 使用数据库中实际的大使ID
         const ambassadorId = '1de6110a-f982-4f7f-979e-00e7f7d33bed';
         
-        const response = await fetch(`/api/ambassador/approved-applications?ambassador_id=${ambassadorId}&limit=3`);
+        const response = await fetch(`/api/ambassador/recent-events?ambassador_id=${ambassadorId}`);
         const data = await response.json();
         
         if (data.success) {
-          setRealApprovedEvents(data.applications);
+          setRecentEvents(data.data);
+          console.log('Fetched recent events:', data.data);
         } else {
-          console.error('Failed to fetch approved events:', data.error);
+          console.error('Failed to fetch recent events:', data.error);
         }
       } catch (error) {
-        console.error('Error fetching approved events:', error);
+        console.error('Error fetching recent events:', error);
       } finally {
         setEventsLoading(false);
       }
     };
 
-    fetchApprovedEvents();
+    fetchRecentEvents();
   }, []);
 
   useEffect(() => {
@@ -481,7 +482,7 @@ export default function AmbassadorDashboard() {
     }
   }
 
-  // Render compact event card / 渲染紧凑的赛事卡片
+  // Render compact event card for mock data / 渲染紧凑的赛事卡片（模拟数据）
   const renderEventCard = (event) => (
     <div key={event.id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-slate-600/50 transition-all duration-300 hover:transform hover:scale-105">
       {/* Event Header / 赛事标题 */}
@@ -553,6 +554,139 @@ export default function AmbassadorDashboard() {
       </button>
     </div>
   );
+
+  // Render recent event card for real data / 渲染最近活动卡片（真实数据）
+  const renderRecentEventCard = (event) => {
+    // Team information is already parsed as objects by PostgreSQL
+    // 队伍信息已经被PostgreSQL解析为对象
+    const teamAInfo = event.team_a_info || null;
+    const teamBInfo = event.team_b_info || null;
+    
+    // Format event date
+    // 格式化活动日期
+    const eventDate = new Date(event.event_date);
+    const formattedDate = eventDate.toLocaleDateString();
+    const formattedTime = eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Calculate time proximity for display
+    // 计算时间接近度用于显示
+    const timeProximityHours = Math.round(event.time_proximity_hours);
+    const isFuture = eventDate > new Date();
+    
+    return (
+      <div key={event.event_id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-slate-600/50 transition-all duration-300 hover:transform hover:scale-105">
+        {/* Event Header / 活动标题 */}
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-white mb-2 line-clamp-1">
+              {event.event_title || 'Untitled Event'}
+            </h3>
+            <div className="flex items-center space-x-2 text-sm text-slate-400 mb-2">
+              <FaMapMarkerAlt className="text-xs" />
+              <span className="line-clamp-1">{event.venue_name || 'Venue TBD'}</span>
+            </div>
+            <div className="flex items-center space-x-2 text-sm text-slate-400">
+              <FaCalendar className="text-xs" />
+              <span>{formattedDate} • {formattedTime}</span>
+            </div>
+          </div>
+          <div className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(event.match_status)}`}>
+            {event.match_status.toUpperCase()}
+          </div>
+        </div>
+
+        {/* Teams Information / 队伍信息 */}
+        {teamAInfo && teamBInfo && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-blue-400 font-medium">{teamAInfo.name}</span>
+              </div>
+              <span className="text-slate-500">VS</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-red-400 font-medium">{teamBInfo.name}</span>
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Match Result / 比赛结果 */}
+        {event.match_result && (
+          <div className="mb-4 p-3 bg-slate-900/50 border border-slate-700/30 rounded-lg">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-400">Result:</span>
+              <span className="font-bold text-emerald-400">
+                {event.match_result === 'team_a_wins' ? `${teamAInfo?.name} Wins` :
+                 event.match_result === 'team_b_wins' ? `${teamBInfo?.name} Wins` :
+                 event.match_result === 'draw' ? 'Draw' : event.match_result}
+              </span>
+            </div>
+            {event.team_a_score !== null && event.team_b_score !== null && (
+              <div className="flex items-center justify-center space-x-4 mt-2">
+                <span className="text-2xl font-bold text-blue-400">{event.team_a_score}</span>
+                <span className="text-slate-500">-</span>
+                <span className="text-2xl font-bold text-red-400">{event.team_b_score}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Quick Stats / 快速统计 */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="bg-slate-900/50 border border-slate-700/30 rounded-lg p-3">
+            <div className="flex items-center space-x-2 mb-1">
+              <FaUsers className="text-purple-400 text-xs" />
+              <span className="text-slate-400 text-xs">Participants</span>
+            </div>
+            <p className="font-bold text-purple-400">{event.total_participants || 0}</p>
+          </div>
+          <div className="bg-slate-900/50 border border-slate-700/30 rounded-lg p-3">
+            <div className="flex items-center space-x-2 mb-1">
+              <FaCoins className="text-emerald-400 text-xs" />
+              <span className="text-slate-400 text-xs">Stakes</span>
+            </div>
+            <p className="font-bold text-emerald-400">{parseFloat(event.total_stakes_amount || 0).toFixed(2)} CHZ</p>
+          </div>
+        </div>
+
+        {/* Time Proximity / 时间接近度 */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-slate-300">
+              {isFuture ? 'Time Until Event' : 'Time Since Event'}
+            </span>
+            <span className={`text-xs font-bold ${
+              isFuture ? 'text-emerald-400' : 'text-slate-400'
+            }`}>
+              {timeProximityHours} hours
+            </span>
+          </div>
+          <div className="w-full bg-slate-700/50 rounded-full h-2">
+            <div 
+              className={`h-2 rounded-full transition-all duration-300 ${
+                isFuture ? 'bg-gradient-to-r from-emerald-500 to-blue-600' : 'bg-gradient-to-r from-slate-500 to-slate-600'
+              }`}
+              style={{ width: `${Math.min((timeProximityHours / 24) * 100, 100)}%` }}
+            ></div>
+          </div>
+        </div>
+
+        {/* Action Button / 操作按钮 */}
+        <button 
+          onClick={() => {
+            setSelectedEvent(event);
+            setShowEventModal(true);
+          }}
+          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2"
+        >
+          <FaEye />
+          <span>{language === 'en' ? 'View Details' : '查看详情'}</span>
+        </button>
+      </div>
+    );
+  };
 
   // Render compact athlete card / 渲染紧凑的运动员卡片
   const renderAthleteCard = (athlete) => (
@@ -801,8 +935,8 @@ export default function AmbassadorDashboard() {
                       {language === 'en' ? 'Loading approved events...' : '加载已批准赛事中...'}
                     </span>
                   </div>
-                ) : realApprovedEvents.length > 0 ? (
-                  realApprovedEvents.slice(0, 2).map(renderEventCard)
+                ) : recentEvents.length > 0 ? (
+                  recentEvents.slice(0, 2).map(renderRecentEventCard)
                 ) : (
                   <div className="col-span-2 text-center py-8">
                     <FaCalendarAlt className="text-4xl text-slate-500 mx-auto mb-4" />
