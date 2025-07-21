@@ -55,6 +55,7 @@ import {
 } from 'react-icons/fa';
 
 import TeamDraftManager from '@/app/components/ambassador/TeamDraftManager';
+import { useToast } from '@/app/components/shared/Toast';
 
 // Mock data for ambassador profile / 大使档案模拟数据
 const mockAmbassadorProfile = {
@@ -386,6 +387,7 @@ const mockRevenueData = [
 export default function AmbassadorDashboard() {
   const router = useRouter();
   const { language } = useLanguage();
+  const { showToast, ToastContainer } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventModal, setShowEventModal] = useState(false);
@@ -437,7 +439,11 @@ export default function AmbassadorDashboard() {
       const result = await response.json();
 
       if (result.success) {
-        alert(language === 'en' ? 'Match result announced successfully!' : '比赛结果宣布成功！');
+        showToast({
+          message: language === 'en' ? 'Match result announced successfully!' : '比赛结果宣布成功！',
+          type: 'success',
+          duration: 3000
+        });
         
         // Close modal and reset form
         // 关闭弹窗并重置表单
@@ -454,7 +460,11 @@ export default function AmbassadorDashboard() {
       
     } catch (error) {
       console.error('Error submitting match result:', error);
-      alert(language === 'en' ? 'Error announcing match result. Please try again.' : '宣布比赛结果时出错。请重试。');
+      showToast({
+        message: language === 'en' ? 'Error announcing match result. Please try again.' : '宣布比赛结果时出错。请重试。',
+        type: 'error',
+        duration: 4000
+      });
     }
   };
 
@@ -621,10 +631,27 @@ export default function AmbassadorDashboard() {
 
   // Render recent event card for real data / 渲染最近活动卡片（真实数据）
   const renderRecentEventCard = (event) => {
-    // Team information is already parsed as objects by PostgreSQL
-    // 队伍信息已经被PostgreSQL解析为对象
-    const teamAInfo = event.team_a_info || null;
-    const teamBInfo = event.team_b_info || null;
+    // Parse team information from database
+    // 从数据库解析队伍信息
+    let teamAInfo = null;
+    let teamBInfo = null;
+    
+    try {
+      if (event.team_a_info) {
+        teamAInfo = typeof event.team_a_info === 'string' ? 
+          JSON.parse(event.team_a_info) : event.team_a_info;
+      }
+      if (event.team_b_info) {
+        teamBInfo = typeof event.team_b_info === 'string' ? 
+          JSON.parse(event.team_b_info) : event.team_b_info;
+      }
+    } catch (error) {
+      console.error('Error parsing team info:', error);
+      // Fallback to string values if parsing fails
+      // 如果解析失败，回退到字符串值
+      teamAInfo = event.team_a_info;
+      teamBInfo = event.team_b_info;
+    }
     
     // Format event date
     // 格式化活动日期
@@ -665,11 +692,15 @@ export default function AmbassadorDashboard() {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-blue-400 font-medium">{teamAInfo.name}</span>
+                <span className="text-blue-400 font-medium">
+                  {typeof teamAInfo === 'string' ? teamAInfo : teamAInfo.name || 'Team A'}
+                </span>
               </div>
               <span className="text-slate-500">VS</span>
               <div className="flex items-center space-x-2">
-                <span className="text-red-400 font-medium">{teamBInfo.name}</span>
+                <span className="text-red-400 font-medium">
+                  {typeof teamBInfo === 'string' ? teamBInfo : teamBInfo.name || 'Team B'}
+                </span>
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
               </div>
             </div>
@@ -682,8 +713,10 @@ export default function AmbassadorDashboard() {
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-400">Result:</span>
               <span className="font-bold text-emerald-400">
-                {event.match_result === 'team_a_wins' ? `${teamAInfo?.name} Wins` :
-                 event.match_result === 'team_b_wins' ? `${teamBInfo?.name} Wins` :
+                {event.match_result === 'team_a_wins' ? 
+                  `${typeof teamAInfo === 'string' ? teamAInfo : teamAInfo?.name || 'Team A'} Wins` :
+                 event.match_result === 'team_b_wins' ? 
+                  `${typeof teamBInfo === 'string' ? teamBInfo : teamBInfo?.name || 'Team B'} Wins` :
                  event.match_result === 'draw' ? 'Draw' : event.match_result}
               </span>
             </div>
@@ -1747,6 +1780,9 @@ export default function AmbassadorDashboard() {
           }}
         />
       )}
+
+      {/* Toast Container / Toast容器 */}
+      <ToastContainer />
     </DashboardLayout>
   );
 } 

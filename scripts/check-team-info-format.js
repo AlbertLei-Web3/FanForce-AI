@@ -1,149 +1,137 @@
-/*
- * Check Team Info Format
- * 检查队伍信息格式
- * 
- * This script checks the actual format of team information in the database
- * 此脚本检查数据库中队伍信息的实际格式
- */
+// Check team info format in database
+// 检查数据库中的队伍信息格式
 
 const { Pool } = require('pg');
 
-// Database connection
-// 数据库连接
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'fanforce_ai',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'LYQ20000'
-});
-
 async function checkTeamInfoFormat() {
   console.log('🔍 Checking team info format in database...');
-  console.log('🔍 检查数据库中队伍信息格式...');
+  console.log('🔍 检查数据库中的队伍信息格式...');
+
+  const pool = new Pool({
+    user: process.env.DB_USER || 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME || 'fanforce_ai',
+    password: process.env.DB_PASSWORD || 'password',
+    port: parseInt(process.env.DB_PORT || '5432'),
+  });
 
   try {
-    // Check the most recent approved application
-    // 检查最新的已批准申请
-    console.log('\n📊 Checking most recent approved application...');
-    console.log('📊 检查最新的已批准申请...');
-    
-    const application = await pool.query(`
-      SELECT 
-        id,
-        event_title,
-        team_a_info,
-        team_b_info,
-        status,
-        created_at
-      FROM event_applications 
-      WHERE status = 'approved'
-      ORDER BY created_at DESC
-      LIMIT 1
-    `);
+    const client = await pool.connect();
 
-    if (application.rows.length > 0) {
-      const app = application.rows[0];
-      console.log(`Application ID: ${app.id}`);
-      console.log(`Event Title: ${app.event_title}`);
-      console.log(`Status: ${app.status}`);
-      console.log(`Created: ${app.created_at}`);
-      
-      console.log('\n📊 Team A Info:');
-      console.log('📊 队伍A信息:');
-      console.log(`   Raw value: ${app.team_a_info}`);
-      console.log(`   Type: ${typeof app.team_a_info}`);
-      
-      if (app.team_a_info) {
-        try {
-          const parsed = JSON.parse(app.team_a_info);
-          console.log(`   Parsed: ${JSON.stringify(parsed, null, 2)}`);
-        } catch (error) {
-          console.log(`   Parse error: ${error.message}`);
-        }
-      }
-      
-      console.log('\n📊 Team B Info:');
-      console.log('📊 队伍B信息:');
-      console.log(`   Raw value: ${app.team_b_info}`);
-      console.log(`   Type: ${typeof app.team_b_info}`);
-      
-      if (app.team_b_info) {
-        try {
-          const parsed = JSON.parse(app.team_b_info);
-          console.log(`   Parsed: ${JSON.stringify(parsed, null, 2)}`);
-        } catch (error) {
-          console.log(`   Parse error: ${error.message}`);
-        }
-      }
-    } else {
-      console.log('❌ No approved applications found');
-      console.log('❌ 未找到已批准的申请');
-    }
-
-    // Check all approved applications to see different formats
-    // 检查所有已批准的申请以查看不同格式
-    console.log('\n📊 Checking all approved applications...');
-    console.log('📊 检查所有已批准的申请...');
-    
-    const allApplications = await pool.query(`
-      SELECT 
-        id,
-        event_title,
-        team_a_info,
-        team_b_info
-      FROM event_applications 
-      WHERE status = 'approved'
+    // Check events with team info
+    // 检查包含队伍信息的活动
+    console.log('\n📊 Checking events with team info...');
+    console.log('📊 检查包含队伍信息的活动...');
+    const eventsResult = await client.query(`
+      SELECT id, title, team_a_info, team_b_info, 
+             team_a_info::text as team_a_info_text,
+             team_b_info::text as team_b_info_text
+      FROM events 
+      WHERE team_a_info IS NOT NULL OR team_b_info IS NOT NULL
       ORDER BY created_at DESC
       LIMIT 5
     `);
-
-    console.log(`Found ${allApplications.rows.length} approved applications:`);
-    console.log(`找到 ${allApplications.rows.length} 个已批准的申请:`);
     
-    allApplications.rows.forEach((app, index) => {
-      console.log(`\n${index + 1}. Application ID: ${app.id}`);
-      console.log(`   Title: ${app.event_title}`);
-      console.log(`   Team A Info: ${app.team_a_info}`);
-      console.log(`   Team B Info: ${app.team_b_info}`);
-      
-      if (app.team_a_info) {
-        try {
-          const parsedA = JSON.parse(app.team_a_info);
-          console.log(`   Team A Parsed: ${JSON.stringify(parsedA)}`);
-        } catch (error) {
-          console.log(`   Team A Parse error: ${error.message}`);
+    if (eventsResult.rows.length > 0) {
+      console.log('✅ Found events with team info:', eventsResult.rows.length);
+      console.log('✅ 找到包含队伍信息的活动:', eventsResult.rows.length);
+      eventsResult.rows.forEach((event, index) => {
+        console.log(`\n  Event ${index + 1}:`);
+        console.log(`  活动 ${index + 1}:`);
+        console.log('    Title:', event.title);
+        console.log('    Team A Info:', event.team_a_info);
+        console.log('    Team A Info (text):', event.team_a_info_text);
+        console.log('    Team B Info:', event.team_b_info);
+        console.log('    Team B Info (text):', event.team_b_info_text);
+        
+        // Try to parse team info
+        // 尝试解析队伍信息
+        if (event.team_a_info) {
+          try {
+            const teamA = typeof event.team_a_info === 'string' ? 
+              JSON.parse(event.team_a_info) : event.team_a_info;
+            console.log('    Team A Parsed:', teamA);
+          } catch (e) {
+            console.log('    Team A Parse Error:', e.message);
+          }
         }
-      }
-      
-      if (app.team_b_info) {
-        try {
-          const parsedB = JSON.parse(app.team_b_info);
-          console.log(`   Team B Parsed: ${JSON.stringify(parsedB)}`);
-        } catch (error) {
-          console.log(`   Team B Parse error: ${error.message}`);
+        
+        if (event.team_b_info) {
+          try {
+            const teamB = typeof event.team_b_info === 'string' ? 
+              JSON.parse(event.team_b_info) : event.team_b_info;
+            console.log('    Team B Parsed:', teamB);
+          } catch (e) {
+            console.log('    Team B Parse Error:', e.message);
+          }
         }
-      }
-    });
+      });
+    } else {
+      console.log('❌ No events with team info found');
+      console.log('❌ 未找到包含队伍信息的活动');
+    }
 
+    // Check specific event that was just updated
+    // 检查刚刚更新的特定活动
+    console.log('\n🎯 Checking specific updated event...');
+    console.log('🎯 检查刚刚更新的特定活动...');
+    const specificEventResult = await client.query(`
+      SELECT id, title, team_a_info, team_b_info, 
+             team_a_info::text as team_a_info_text,
+             team_b_info::text as team_b_info_text
+      FROM events 
+      WHERE id = '9b33b55c-c09e-41b9-b031-1c8680dd636a'
+    `);
+    
+    if (specificEventResult.rows.length > 0) {
+      const event = specificEventResult.rows[0];
+      console.log('✅ Found specific event:');
+      console.log('✅ 找到特定活动:');
+      console.log('  Title:', event.title);
+      console.log('  Team A Info:', event.team_a_info);
+      console.log('  Team B Info:', event.team_b_info);
+      
+      // Parse team info for this specific event
+      // 解析此特定活动的队伍信息
+      if (event.team_a_info) {
+        try {
+          const teamA = typeof event.team_a_info === 'string' ? 
+            JSON.parse(event.team_a_info) : event.team_a_info;
+          console.log('  Team A Parsed:', teamA);
+          console.log('  Team A Name:', teamA.name);
+        } catch (e) {
+          console.log('  Team A Parse Error:', e.message);
+        }
+      }
+      
+      if (event.team_b_info) {
+        try {
+          const teamB = typeof event.team_b_info === 'string' ? 
+            JSON.parse(event.team_b_info) : event.team_b_info;
+          console.log('  Team B Parsed:', teamB);
+          console.log('  Team B Name:', teamB.name);
+        } catch (e) {
+          console.log('  Team B Parse Error:', e.message);
+        }
+      }
+    } else {
+      console.log('❌ Specific event not found');
+      console.log('❌ 未找到特定活动');
+    }
+
+    client.release();
   } catch (error) {
-    console.error('❌ Error checking team info format:', error);
-    console.error('❌ 检查队伍信息格式时出错:', error);
+    console.error('❌ Database check failed:', error.message);
+    console.error('❌ 数据库检查失败:', error.message);
   } finally {
     await pool.end();
-    console.log('\n🔌 Database connection closed');
-    console.log('🔌 数据库连接已关闭');
   }
 }
 
 // Run the check
 // 运行检查
-checkTeamInfoFormat().then(() => {
-  console.log('\n✨ Team info format check completed');
-  console.log('✨ 队伍信息格式检查完成');
-  process.exit(0);
-}).catch((error) => {
-  console.error('💥 Check failed:', error);
-  console.error('💥 检查失败:', error);
-  process.exit(1);
-}); 
+if (require.main === module) {
+  checkTeamInfoFormat();
+}
+
+module.exports = { checkTeamInfoFormat }; 
