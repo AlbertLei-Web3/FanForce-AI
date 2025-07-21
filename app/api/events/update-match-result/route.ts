@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Validate winner value
-    // 验证获胜者值
+    // Validate winner value and map to database format
+    // 验证获胜者值并映射到数据库格式
     const validWinners = ['team_a', 'team_b', 'draw'];
     if (!validWinners.includes(winner)) {
       return NextResponse.json({
@@ -41,6 +41,23 @@ export async function POST(request: NextRequest) {
         error: 'Invalid winner value. Must be team_a, team_b, or draw'
       }, { status: 400 });
     }
+
+    // Map frontend values to database format
+    // 将前端值映射到数据库格式
+    const mapWinnerToDatabase = (winner) => {
+      switch (winner) {
+        case 'team_a':
+          return 'team_a_wins';
+        case 'team_b':
+          return 'team_b_wins';
+        case 'draw':
+          return 'draw';
+        default:
+          return winner;
+      }
+    };
+
+    const databaseWinner = mapWinnerToDatabase(winner);
 
     const client = await pool.connect();
 
@@ -65,7 +82,7 @@ export async function POST(request: NextRequest) {
       `;
 
       const eventResult = await client.query(updateEventQuery, [
-        winner,
+        databaseWinner,
         teamAScore,
         teamBScore,
         eventId
@@ -222,7 +239,7 @@ export async function POST(request: NextRequest) {
         SELECT 
           usr.user_id,
           usr.stake_amount,
-          usr.tier,
+          usr.participation_tier,
           usr.event_id
         FROM user_stake_records usr
         WHERE usr.event_id = $1 AND usr.status = 'active'
@@ -239,15 +256,18 @@ export async function POST(request: NextRequest) {
         const platformFeePercentage = 5.0; // 5% platform fee
 
         for (const stake of audienceStakes) {
-          // Calculate tier coefficient
-          // 计算等级系数
+          // Calculate tier coefficient based on participation_tier
+          // 根据participation_tier计算等级系数
           let tierCoefficient = 1.0;
-          switch (stake.tier) {
-            case 'premium':
+          switch (stake.participation_tier) {
+            case 1: // Full Experience
+              tierCoefficient = 2.0;
+              break;
+            case 2: // Stake+Match
               tierCoefficient = 1.5;
               break;
-            case 'vip':
-              tierCoefficient = 2.0;
+            case 3: // Stake Only
+              tierCoefficient = 1.0;
               break;
             default:
               tierCoefficient = 1.0;
@@ -296,14 +316,18 @@ export async function POST(request: NextRequest) {
       const insertAnnouncementQuery = `
         INSERT INTO match_result_announcements (
           event_id, announced_by, match_result, team_a_score, team_b_score,
-          announcement_notes, announcement_timestamp
-        ) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
+          announcement_notes
+        ) VALUES ($1, $2, $3, $4, $5, $6)
       `;
 
+      // For now, use a default user ID or handle the announcedBy properly
+      // 目前，使用默认用户ID或正确处理announcedBy
+      const defaultUserId = '1de6110a-f982-4f7f-979e-00e7f7d33bed'; // Use actual user ID
+      
       await client.query(insertAnnouncementQuery, [
         eventId,
-        announcedBy || 'system',
-        winner,
+        announcedBy || defaultUserId,
+        databaseWinner,
         teamAScore,
         teamBScore,
         notes || ''
