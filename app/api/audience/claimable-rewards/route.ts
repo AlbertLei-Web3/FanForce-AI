@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         usr.stake_time
        FROM reward_distributions rd
        JOIN events e ON rd.event_id = e.id
-       JOIN user_stake_records usr ON rd.stake_record_id = usr.id
+       JOIN user_stake_records usr ON usr.event_id = rd.event_id AND usr.user_id = rd.user_id
        WHERE rd.user_id = $1
        ORDER BY rd.created_at DESC`,
       [userId]
