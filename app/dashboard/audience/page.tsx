@@ -1819,9 +1819,6 @@ export default function AudienceDashboard() {
         </div>
       </div>
 
-      {/* Quick Reward Overview Panel / 快速奖励概览板块 */}
-      {renderQuickRewardOverview()}
-
       {/* Featured Event Banner - Now with Real Data / 焦点赛事横幅 - 现在使用真实数据 */}
       {featuredEventLoading ? (
         <div className="bg-gradient-to-r from-blue-900 via-purple-800 to-red-900 rounded-lg p-4 mb-6 text-center shadow-xl border border-gray-700">
@@ -1935,6 +1932,9 @@ export default function AudienceDashboard() {
           </div>
         </div>
       ) : null}
+
+      {/* Quick Reward Overview Panel / 快速奖励概览板块 */}
+      {renderQuickRewardOverview()}
       
       {/* Navigation Tabs / 导航标签 */}
       <div className="mb-4">
