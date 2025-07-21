@@ -430,7 +430,7 @@ export default function AmbassadorDashboard() {
           teamBScore: teamBScore,
           winner: matchResult.winner,
           notes: matchResult.notes,
-          announcedBy: 'ambassador' // You can get this from user context
+          announcedBy: '1de6110a-f982-4f7f-979e-00e7f7d33bed' // Use actual ambassador UUID
         })
       });
 
