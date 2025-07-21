@@ -477,26 +477,26 @@ export default function AmbassadorDashboard() {
 
   // Fetch real recent events from database / 从数据库获取真实最近活动
   const fetchRecentEvents = async () => {
-    try {
-      setEventsLoading(true);
-      // Use the actual ambassador ID from database / 使用数据库中实际的大使ID
-      const ambassadorId = '1de6110a-f982-4f7f-979e-00e7f7d33bed';
-      
+      try {
+        setEventsLoading(true);
+        // Use the actual ambassador ID from database / 使用数据库中实际的大使ID
+        const ambassadorId = '1de6110a-f982-4f7f-979e-00e7f7d33bed';
+        
       const response = await fetch(`/api/ambassador/recent-events?ambassador_id=${ambassadorId}`);
-      const data = await response.json();
-      
-      if (data.success) {
+        const data = await response.json();
+        
+        if (data.success) {
         setRecentEvents(data.data);
         console.log('Fetched recent events:', data.data);
-      } else {
+        } else {
         console.error('Failed to fetch recent events:', data.error);
-      }
-    } catch (error) {
+        }
+      } catch (error) {
       console.error('Error fetching recent events:', error);
-    } finally {
-      setEventsLoading(false);
-    }
-  };
+      } finally {
+        setEventsLoading(false);
+      }
+    };
 
   useEffect(() => {
     fetchRecentEvents();

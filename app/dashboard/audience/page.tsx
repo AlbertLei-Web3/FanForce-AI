@@ -515,26 +515,55 @@ export default function AudienceDashboard() {
         setFeaturedChampionship(data.data.featuredChampionship);
         setUserStats(data.data.userStats);
         
-        // Process quick reward overview data / 处理快速奖励概览数据
-        const claimableCount = data.data.claimableRewards?.length || 0;
-        const totalRewards = data.data.userStats?.total_rewards_earned || 0;
-        const recentReward = data.data.featuredChampionship?.userReward;
-        
+        // --- BEGIN: Calculate correct reward statistics for the UI ---
+        // 下面开始：为UI正确计算奖励统计数据
+
+        // 1. Only count rewards that are claimable (distributionStatus === 'calculated')
+        // 1. 只统计可领取的奖励（distributionStatus === 'calculated'）
+        const claimableList = (data.data.claimableRewards || []).filter(
+          r => r.distributionStatus === 'calculated'
+        );
+
+        // 2. The number of claimable rewards
+        // 2. 可领取奖励的数量
+        const claimableCount = claimableList.length;
+
+        // 3. The sum of all claimable rewards (for 'Claimable' and 'Recent Reward')
+        // 3. 所有可领取奖励的总和（用于"可领取"和"最近奖励"）
+        const claimableSum = claimableList.reduce(
+          (sum, r) => sum + (parseFloat(r.finalReward) || 0),
+          0
+        );
+
+        // 4. The most recent claimable reward (for 'Recent Reward')
+        // 4. 最新的可领取奖励（用于"最近奖励"）
+        const recentClaimableReward = claimableList.length > 0 ? claimableList[0] : null;
+
+        // 5. The total rewards earned (all time, from backend stats)
+        // 5. 总计获得的奖励（全部历史，由后端统计提供）
+        const totalRewards = parseFloat(data.data.userStats?.total_rewards_earned) || 0;
+
+        // 6. Set the quick reward overview state for the UI
+        // 6. 设置UI用的快速奖励概览状态
         setQuickRewardOverview({
-          claimableCount,
-          totalRewards,
-          recentReward,
+          claimableCount, // 可领取奖励数量
+          claimableSum,   // 可领取奖励总和
+          totalRewards,   // 总计获得奖励
+          recentReward: recentClaimableReward
+            ? { amount: parseFloat(recentClaimableReward.finalReward) || 0, distributionStatus: recentClaimableReward.distributionStatus }
+            : null,
           hasRewards: claimableCount > 0 || totalRewards > 0
         });
-        
-        setRecentRewardStatus(recentReward);
+        // --- END: Calculate correct reward statistics for the UI ---
+
+        setRecentRewardStatus(recentClaimableReward);
         
         console.log('✅ Claimable rewards loaded:', data.data.claimableRewards?.length || 0, 'rewards');
         console.log('✅ 可领取奖励已加载:', data.data.claimableRewards?.length || 0, '个奖励');
         console.log('✅ Featured championship:', data.data.featuredChampionship?.title);
         console.log('✅ 焦点锦标赛:', data.data.featuredChampionship?.title);
-        console.log('✅ Quick reward overview processed:', { claimableCount, totalRewards });
-        console.log('✅ 快速奖励概览已处理:', { claimableCount, totalRewards });
+        console.log('✅ Quick reward overview processed:', { claimableCount, claimableSum, totalRewards });
+        console.log('✅ 快速奖励概览已处理:', { claimableCount, claimableSum, totalRewards });
       } else {
         setRewardsError(data.error || 'Failed to fetch claimable rewards');
         console.error('❌ Failed to fetch claimable rewards:', data.error);
@@ -731,12 +760,14 @@ export default function AudienceDashboard() {
 
     if (!quickRewardOverview) return null;
 
-    const { claimableCount, totalRewards, recentReward, hasRewards } = quickRewardOverview;
+    // Destructure the quickRewardOverview object for use in the UI
+    // 解构 quickRewardOverview 对象，便于在UI中使用
+    const { claimableCount, claimableSum, totalRewards, recentReward, hasRewards } = quickRewardOverview;
 
     return (
       <div className="bg-gradient-to-r from-green-600/20 via-blue-600/20 to-purple-600/20 rounded-lg p-4 mb-4 border border-green-500/30 shadow-lg">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          {/* 左侧：最近奖励状态 */}
+          {/* 左侧：最近奖励状态 / Left: Recent Reward Status */}
           <div className="flex items-center gap-3">
             <div className="text-center">
               <div className="text-2xl mb-1">
@@ -747,6 +778,8 @@ export default function AudienceDashboard() {
               </div>
             </div>
             <div>
+              {/* Show the most recent claimable reward amount, or 0 if none */}
+              {/* 显示最新可领取奖励金额，如果没有则显示0 */}
               <div className="text-lg font-bold text-white">
                 {recentReward ? `${recentReward.amount} CHZ` : '0 CHZ'}
               </div>
@@ -756,20 +789,19 @@ export default function AudienceDashboard() {
             </div>
           </div>
 
-          {/* 中间：统计信息 */}
+          {/* 中间：统计信息 / Center: Statistics */}
           <div className="text-center">
+            {/* Show the total sum of claimable rewards */}
+            {/* 显示所有可领取奖励的总和 */}
             <div className="text-lg font-bold text-yellow-400">
-              {claimableCount}
+              {claimableSum.toFixed(2)} CHZ
             </div>
             <div className="text-xs text-gray-400">
               {language === 'en' ? 'Claimable' : '可领取'}
             </div>
-            <div className="text-xs text-green-400 mt-1">
-              {totalRewards.toFixed(2)} CHZ {language === 'en' ? 'Total' : '总计'}
-            </div>
           </div>
 
-          {/* 右侧：操作按钮 */}
+          {/* 右侧：操作按钮 / Right: Action Buttons */}
           <div className="flex flex-row md:flex-col gap-2">
             <button
               onClick={() => setActiveTab('rewards')}
@@ -1586,7 +1618,7 @@ export default function AudienceDashboard() {
                 </div>
               </div>
             )}
-          </div>
+            </div>
         );
       
       case 'leaderboard':
