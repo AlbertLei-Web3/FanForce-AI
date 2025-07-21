@@ -390,6 +390,13 @@ export default function AudienceDashboard() {
   const [allEventsLoading, setAllEventsLoading] = useState(false);
   const [allEventsError, setAllEventsError] = useState(null);
 
+  // Reward states / 奖励状态
+  const [claimableRewards, setClaimableRewards] = useState([]);
+  const [rewardsLoading, setRewardsLoading] = useState(false);
+  const [rewardsError, setRewardsError] = useState(null);
+  const [featuredChampionship, setFeaturedChampionship] = useState(null);
+  const [userStats, setUserStats] = useState(null);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -434,6 +441,11 @@ export default function AudienceDashboard() {
   // Fetch all events from database on component mount / 组件挂载时从数据库获取所有赛事
   useEffect(() => {
     fetchAllEvents();
+  }, []);
+
+  // Fetch claimable rewards and user stats / 获取可领取奖励和用户统计
+  useEffect(() => {
+    fetchClaimableRewards();
   }, []);
 
   // Fetch user stake status for featured event / 获取用户在焦点赛事的质押状态
@@ -482,6 +494,37 @@ export default function AudienceDashboard() {
       console.error('❌ 获取所有赛事网络错误:', error);
     } finally {
       setAllEventsLoading(false);
+    }
+  };
+
+  // Fetch claimable rewards and user stats / 获取可领取奖励和用户统计
+  const fetchClaimableRewards = async () => {
+    try {
+      setRewardsLoading(true);
+      setRewardsError(null);
+      
+      const response = await fetch(`/api/audience/claimable-rewards?userId=${mockUserProfile.id}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setClaimableRewards(data.data.claimableRewards || []);
+        setFeaturedChampionship(data.data.featuredChampionship);
+        setUserStats(data.data.userStats);
+        console.log('✅ Claimable rewards loaded:', data.data.claimableRewards?.length || 0, 'rewards');
+        console.log('✅ 可领取奖励已加载:', data.data.claimableRewards?.length || 0, '个奖励');
+        console.log('✅ Featured championship:', data.data.featuredChampionship?.title);
+        console.log('✅ 焦点锦标赛:', data.data.featuredChampionship?.title);
+      } else {
+        setRewardsError(data.error || 'Failed to fetch claimable rewards');
+        console.error('❌ Failed to fetch claimable rewards:', data.error);
+        console.error('❌ 获取可领取奖励失败:', data.error);
+      }
+    } catch (error) {
+      setRewardsError('Network error while fetching claimable rewards');
+      console.error('❌ Network error fetching claimable rewards:', error);
+      console.error('❌ 获取可领取奖励网络错误:', error);
+    } finally {
+      setRewardsLoading(false);
     }
   };
 
@@ -613,6 +656,40 @@ export default function AudienceDashboard() {
       setStakeError('Network error during stake submission');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Handle reward claiming / 处理奖励领取
+  const handleRewardClaim = async (rewardId) => {
+    try {
+      const response = await fetch('/api/audience/claimable-rewards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rewardId })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log('✅ Reward claimed successfully:', data.data.amount);
+        console.log('✅ 奖励领取成功:', data.data.amount);
+        
+        // Refresh rewards data
+        // 刷新奖励数据
+        await fetchClaimableRewards();
+        
+        // Show success message (you can add toast here)
+        // 显示成功消息（可以在这里添加toast）
+        alert(language === 'en' ? 'Reward claimed successfully!' : '奖励领取成功！');
+      } else {
+        console.error('❌ Failed to claim reward:', data.error);
+        console.error('❌ 领取奖励失败:', data.error);
+        alert(language === 'en' ? 'Failed to claim reward. Please try again.' : '领取奖励失败。请重试。');
+      }
+    } catch (error) {
+      console.error('❌ Network error claiming reward:', error);
+      console.error('❌ 领取奖励网络错误:', error);
+      alert(language === 'en' ? 'Network error while claiming reward' : '领取奖励时网络错误');
     }
   };
 
@@ -1139,6 +1216,256 @@ export default function AudienceDashboard() {
             </div>
         );
       
+      case 'rewards':
+        return (
+          <div className="space-y-6">
+            {/* Featured Championship Rewards / 焦点锦标赛奖励 */}
+            {featuredChampionship && (
+              <div className="bg-gradient-to-r from-yellow-900/50 to-orange-900/50 rounded-lg p-6 border border-yellow-500/30">
+                <h2 className="text-xl font-bold mb-4 text-yellow-400 flex items-center gap-2">
+                  <FaTrophy className="text-yellow-500" />
+                  {language === 'en' ? 'Featured Championship Rewards' : '焦点锦标赛奖励'}
+                </h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Event Info / 赛事信息 */}
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <h3 className="font-bold text-white mb-3">
+                      {language === 'en' ? 'Event Details' : '赛事详情'}
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">{language === 'en' ? 'Event:' : '赛事:'}</span>
+                        <span className="text-white">{featuredChampionship.title}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">{language === 'en' ? 'Match Result:' : '比赛结果:'}</span>
+                        <span className="text-green-400">{featuredChampionship.teamAScore} - {featuredChampionship.teamBScore}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">{language === 'en' ? 'Total Participants:' : '总参与人数:'}</span>
+                        <span className="text-white">{featuredChampionship.totalParticipants}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">{language === 'en' ? 'Total Stakes:' : '总质押:'}</span>
+                        <span className="text-white">{featuredChampionship.totalStakesAmount} CHZ</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* User's Stake & Reward / 用户的质押和奖励 */}
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <h3 className="font-bold text-white mb-3">
+                      {language === 'en' ? 'Your Participation' : '您的参与'}
+                    </h3>
+                    {featuredChampionship.userStake ? (
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">{language === 'en' ? 'Your Stake:' : '您的质押:'}</span>
+                          <span className="text-green-400 font-bold">{featuredChampionship.userStake.amount} CHZ</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">{language === 'en' ? 'Participation Tier:' : '参与等级:'}</span>
+                          <span className="text-blue-400">
+                            {language === 'en' 
+                              ? participationTiers.find(t => t.tier === featuredChampionship.userStake.participationTier)?.name
+                              : participationTiers.find(t => t.tier === featuredChampionship.userStake.participationTier)?.nameCn
+                            }
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">{language === 'en' ? 'Team Choice:' : '队伍选择:'}</span>
+                          <span className="text-white">
+                            {featuredChampionship.userStake.teamChoice === 'team_a' 
+                              ? (featuredChampionship.teamAInfo?.name || 'Team A')
+                              : (featuredChampionship.teamBInfo?.name || 'Team B')
+                            }
+                          </span>
+                        </div>
+                        {featuredChampionship.userReward && (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">{language === 'en' ? 'Calculated Reward:' : '计算奖励:'}</span>
+                              <span className="text-yellow-400 font-bold">{featuredChampionship.userReward.amount} CHZ</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">{language === 'en' ? 'Status:' : '状态:'}</span>
+                              <span className={`font-medium ${
+                                featuredChampionship.userReward.distributionStatus === 'calculated' 
+                                  ? 'text-green-400' 
+                                  : 'text-yellow-400'
+                              }`}>
+                                {language === 'en' 
+                                  ? (featuredChampionship.userReward.distributionStatus === 'calculated' ? 'Ready to Claim' : 'Processing')
+                                  : (featuredChampionship.userReward.distributionStatus === 'calculated' ? '可领取' : '处理中')
+                                }
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-gray-400 text-center py-4">
+                        {language === 'en' ? 'You did not participate in this event' : '您未参与此赛事'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Reward Calculation Formula / 奖励计算公式 */}
+                {featuredChampionship.userReward && (
+                  <div className="mt-6 bg-gray-800/50 rounded-lg p-4">
+                    <h3 className="font-bold text-white mb-3">
+                      {language === 'en' ? 'Reward Calculation Formula' : '奖励计算公式'}
+                    </h3>
+                    <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
+                      <div className="text-green-400 mb-2">
+                        {language === 'en' ? 'Personal Reward = (Admin Pool ÷ Total Participants × Tier Coefficient) - (Admin Pool ÷ Total Participants × Tier Coefficient) × Platform Fee' : '个人获得奖励=（admin奖池÷总人数×三档之一的系数）-（admin奖池÷总人数×三档之一的系数）× 平台手续费'}
+                      </div>
+                      <div className="text-gray-400 space-y-1">
+                        <div>• {language === 'en' ? 'Tier 1 (Full Experience): 100% coefficient' : '等级1（完整体验）：100%系数'}</div>
+                        <div>• {language === 'en' ? 'Tier 2 (Stake + Match): 70% coefficient' : '等级2（质押+比赛）：70%系数'}</div>
+                        <div>• {language === 'en' ? 'Tier 3 (Stake Only): 30% coefficient' : '等级3（仅质押）：30%系数'}</div>
+                        <div>• {language === 'en' ? 'Platform Fee: 5% (default)' : '平台手续费：5%（默认）'}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Claim Button / 领取按钮 */}
+                {featuredChampionship.userReward && featuredChampionship.userReward.distributionStatus === 'calculated' && (
+                  <div className="mt-6 text-center">
+                    <button
+                      onClick={() => handleRewardClaim(featuredChampionship.userReward.id)}
+                      className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 mx-auto"
+                    >
+                      <FaGift className="text-lg" />
+                      {language === 'en' ? 'Claim Reward' : '领取奖励'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* All Claimable Rewards / 所有可领取奖励 */}
+            <div className="bg-gray-800/50 rounded-lg p-6">
+              <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
+                <FaCoins className="text-yellow-500" />
+                {language === 'en' ? 'All Claimable Rewards' : '所有可领取奖励'}
+              </h2>
+              
+              {rewardsLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  <span className="ml-3 text-gray-400">
+                    {language === 'en' ? 'Loading rewards...' : '加载奖励中...'}
+                  </span>
+                </div>
+              ) : rewardsError ? (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FaExclamationTriangle className="text-red-500" />
+                    <span className="font-medium text-red-500">
+                      {language === 'en' ? 'Error' : '错误'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-red-300">{rewardsError}</p>
+                </div>
+              ) : claimableRewards.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">💰</div>
+                  <h3 className="text-lg font-bold text-white mb-2">
+                    {language === 'en' ? 'No Claimable Rewards' : '暂无可领取奖励'}
+                  </h3>
+                  <p className="text-gray-400">
+                    {language === 'en' ? 'Complete events to earn rewards' : '完成赛事以获得奖励'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {claimableRewards.map((reward) => (
+                    <div key={reward.id} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600 hover:border-yellow-500/50 transition-all duration-300">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-bold text-white mb-1">{reward.eventTitle}</h3>
+                          <p className="text-sm text-gray-400">
+                            {language === 'en' ? 'Match Result:' : '比赛结果:'} {reward.teamAScore} - {reward.teamBScore}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-yellow-400">{reward.finalReward} CHZ</div>
+                          <div className="text-xs text-gray-400">
+                            {language === 'en' ? 'Tier' : '等级'} {reward.participationTier}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                        <div>
+                          <span className="text-gray-400">{language === 'en' ? 'Stake Amount:' : '质押金额:'}</span>
+                          <span className="text-white ml-2">{reward.stakeAmount} CHZ</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">{language === 'en' ? 'Team Choice:' : '队伍选择:'}</span>
+                          <span className="text-white ml-2">
+                            {reward.teamChoice === 'team_a' 
+                              ? (reward.teamAInfo?.name || 'Team A')
+                              : (reward.teamBInfo?.name || 'Team B')
+                            }
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <div className="text-xs text-gray-400">
+                          {language === 'en' ? 'Calculated:' : '计算时间:'} {new Date(reward.calculatedAt).toLocaleDateString()}
+                        </div>
+                        {reward.distributionStatus === 'calculated' && (
+                          <button
+                            onClick={() => handleRewardClaim(reward.id)}
+                            className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 flex items-center gap-2"
+                          >
+                            <FaGift className="text-sm" />
+                            {language === 'en' ? 'Claim' : '领取'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* User Statistics / 用户统计 */}
+            {userStats && (
+              <div className="bg-gray-800/50 rounded-lg p-6">
+                <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
+                  <FaChartLine className="text-blue-500" />
+                  {language === 'en' ? 'Your Statistics' : '您的统计'}
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-gray-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-white">{userStats.total_events_participated}</div>
+                    <div className="text-sm text-gray-400">{language === 'en' ? 'Events Participated' : '参与赛事'}</div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-green-400">{userStats.total_rewards_earned} CHZ</div>
+                    <div className="text-sm text-gray-400">{language === 'en' ? 'Total Rewards' : '总奖励'}</div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-blue-400">{userStats.total_stakes_placed} CHZ</div>
+                    <div className="text-sm text-gray-400">{language === 'en' ? 'Total Stakes' : '总质押'}</div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-yellow-400">{userStats.average_reward_per_event} CHZ</div>
+                    <div className="text-sm text-gray-400">{language === 'en' ? 'Avg Reward/Event' : '平均奖励/赛事'}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      
       case 'leaderboard':
         return (
           <div className="bg-gray-800/50 rounded-lg p-6">
@@ -1515,6 +1842,16 @@ export default function AudienceDashboard() {
             }`}
           >
             {language === 'en' ? "🏅 Leaderboard" : "🏅 排行榜"}
+            </button>
+          <button 
+            onClick={() => setActiveTab('rewards')} 
+            className={`py-2 px-4 text-sm font-medium transition-all duration-300 ${
+              activeTab === 'rewards' 
+                ? 'border-b-2 border-blue-500 text-white bg-blue-500/10' 
+                : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            {language === 'en' ? "💰 Rewards" : "💰 奖励"}
             </button>
         </div>
       </div>
