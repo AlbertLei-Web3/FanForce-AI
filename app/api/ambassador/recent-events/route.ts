@@ -23,17 +23,33 @@ export async function GET(request: NextRequest) {
     const sqlQuery = `
       SELECT 
         e.id as event_id,
-        e.title as event_title,
-        e.description as event_description,
+        COALESCE(e.title, ea.event_title) as event_title,
+        COALESCE(e.description, ea.event_description) as event_description,
         e.event_date,
         e.status as match_status,
-        e.venue_name,
-        e.venue_capacity,
+        COALESCE(e.venue_name, ea.venue_name) as venue_name,
+        COALESCE(e.venue_capacity, ea.venue_capacity) as venue_capacity,
         e.party_venue_capacity,
         ea.team_a_info,
         ea.team_b_info,
-        ea.venue_name as application_venue_name,
-        ea.venue_capacity as application_venue_capacity,
+        -- Match result information
+        -- 比赛结果信息
+        e.match_result,
+        e.team_a_score,
+        e.team_b_score,
+        e.result_announced_at,
+        e.match_completed_at,
+        -- Get approval time from event_approval_log
+        -- 从event_approval_log获取审批时间
+        COALESCE((
+          SELECT eal.created_at 
+          FROM event_approval_log eal
+          WHERE eal.application_id = ea.id 
+            AND eal.action_type = 'approve'
+            AND eal.decision = 'approved'
+          ORDER BY eal.created_at DESC 
+          LIMIT 1
+        ), ea.created_at) as approval_time,
         u.wallet_address as ambassador_wallet,
         u.student_id as ambassador_student_id,
         -- Get participant count from event_participants
@@ -76,14 +92,14 @@ export async function GET(request: NextRequest) {
         AND e.event_date > (NOW() - INTERVAL '30 days')
         ${statusFilter}
       ORDER BY 
-        -- Future events first (closest to current time)
-        -- 未来活动优先（最接近当前时间）
+        -- Priority 1: Most recently approved events first
+        -- 优先级1：最近审批的事件优先
+        approval_time DESC,
+        -- Priority 2: Future events before past events
+        -- 优先级2：未来事件优先于过去事件
         CASE WHEN e.event_date > NOW() THEN 0 ELSE 1 END,
-        -- Then by time proximity (closest first)
-        -- 然后按时间接近度排序（最近的优先）
-        time_proximity_hours ASC,
-        -- Finally by event date for events at same time
-        -- 最后按活动日期排序（同一时间的活动）
+        -- Priority 3: By event date for events approved at same time
+        -- 优先级3：对于同时审批的事件，按事件日期排序
         e.event_date DESC
       LIMIT 6
     `;
@@ -97,9 +113,38 @@ export async function GET(request: NextRequest) {
     console.log(`Found ${result.rows.length} recent approved events for ambassador`);
     console.log(`为大使找到 ${result.rows.length} 个最近已批准活动`);
 
+    // Format the response to match frontend expectations
+    // 格式化响应以匹配前端期望
+    const formattedEvents = result.rows.map((event) => ({
+      event_id: event.event_id,
+      event_title: event.event_title,
+      event_description: event.event_description,
+      event_date: event.event_date,
+      match_status: event.match_status,
+      venue_name: event.venue_name,
+      venue_capacity: event.venue_capacity,
+      party_venue_capacity: event.party_venue_capacity,
+      team_a_info: event.team_a_info,
+      team_b_info: event.team_b_info,
+      // Match result fields
+      // 比赛结果字段
+      match_result: event.match_result,
+      team_a_score: event.team_a_score,
+      team_b_score: event.team_b_score,
+      result_announced_at: event.result_announced_at,
+      match_completed_at: event.match_completed_at,
+      approval_time: event.approval_time,
+      ambassador_wallet: event.ambassador_wallet,
+      ambassador_student_id: event.ambassador_student_id,
+      total_participants: event.total_participants,
+      total_stakes: event.total_stakes,
+      total_stakes_amount: event.total_stakes_amount,
+      time_proximity_hours: event.time_proximity_hours
+    }));
+
     return NextResponse.json({
       success: true,
-      data: result.rows
+      data: formattedEvents
     });
 
   } catch (error) {

@@ -33,6 +33,7 @@ import {
   FaHourglassHalf,
   FaPaperPlane,
   FaExclamationCircle,
+  FaExclamationTriangle,
   FaStar,
   FaCoins,
   FaPlay,
@@ -474,6 +475,12 @@ export default function AmbassadorDashboard() {
   // Real data state / 真实数据状态
   const [recentEvents, setRecentEvents] = useState<any[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
+  
+  // Dynamic events state for Events tab / Events标签的动态事件状态
+  const [allEvents, setAllEvents] = useState<any[]>([]);
+  const [allEventsLoading, setAllEventsLoading] = useState(false);
+  const [allEventsError, setAllEventsError] = useState<string | null>(null);
+  const [showAllEvents, setShowAllEvents] = useState(false);
 
   // Fetch real recent events from database / 从数据库获取真实最近活动
   const fetchRecentEvents = async () => {
@@ -501,6 +508,43 @@ export default function AmbassadorDashboard() {
   useEffect(() => {
     fetchRecentEvents();
   }, []);
+
+  // Fetch all events for ambassador / 获取大使的所有事件
+  const fetchAllEvents = async () => {
+    try {
+      setAllEventsLoading(true);
+      setAllEventsError(null);
+      
+      // Use the actual ambassador ID from database / 使用数据库中实际的大使ID
+      const ambassadorId = '1de6110a-f982-4f7f-979e-00e7f7d33bed';
+      
+      const response = await fetch(`/api/ambassador/all-events?ambassador_id=${ambassadorId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setAllEvents(data.events);
+        console.log('✅ All events loaded from database:', data.events.length, 'events');
+        console.log('✅ 从数据库加载所有事件:', data.events.length, '个事件');
+      } else {
+        setAllEventsError(data.error || 'Failed to fetch all events');
+        console.error('❌ Failed to fetch all events:', data.error);
+        console.error('❌ 获取所有事件失败:', data.error);
+      }
+    } catch (error) {
+      setAllEventsError('Network error while fetching all events');
+      console.error('❌ Network error fetching all events:', error);
+      console.error('❌ 获取所有事件网络错误:', error);
+    } finally {
+      setAllEventsLoading(false);
+    }
+  };
+
+  // Fetch all events when Events tab is active / 当Events标签激活时获取所有事件
+  useEffect(() => {
+    if (activeTab === 'events') {
+      fetchAllEvents();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -548,10 +592,12 @@ export default function AmbassadorDashboard() {
       case 'upcoming': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
       case 'planning': return 'bg-amber-500/20 text-amber-400 border-amber-500/30'
       case 'completed': return 'bg-slate-500/20 text-slate-400 border-slate-500/30'
+      case 'active': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
       case 'approved': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
       case 'pending': return 'bg-amber-500/20 text-amber-400 border-amber-500/30'
       case 'under_review': return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
       case 'rejected': return 'bg-red-500/20 text-red-400 border-red-500/30'
+      case 'unknown': return 'bg-slate-500/20 text-slate-400 border-slate-500/30'
       default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30'
     }
   }
@@ -638,19 +684,33 @@ export default function AmbassadorDashboard() {
     
     try {
       if (event.team_a_info) {
-        teamAInfo = typeof event.team_a_info === 'string' ? 
-          JSON.parse(event.team_a_info) : event.team_a_info;
+        // Handle both string and object formats
+        // 处理字符串和对象格式
+        if (typeof event.team_a_info === 'string') {
+          teamAInfo = JSON.parse(event.team_a_info);
+        } else if (typeof event.team_a_info === 'object') {
+          teamAInfo = event.team_a_info;
+        } else {
+          teamAInfo = { name: 'Team A' };
+        }
       }
       if (event.team_b_info) {
-        teamBInfo = typeof event.team_b_info === 'string' ? 
-          JSON.parse(event.team_b_info) : event.team_b_info;
+        // Handle both string and object formats
+        // 处理字符串和对象格式
+        if (typeof event.team_b_info === 'string') {
+          teamBInfo = JSON.parse(event.team_b_info);
+        } else if (typeof event.team_b_info === 'object') {
+          teamBInfo = event.team_b_info;
+        } else {
+          teamBInfo = { name: 'Team B' };
+        }
       }
     } catch (error) {
       console.error('Error parsing team info:', error);
-      // Fallback to string values if parsing fails
-      // 如果解析失败，回退到字符串值
-      teamAInfo = event.team_a_info;
-      teamBInfo = event.team_b_info;
+      // Fallback to default values if parsing fails
+      // 如果解析失败，回退到默认值
+      teamAInfo = { name: 'Team A' };
+      teamBInfo = { name: 'Team B' };
     }
     
     // Format event date
@@ -680,9 +740,15 @@ export default function AmbassadorDashboard() {
               <FaCalendar className="text-xs" />
               <span>{formattedDate} • {formattedTime}</span>
             </div>
+            {event.approval_time && (
+              <div className="flex items-center space-x-2 text-xs text-slate-500 mt-1">
+                <FaCheckCircle className="text-xs" />
+                <span>Approved: {new Date(event.approval_time).toLocaleDateString()}</span>
+              </div>
+            )}
           </div>
-          <div className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(event.match_status)}`}>
-            {event.match_status.toUpperCase()}
+          <div className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(event.match_status || 'unknown')}`}>
+            {(event.match_status || 'unknown').toUpperCase()}
           </div>
         </div>
 
@@ -693,13 +759,13 @@ export default function AmbassadorDashboard() {
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                 <span className="text-blue-400 font-medium">
-                  {typeof teamAInfo === 'string' ? teamAInfo : teamAInfo.name || 'Team A'}
+                  {teamAInfo.name || 'Team A'}
                 </span>
               </div>
               <span className="text-slate-500">VS</span>
               <div className="flex items-center space-x-2">
                 <span className="text-red-400 font-medium">
-                  {typeof teamBInfo === 'string' ? teamBInfo : teamBInfo.name || 'Team B'}
+                  {teamBInfo.name || 'Team B'}
                 </span>
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
               </div>
@@ -708,27 +774,53 @@ export default function AmbassadorDashboard() {
         )}
 
         {/* Match Result / 比赛结果 */}
-        {event.match_result && (
-          <div className="mb-4 p-3 bg-slate-900/50 border border-slate-700/30 rounded-lg">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-400">Result:</span>
-              <span className="font-bold text-emerald-400">
+        {event.match_result ? (
+          <div className="mb-4 p-3 bg-gradient-to-r from-emerald-900/30 to-blue-900/30 border border-emerald-500/30 rounded-lg">
+            <div className="flex items-center justify-between text-sm mb-2">
+              <div className="flex items-center space-x-2">
+                <FaTrophy className="text-yellow-400 text-sm" />
+                <span className="text-emerald-400 font-medium">Match Result</span>
+              </div>
+              <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                event.match_result === 'team_a_wins' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                event.match_result === 'team_b_wins' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+              }`}>
                 {event.match_result === 'team_a_wins' ? 
-                  `${typeof teamAInfo === 'string' ? teamAInfo : teamAInfo?.name || 'Team A'} Wins` :
+                  `${teamAInfo?.name || 'Team A'} Wins` :
                  event.match_result === 'team_b_wins' ? 
-                  `${typeof teamBInfo === 'string' ? teamBInfo : teamBInfo?.name || 'Team B'} Wins` :
+                  `${teamBInfo?.name || 'Team B'} Wins` :
                  event.match_result === 'draw' ? 'Draw' : event.match_result}
               </span>
             </div>
             {event.team_a_score !== null && event.team_b_score !== null && (
-              <div className="flex items-center justify-center space-x-4 mt-2">
-                <span className="text-2xl font-bold text-blue-400">{event.team_a_score}</span>
-                <span className="text-slate-500">-</span>
-                <span className="text-2xl font-bold text-red-400">{event.team_b_score}</span>
+              <div className="flex items-center justify-center space-x-6 mt-3">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-400">{event.team_a_score}</div>
+                  <div className="text-xs text-slate-400 mt-1">{teamAInfo?.name || 'Team A'}</div>
+                </div>
+                <div className="text-slate-500 text-lg font-bold">VS</div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-red-400">{event.team_b_score}</div>
+                  <div className="text-xs text-slate-400 mt-1">{teamBInfo?.name || 'Team B'}</div>
+                </div>
+              </div>
+            )}
+            {event.result_announced_at && (
+              <div className="flex items-center justify-center mt-3 text-xs text-slate-400">
+                <FaClock className="mr-1" />
+                <span>Result announced: {new Date(event.result_announced_at).toLocaleString()}</span>
               </div>
             )}
           </div>
-        )}
+        ) : event.match_status === 'completed' ? (
+          <div className="mb-4 p-3 bg-amber-900/20 border border-amber-500/30 rounded-lg">
+            <div className="flex items-center justify-center text-sm">
+              <FaExclamationCircle className="text-amber-400 mr-2" />
+              <span className="text-amber-400">Match completed - Result pending</span>
+            </div>
+          </div>
+        ) : null}
 
         {/* Quick Stats / 快速统计 */}
         <div className="grid grid-cols-2 gap-3 mb-4">
@@ -1017,7 +1109,7 @@ export default function AmbassadorDashboard() {
                   <span>{language === 'en' ? 'Recent Events' : '近期赛事'}</span>
                 </h3>
                 <button 
-                  onClick={() => router.push('/dashboard/audience')}
+                  onClick={() => setActiveTab('events')}
                   className="flex items-center space-x-2 text-emerald-400 hover:text-emerald-300 text-sm font-medium"
                 >
                   <span>{language === 'en' ? 'View All' : '查看全部'}</span>
@@ -1196,9 +1288,7 @@ export default function AmbassadorDashboard() {
                     className="bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white text-sm"
                   >
                     <option value="all">{language === 'en' ? 'All Events' : '所有赛事'}</option>
-                    <option value="planning">{language === 'en' ? 'Planning' : '规划中'}</option>
-                    <option value="upcoming">{language === 'en' ? 'Upcoming' : '即将开始'}</option>
-                    <option value="live">{language === 'en' ? 'Live' : '进行中'}</option>
+                    <option value="active">{language === 'en' ? 'Active' : '活跃'}</option>
                     <option value="completed">{language === 'en' ? 'Completed' : '已完成'}</option>
                   </select>
                   <button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 text-sm flex items-center space-x-2">
@@ -1208,18 +1298,71 @@ export default function AmbassadorDashboard() {
                 </div>
               </div>
               <div className="mt-4 flex items-center space-x-4 text-sm text-slate-400">
-                <span>{filteredEvents.length} events found</span>
+                <span>{allEventsLoading ? '...' : allEvents.length} events found</span>
                 <span>•</span>
-                <span>{mockEvents.filter(e => e.status === 'live').length} live</span>
+                <span>{allEvents.filter(e => e.status === 'active').length} active</span>
                 <span>•</span>
-                <span>{mockEvents.filter(e => e.status === 'upcoming').length} upcoming</span>
+                <span>{allEvents.filter(e => e.status === 'completed').length} completed</span>
               </div>
             </div>
 
-            {/* Events Grid / 赛事网格 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredEvents.map(renderEventCard)}
-            </div>
+            {/* Events Display / 赛事显示 */}
+            {allEventsLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <FaSpinner className="animate-spin text-2xl text-blue-400 mr-3" />
+                <span className="text-slate-400">
+                  {language === 'en' ? 'Loading events...' : '加载赛事中...'}
+                </span>
+              </div>
+            ) : allEventsError ? (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FaExclamationTriangle className="text-red-500" />
+                  <span className="font-medium text-red-500">
+                    {language === 'en' ? 'Error' : '错误'}
+                  </span>
+                </div>
+                <p className="text-sm text-red-300">{allEventsError}</p>
+              </div>
+            ) : allEvents.length === 0 ? (
+              <div className="bg-slate-800/50 rounded-lg p-8 text-center">
+                <FaCalendarAlt className="text-4xl text-slate-500 mx-auto mb-4" />
+                <h3 className="text-lg font-bold text-white mb-2">
+                  {language === 'en' ? 'No Events Available' : '暂无可用赛事'}
+                </h3>
+                <p className="text-slate-400">
+                  {language === 'en' ? 'Your approved events will appear here' : '您的已批准赛事将显示在这里'}
+                </p>
+              </div>
+            ) : (
+              <div>
+                {/* Events Grid - Show first 6 events (2 rows of 3) / 赛事网格 - 显示前6个赛事（2行，每行3个） */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                  {allEvents.slice(0, 6).map(renderRecentEventCard)}
+                </div>
+                
+                {/* View All Button - Show if there are more than 6 events / 查看全部按钮 - 如果有超过6个赛事则显示 */}
+                {allEvents.length > 6 && !showAllEvents && (
+                  <div className="text-center">
+                    <button
+                      onClick={() => setShowAllEvents(true)}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center mx-auto space-x-2"
+                    >
+                      <FaEye className="text-sm" />
+                      <span>{language === 'en' ? 'View All Events' : '查看所有赛事'}</span>
+                      <span className="text-xs opacity-80">({allEvents.length})</span>
+                    </button>
+                  </div>
+                )}
+                
+                {/* Show remaining events when "View All" is clicked / 点击"查看全部"时显示剩余赛事 */}
+                {showAllEvents && allEvents.length > 6 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                    {allEvents.slice(6).map(renderRecentEventCard)}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         );
 
