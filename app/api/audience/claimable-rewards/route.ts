@@ -38,11 +38,11 @@ export async function GET(request: NextRequest) {
         usr.participation_tier,
         usr.team_choice,
         usr.stake_time,
-        -- Create calculation formula display for liquidity mining
-        -- 为流动性挖矿创建计算公式显示
+        -- Create calculation formula display for liquidity mining (with principal)
+        -- 为流动性挖矿创建计算公式显示（含本金）
         CONCAT('流动性挖矿奖励 = (', rc.admin_pool_amount, ' × ', 
                ROUND((usr.stake_amount::numeric / (SELECT SUM(stake_amount::numeric) FROM user_stake_records WHERE event_id = rc.event_id)) * 100, 2), 
-               '% × ', rc.user_tier_coefficient, ') × (1 - ', rc.platform_fee_percentage, '%) = ', rc.final_reward, ' CHZ') as calculation_formula
+               '% × ', rc.user_tier_coefficient, ' + ', usr.stake_amount, ') × (1 - ', rc.platform_fee_percentage, '%) = ', rc.final_reward, ' CHZ') as calculation_formula
        FROM reward_calculations rc
        JOIN events e ON rc.event_id = e.id
        JOIN user_stake_records usr ON usr.id = rc.stake_record_id

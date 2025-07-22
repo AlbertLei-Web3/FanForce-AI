@@ -282,22 +282,10 @@ export async function POST(request: NextRequest) {
               tierCoefficient = 0.3;
           }
 
-          // === 流动性挖矿奖励计算公式实现 ===
-          // Liquidity Mining Reward Calculation Formula Implementation
-          // 
-          // 公式：个人可领取奖励 = （奖池总额 × 用户质押占比 × 系数） × (1 - 平台手续费%)
-          // Formula: Personal Reward = (Pool Total × User Stake Ratio × Coefficient) × (1 - Platform Fee%)
-          //
-          // 其中：
-          // Where:
-          // - 奖池总额 = events.pool_injected_chz (管理员注入的奖池金额)
-          // - Pool Total = events.pool_injected_chz (Admin injected pool amount)
-          // - 用户质押占比 = 用户个人质押金额 ÷ 所有用户质押金额总和
-          // - User Stake Ratio = User's stake amount ÷ Total stake amount of all users
-          // - 系数 = 基于用户奖励档位的倍数 (一档1.0, 二档0.7, 三档0.3)
-          // - Coefficient = Multiplier based on user reward tier (Tier 1: 1.0, Tier 2: 0.7, Tier 3: 0.3)
-          // - 平台手续费% = 从平台配置中获取的手续费百分比
-          // - Platform Fee% = Fee percentage obtained from platform configuration
+          // === 流动性挖矿奖励计算公式实现（含本金返还） ===
+          // Liquidity Mining Reward Calculation Formula Implementation (with principal return)
+          // 公式：个人可领取奖励 = （奖池总额 × 用户质押占比 × 系数 + 用户质押本金） × (1 - 平台手续费%)
+          // Formula: Personal Reward = (Pool Total × User Stake Ratio × Coefficient + User Principal) × (1 - Platform Fee%)
 
           // Step 1: Calculate total stake amount for all users in this event
           // 步骤1：计算此赛事所有用户的总质押金额
@@ -306,28 +294,33 @@ export async function POST(request: NextRequest) {
             totalStake += parseFloat(stakeRecord.stake_amount);
           }
 
-          // Step 2: Calculate user stake ratio (liquidity contribution ratio)
-          // 步骤2：计算用户质押占比（流动性贡献比例）
-          const userStake = parseFloat(stake.stake_amount);
-          const userRatio = userStake / totalStake;
+          // Step 2: Get user's principal (stake amount) from database
+          // 步骤2：从数据库获取用户质押本金
+          const principal = parseFloat(stake.stake_amount);
 
-          // Step 3: Calculate base reward using liquidity mining formula
-          // 步骤3：使用流动性挖矿公式计算基础奖励
+          // Step 3: Calculate user stake ratio (liquidity contribution ratio)
+          // 步骤3：计算用户质押占比（流动性贡献比例）
+          const userRatio = principal / totalStake;
+
+          // Step 4: Calculate base reward using liquidity mining formula
+          // 步骤4：使用流动性挖矿公式计算基础奖励
           // baseReward = adminPoolAmount × userRatio × tierCoefficient
           // 基础奖励 = 奖池总额 × 用户质押占比 × 系数
           const baseReward = adminPoolAmount * userRatio * tierCoefficient;
-          
-          // Step 4: Calculate platform fee
-          // 步骤4：计算平台手续费
-          const platformFeeAmount = baseReward * (platformFeePercentage / 100);
-          
-          // Step 5: Calculate final reward after deducting platform fee
-          // 步骤5：扣除平台手续费后计算最终奖励
-          const finalReward = baseReward - platformFeeAmount;
 
-          // Create calculation formula display with liquidity mining details
-          // 创建包含流动性挖矿详细信息的计算公式显示
-          const calculationFormula = `流动性挖矿奖励 = (${adminPoolAmount} × ${(userRatio * 100).toFixed(2)}% × ${tierCoefficient}) × (1 - ${platformFeePercentage}%) = ${finalReward.toFixed(2)} CHZ`;
+          // Step 5: Calculate final reward including principal, after deducting platform fee
+          // 步骤5：加上本金后扣除平台手续费，计算最终奖励
+          // finalReward = (baseReward + principal) × (1 - 平台手续费%)
+          // 最终奖励 = (基础奖励 + 本金) × (1 - 平台手续费%)
+          const finalReward = (baseReward + principal) * (1 - platformFeePercentage / 100);
+
+          // Step 6: Calculate platform fee amount
+          // 步骤6：计算平台手续费金额
+          const platformFeeAmount = (baseReward + principal) * (platformFeePercentage / 100);
+
+          // Step 7: Create calculation formula display with liquidity mining details
+          // 步骤7：创建包含流动性挖矿详细信息的计算公式显示
+          const calculationFormula = `流动性挖矿奖励 = (${adminPoolAmount} × ${(userRatio * 100).toFixed(2)}% × ${tierCoefficient} + ${principal}) × (1 - ${platformFeePercentage}%) = ${finalReward.toFixed(2)} CHZ`;
 
           // Insert reward distribution record
           // 插入奖励分配记录
