@@ -1,21 +1,31 @@
 /*
- * Calculate Rewards API Route
- * 计算奖励API路由
+ * Calculate Rewards API Route - Liquidity Mining Implementation
+ * 计算奖励API路由 - 流动性挖矿实现
  * 
- * This endpoint calculates rewards for all users who staked in an event
- * 此端点计算所有在赛事中质押的用户的奖励
+ * This endpoint calculates rewards for all users who staked in an event using liquidity mining principles
+ * 此端点使用流动性挖矿原则计算所有在赛事中质押的用户的奖励
  * 
  * POST /api/audience/calculate-rewards
- * - Calculate rewards for all stakers in an event
+ * - Calculate rewards for all stakers in an event using liquidity mining formula
  * - Parameter: event_id
- * - Implements reward formula: (admin_pool ÷ total_participants × tier_coefficient) - (admin_pool ÷ total_participants × tier_coefficient) × platform_fee
- * - Updates reward_calculations table
+ * - Implements liquidity mining formula: (admin_pool × user_stake_ratio × tier_coefficient) × (1 - platform_fee)
+ * - Updates reward_calculations table with detailed calculation data
  * 
  * POST /api/audience/calculate-rewards
- * - 计算赛事中所有质押者的奖励
+ * - 使用流动性挖矿公式计算赛事中所有质押者的奖励
  * - 参数：event_id
- * - 实现奖励公式：(admin奖池÷总人数×档位系数)-(admin奖池÷总人数×档位系数)×平台手续费
- * - 更新reward_calculations表
+ * - 实现流动性挖矿公式：(奖池总额 × 用户质押占比 × 系数) × (1 - 平台手续费%)
+ * - 使用详细计算数据更新reward_calculations表
+ * 
+ * Liquidity Mining Formula Details / 流动性挖矿公式详情:
+ * - 奖池总额 = adminPoolAmount (管理员注入的奖池金额)
+ * - Pool Total = adminPoolAmount (Admin injected pool amount)
+ * - 用户质押占比 = 用户个人质押金额 ÷ 所有用户质押金额总和
+ * - User Stake Ratio = User's stake amount ÷ Total stake amount of all users
+ * - 系数 = 基于用户奖励档位的倍数 (一档1.0, 二档0.7, 三档0.3)
+ * - Coefficient = Multiplier based on user reward tier (Tier 1: 1.0, Tier 2: 0.7, Tier 3: 0.3)
+ * - 平台手续费% = 从平台配置中获取的手续费百分比
+ * - Platform Fee% = Fee percentage obtained from platform configuration
  * 
  * Related files:
  * - lib/database.ts: Database connection utilities
@@ -169,41 +179,73 @@ export async function POST(request: NextRequest): Promise<NextResponse<Calculate
       const platformFeePercentage = feeConfig.rows.length > 0 ? 
         parseFloat(feeConfig.rows[0].fee_percentage) : 5.0;
 
-      // 5. Calculate rewards for each stake
-      // 5. 为每个质押计算奖励
+      // 5. Calculate rewards for each stake using liquidity mining formula
+      // 5. 使用流动性挖矿公式为每个质押计算奖励
       const totalParticipants = stakes.rows.length;
       let totalRewardsCalculated = 0;
       let totalFeesCollected = 0;
       let calculationsCreated = 0;
 
       for (const stake of stakes.rows) {
-        // Calculate tier coefficient
-        // 计算档位系数
+        // === 流动性挖矿奖励计算公式实现 ===
+        // Liquidity Mining Reward Calculation Formula Implementation
+        // 
+        // 公式：个人可领取奖励 = （奖池总额 × 用户质押占比 × 系数） × (1 - 平台手续费%)
+        // Formula: Personal Reward = (Pool Total × User Stake Ratio × Coefficient) × (1 - Platform Fee%)
+        //
+        // 其中：
+        // Where:
+        // - 奖池总额 = adminPoolAmount (管理员注入的奖池金额)
+        // - Pool Total = adminPoolAmount (Admin injected pool amount)
+        // - 用户质押占比 = 用户个人质押金额 ÷ 所有用户质押金额总和
+        // - User Stake Ratio = User's stake amount ÷ Total stake amount of all users
+        // - 系数 = 基于用户奖励档位的倍数 (一档1.0, 二档0.7, 三档0.3)
+        // - Coefficient = Multiplier based on user reward tier (Tier 1: 1.0, Tier 2: 0.7, Tier 3: 0.3)
+        // - 平台手续费% = 从平台配置中获取的手续费百分比
+        // - Platform Fee% = Fee percentage obtained from platform configuration
+
+        // Step 1: Calculate tier coefficient based on participation tier
+        // 步骤1：根据参与档位计算系数
         const tierCoefficient = stake.participation_tier === 1 ? 1.0 : 
                                stake.participation_tier === 2 ? 0.7 : 0.3;
 
-        // === 修改：用新公式计算基础奖励 ===
-        // Calculate user stake ratio (user_stake / total_stake)
-        // 计算用户质押占比（user_stake / 总质押）
+        // Step 2: Calculate user stake ratio (liquidity contribution ratio)
+        // 步骤2：计算用户质押占比（流动性贡献比例）
         const userStake = parseFloat(stake.stake_amount);
         const userRatio = userStake / totalStake;
 
-        // Calculate base reward using new formula
-        // 用新公式计算基础奖励
+        // Step 3: Calculate base reward using liquidity mining formula
+        // 步骤3：使用流动性挖矿公式计算基础奖励
         // baseReward = adminPoolAmount × userRatio × tierCoefficient
+        // 基础奖励 = 奖池总额 × 用户质押占比 × 系数
         const baseReward = adminPoolAmount * userRatio * tierCoefficient;
-        // === END ===
         
-        // Calculate platform fee
-        // 计算平台手续费
+        // Step 4: Calculate platform fee
+        // 步骤4：计算平台手续费
         const feeAmount = baseReward * (platformFeePercentage / 100);
         
-        // Calculate final reward
-        // 计算最终奖励
+        // Step 5: Calculate final reward after deducting platform fee
+        // 步骤5：扣除平台手续费后计算最终奖励
         const finalReward = baseReward - feeAmount;
 
-        // Insert reward calculation record
-        // 插入奖励计算记录
+        // === 详细计算日志记录 ===
+        // Detailed calculation log recording
+        console.log(`=== 用户 ${stake.username} 奖励计算详情 ===`);
+        console.log(`=== User ${stake.username} Reward Calculation Details ===`);
+        console.log(`用户质押金额 / User Stake Amount: ${userStake}`);
+        console.log(`总质押金额 / Total Stake Amount: ${totalStake}`);
+        console.log(`用户质押占比 / User Stake Ratio: ${(userRatio * 100).toFixed(2)}%`);
+        console.log(`参与档位 / Participation Tier: ${stake.participation_tier}`);
+        console.log(`档位系数 / Tier Coefficient: ${tierCoefficient}`);
+        console.log(`奖池总额 / Admin Pool Amount: ${adminPoolAmount}`);
+        console.log(`基础奖励 / Base Reward: ${baseReward.toFixed(2)}`);
+        console.log(`平台手续费率 / Platform Fee Rate: ${platformFeePercentage}%`);
+        console.log(`手续费金额 / Fee Amount: ${feeAmount.toFixed(2)}`);
+        console.log(`最终奖励 / Final Reward: ${finalReward.toFixed(2)}`);
+        console.log(`=== 计算完成 / Calculation Complete ===`);
+
+        // Insert reward calculation record with enhanced liquidity mining data
+        // 插入奖励计算记录，包含增强的流动性挖矿数据
         await client.query(`
           INSERT INTO reward_calculations (
             event_id, user_id, stake_record_id, admin_pool_amount, total_participants,
@@ -223,8 +265,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<Calculate
           finalReward
         ]);
 
-        // Update user balance with reward
-        // 用奖励更新用户余额
+        // Update user balance with reward (liquidity mining payout)
+        // 用奖励更新用户余额（流动性挖矿支付）
         const currentBalance = parseFloat(stake.virtual_chz_balance || '0');
         const newBalance = currentBalance + finalReward;
         
@@ -234,8 +276,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<Calculate
           WHERE id = $2
         `, [newBalance.toString(), stake.user_id]);
 
-        // Update stake record status
-        // 更新质押记录状态
+        // Update stake record status to settled (liquidity mining completion)
+        // 更新质押记录状态为已结算（流动性挖矿完成）
         await client.query(`
           UPDATE user_stake_records 
           SET status = 'settled', settlement_time = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
