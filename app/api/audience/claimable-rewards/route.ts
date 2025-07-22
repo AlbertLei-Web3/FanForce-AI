@@ -13,7 +13,13 @@ export async function GET(request: NextRequest) {
 
     // Get user's claimable rewards from reward_calculations table (liquidity mining)
     // 从reward_calculations表获取用户的可领取奖励（流动性挖矿）
-    const rewardsResult = await query(
+    // If reward_calculations is empty, fall back to reward_distributions
+    // 如果reward_calculations为空，回退到reward_distributions
+    let rewardsResult;
+    
+    // First try reward_calculations table
+    // 首先尝试reward_calculations表
+    const rewardCalculationsResult = await query(
       `SELECT 
         rc.id,
         rc.event_id,
@@ -45,9 +51,50 @@ export async function GET(request: NextRequest) {
       [userId]
     );
 
+    if (rewardCalculationsResult.rows.length > 0) {
+      // Use reward_calculations data
+      // 使用reward_calculations数据
+      rewardsResult = rewardCalculationsResult;
+    } else {
+      // Fall back to reward_distributions table
+      // 回退到reward_distributions表
+      console.log('⚠️ reward_calculations表为空，回退到reward_distributions表');
+      console.log('⚠️ reward_calculations table is empty, falling back to reward_distributions table');
+      
+      rewardsResult = await query(
+        `SELECT 
+          rd.id,
+          rd.event_id,
+          rd.final_reward,
+          rd.distribution_status,
+          rd.created_at as calculated_at,
+          e.title as event_title,
+          e.match_result,
+          e.team_a_score,
+          e.team_b_score,
+          e.team_a_info,
+          e.team_b_info,
+          e.event_date,
+          e.venue_name,
+          usr.stake_amount,
+          usr.participation_tier,
+          usr.team_choice,
+          usr.stake_time,
+          rd.calculation_formula
+         FROM reward_distributions rd
+         JOIN events e ON rd.event_id = e.id
+         JOIN user_stake_records usr ON usr.event_id = rd.event_id AND usr.user_id = rd.user_id
+         WHERE rd.user_id = $1
+         ORDER BY rd.created_at DESC`,
+        [userId]
+      );
+    }
+
     // Get user's total statistics from reward_calculations table
     // 从reward_calculations表获取用户的总统计
-    const statsResult = await query(
+    let statsResult;
+    
+    const rewardCalculationsStats = await query(
       `SELECT 
         COUNT(*) as total_events_participated,
         SUM(rc.final_reward) as total_rewards_earned,
@@ -58,6 +105,24 @@ export async function GET(request: NextRequest) {
        WHERE rc.user_id = $1`,
       [userId]
     );
+
+    if (rewardCalculationsStats.rows[0].total_events_participated > 0) {
+      statsResult = rewardCalculationsStats;
+    } else {
+      // Fall back to reward_distributions table
+      // 回退到reward_distributions表
+      statsResult = await query(
+        `SELECT 
+          COUNT(*) as total_events_participated,
+          SUM(rd.final_reward) as total_rewards_earned,
+          SUM(usr.stake_amount) as total_stakes_placed,
+          AVG(rd.final_reward) as average_reward_per_event
+         FROM reward_distributions rd
+         JOIN user_stake_records usr ON usr.event_id = rd.event_id AND usr.user_id = rd.user_id
+         WHERE rd.user_id = $1`,
+        [userId]
+      );
+    }
 
     // Get user's recent activity from reward_calculations table
     // 从reward_calculations表获取用户的最近活动
@@ -102,12 +167,11 @@ export async function GET(request: NextRequest) {
         usr.participation_tier,
         usr.team_choice,
         usr.stake_time,
-        rd.final_reward,
-        rd.calculation_formula,
-        rd.distribution_status
+        rc.final_reward,
+        rc.calculation_status as distribution_status
        FROM events e
        LEFT JOIN user_stake_records usr ON usr.event_id = e.id AND usr.user_id = $1
-               LEFT JOIN reward_calculations rc ON rc.event_id = e.id AND rc.user_id = $1
+       LEFT JOIN reward_calculations rc ON rc.event_id = e.id AND rc.user_id = $1
        WHERE e.status = 'completed' AND e.rewards_distributed = true
        ORDER BY e.rewards_distributed_at DESC
        LIMIT 1`,
@@ -180,7 +244,6 @@ export async function GET(request: NextRequest) {
           } : null,
           userReward: featuredChampionship.final_reward ? {
             amount: featuredChampionship.final_reward,
-            calculationFormula: featuredChampionship.calculation_formula,
             distributionStatus: featuredChampionship.distribution_status
           } : null
         } : null
