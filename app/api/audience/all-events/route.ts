@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
         e.title,
         e.description,
         e.event_date,
-        e.venue_name,
-        e.venue_capacity,
+        COALESCE(e.venue_name, ea.venue_name) as venue_name,
+        COALESCE(e.venue_capacity, ea.venue_capacity) as venue_capacity,
         e.party_venue_capacity,
         ea.team_a_info,
         ea.team_b_info,
@@ -80,6 +80,9 @@ export async function GET(request: NextRequest) {
         -- Only show events that were created from approved applications
         -- 只显示从已批准申请创建的活动
         AND ea.status = 'approved'
+        -- Only show events where ambassador hasn't announced results yet
+        -- 只显示大使还没有公布结果的赛事
+        AND e.match_result IS NULL
       ORDER BY e.event_date ASC
     `;
 

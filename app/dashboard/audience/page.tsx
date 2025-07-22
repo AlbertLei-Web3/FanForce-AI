@@ -1298,8 +1298,8 @@ export default function AudienceDashboard() {
                   {allEvents.slice(0, 6).map((event) => renderEventCard(event, eventsLayout))}
                 </div>
                 
-                {/* View All Button - Show if there are more than 6 events / 查看全部按钮 - 如果有超过6个赛事则显示 */}
-                {allEvents.length > 6 && !showAllEvents && (
+                {/* View All Button - Always show if there are events / 查看全部按钮 - 如果有赛事就显示 */}
+                {allEvents.length > 0 && !showAllEvents && (
                   <div className="text-center">
                     <button
                       onClick={() => setShowAllEvents(true)}
@@ -1312,14 +1312,14 @@ export default function AudienceDashboard() {
                   </div>
                 )}
                 
-                {/* Show remaining events when "View All" is clicked / 点击"查看全部"时显示剩余赛事 */}
-                {showAllEvents && allEvents.length > 6 && (
+                {/* Show all events when "View All" is clicked / 点击"查看全部"时显示所有赛事 */}
+                {showAllEvents && (
                   <div className={
                     eventsLayout === 'grid' 
                       ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6" 
                       : "space-y-4 mt-6"
                   }>
-                    {allEvents.slice(6).map((event) => renderEventCard(event, eventsLayout))}
+                    {allEvents.map((event) => renderEventCard(event, eventsLayout))}
                   </div>
                 )}
               </div>
