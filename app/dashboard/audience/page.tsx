@@ -27,7 +27,8 @@ import {
   FaFire,
   FaMedal,
   FaTh,
-  FaList
+  FaList,
+  FaEye
 } from 'react-icons/fa';
 
 // Enhanced Mock Data based on documentation / 基于文档的增强模拟数据
@@ -362,6 +363,7 @@ export default function AudienceDashboard() {
   const [stakeAmount, setStakeAmount] = useState('');
   const [showStakeModal, setShowStakeModal] = useState(false);
   const [eventsLayout, setEventsLayout] = useState('grid'); // 'grid' or 'list'
+  const [showAllEvents, setShowAllEvents] = useState(false); // Control whether to show all events
 
   // Stake submission states / 质押提交状态
   const [stakeSuccess, setStakeSuccess] = useState({ 
@@ -1286,12 +1288,40 @@ export default function AudienceDashboard() {
                 </p>
               </div>
             ) : (
-              <div className={
-                eventsLayout === 'grid' 
-                  ? "grid grid-cols-1 lg:grid-cols-2 gap-4" 
-                  : "space-y-4"
-              }>
-                {allEvents.map((event) => renderEventCard(event, eventsLayout))}
+              <div>
+                {/* Events Grid - Show first 6 events (2 rows of 3) / 赛事网格 - 显示前6个赛事（2行，每行3个） */}
+                <div className={
+                  eventsLayout === 'grid' 
+                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" 
+                    : "space-y-4 mb-6"
+                }>
+                  {allEvents.slice(0, 6).map((event) => renderEventCard(event, eventsLayout))}
+                </div>
+                
+                {/* View All Button - Show if there are more than 6 events / 查看全部按钮 - 如果有超过6个赛事则显示 */}
+                {allEvents.length > 6 && !showAllEvents && (
+                  <div className="text-center">
+                    <button
+                      onClick={() => setShowAllEvents(true)}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center mx-auto space-x-2"
+                    >
+                      <FaEye className="text-sm" />
+                      <span>{language === 'en' ? 'View All Events' : '查看所有赛事'}</span>
+                      <span className="text-xs opacity-80">({allEvents.length})</span>
+                    </button>
+                  </div>
+                )}
+                
+                {/* Show remaining events when "View All" is clicked / 点击"查看全部"时显示剩余赛事 */}
+                {showAllEvents && allEvents.length > 6 && (
+                  <div className={
+                    eventsLayout === 'grid' 
+                      ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6" 
+                      : "space-y-4 mt-6"
+                  }>
+                    {allEvents.slice(6).map((event) => renderEventCard(event, eventsLayout))}
+                  </div>
+                )}
               </div>
             )}
             </div>

@@ -1017,7 +1017,7 @@ export default function AmbassadorDashboard() {
                   <span>{language === 'en' ? 'Recent Events' : '近期赛事'}</span>
                 </h3>
                 <button 
-                  onClick={() => setActiveTab('events')}
+                  onClick={() => router.push('/dashboard/audience')}
                   className="flex items-center space-x-2 text-emerald-400 hover:text-emerald-300 text-sm font-medium"
                 >
                   <span>{language === 'en' ? 'View All' : '查看全部'}</span>
@@ -1033,7 +1033,16 @@ export default function AmbassadorDashboard() {
                     </span>
                   </div>
                 ) : recentEvents.length > 0 ? (
-                  recentEvents.slice(0, 2).map(renderRecentEventCard)
+                  <>
+                    {recentEvents.slice(0, 2).map(renderRecentEventCard)}
+                    {recentEvents.length > 2 && (
+                      <div className="col-span-2 text-center py-4">
+                        <p className="text-slate-400 text-sm">
+                          {language === 'en' ? `Showing 2 of ${recentEvents.length} approved events` : `显示 ${recentEvents.length} 个已批准赛事中的 2 个`}
+                        </p>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="col-span-2 text-center py-8">
                     <FaCalendarAlt className="text-4xl text-slate-500 mx-auto mb-4" />

@@ -75,7 +75,11 @@ export async function GET(request: NextRequest) {
       FROM events e
       LEFT JOIN event_applications ea ON e.application_id = ea.id
       LEFT JOIN users u ON e.ambassador_id = u.id
-      WHERE e.status = 'active' AND e.event_date > NOW()
+      WHERE e.status = 'active' 
+        AND e.event_date > NOW()
+        -- Only show events that were created from approved applications
+        -- 只显示从已批准申请创建的活动
+        AND ea.status = 'approved'
       ORDER BY e.event_date ASC
     `;
 
