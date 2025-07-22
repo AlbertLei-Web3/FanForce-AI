@@ -249,28 +249,37 @@ export async function POST(request: NextRequest) {
       const audienceStakes = audienceStakesResult.rows;
 
       if (audienceStakes.length > 0) {
-        // Get admin pool amount (assuming it's stored in events table or calculated)
-        // 获取管理员奖池金额（假设存储在events表中或计算得出）
-        const adminPoolAmount = 1000.0; // This should come from actual pool calculation
+        // Get admin pool amount from events.pool_injected_chz
+        // 从events.pool_injected_chz获取管理员奖池金额
+        const eventResult = await client.query(
+          'SELECT pool_injected_chz FROM events WHERE id = $1',
+          [eventId]
+        );
+        
+        if (eventResult.rows.length === 0) {
+          throw new Error('Event not found');
+        }
+        
+        const adminPoolAmount = parseFloat(eventResult.rows[0].pool_injected_chz) || 0;
         const totalParticipants = audienceStakes.length;
         const platformFeePercentage = 5.0; // 5% platform fee
 
         for (const stake of audienceStakes) {
           // Calculate tier coefficient based on participation_tier
           // 根据participation_tier计算等级系数
-          let tierCoefficient = 1.0;
+          let tierCoefficient = 0.3;
           switch (stake.participation_tier) {
             case 1: // Full Experience
-              tierCoefficient = 2.0;
+              tierCoefficient = 1.0;
               break;
             case 2: // Stake+Match
-              tierCoefficient = 1.5;
+              tierCoefficient = 0.7;
               break;
             case 3: // Stake Only
-              tierCoefficient = 1.0;
+              tierCoefficient = 0.3;
               break;
             default:
-              tierCoefficient = 1.0;
+              tierCoefficient = 0.3;
           }
 
           // === 流动性挖矿奖励计算公式实现 ===
@@ -281,8 +290,8 @@ export async function POST(request: NextRequest) {
           //
           // 其中：
           // Where:
-          // - 奖池总额 = adminPoolAmount (管理员注入的奖池金额)
-          // - Pool Total = adminPoolAmount (Admin injected pool amount)
+          // - 奖池总额 = events.pool_injected_chz (管理员注入的奖池金额)
+          // - Pool Total = events.pool_injected_chz (Admin injected pool amount)
           // - 用户质押占比 = 用户个人质押金额 ÷ 所有用户质押金额总和
           // - User Stake Ratio = User's stake amount ÷ Total stake amount of all users
           // - 系数 = 基于用户奖励档位的倍数 (一档1.0, 二档0.7, 三档0.3)
