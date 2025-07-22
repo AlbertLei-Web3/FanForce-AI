@@ -127,22 +127,34 @@ export async function POST(request: NextRequest): Promise<NextResponse<Calculate
         throw new Error('No active stakes found for this event');
       }
 
+      // === 新增：计算所有用户总质押金额 ===
+      // Calculate total stake amount for all users in this event
+      // 统计本场赛事所有用户的总质押金额
+      let totalStake = 0;
+      for (const stake of stakes.rows) {
+        totalStake += parseFloat(stake.stake_amount);
+      }
+      if (totalStake === 0) {
+        throw new Error('Total stake is zero, cannot calculate rewards');
+      }
+      // === END ===
+
       // 3. Get admin pool amount
       // 3. 获取管理员奖池金额
-      const adminPool = await client.query(`
-        SELECT pool_balance_after
-        FROM chz_pool_management cpm
-        JOIN events e ON cpm.event_id = e.id
-        WHERE e.id = $1
-        ORDER BY cpm.created_at DESC
-        LIMIT 1
+      // === 修正：直接从events表读取pool_injected_chz字段作为奖池金额 ===
+      // FIX: Always use events.pool_injected_chz as the admin pool amount for reward calculation
+      const eventPool = await client.query(`
+        SELECT pool_injected_chz
+        FROM events
+        WHERE id = $1
       `, [event_id]);
 
-      if (adminPool.rows.length === 0) {
+      if (eventPool.rows.length === 0) {
         throw new Error('No admin pool found for this event');
       }
 
-      const adminPoolAmount = parseFloat(adminPool.rows[0].pool_balance_after);
+      const adminPoolAmount = parseFloat(eventPool.rows[0].pool_injected_chz);
+      // === END ===
 
       // 4. Get platform fee configuration
       // 4. 获取平台手续费配置
@@ -170,9 +182,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<Calculate
         const tierCoefficient = stake.participation_tier === 1 ? 1.0 : 
                                stake.participation_tier === 2 ? 0.7 : 0.3;
 
-        // Calculate base reward
-        // 计算基础奖励
-        const baseReward = (adminPoolAmount / totalParticipants) * tierCoefficient;
+        // === 修改：用新公式计算基础奖励 ===
+        // Calculate user stake ratio (user_stake / total_stake)
+        // 计算用户质押占比（user_stake / 总质押）
+        const userStake = parseFloat(stake.stake_amount);
+        const userRatio = userStake / totalStake;
+
+        // Calculate base reward using new formula
+        // 用新公式计算基础奖励
+        // baseReward = adminPoolAmount × userRatio × tierCoefficient
+        const baseReward = adminPoolAmount * userRatio * tierCoefficient;
+        // === END ===
         
         // Calculate platform fee
         // 计算平台手续费
@@ -281,6 +301,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<Calculate
       } else if (error.message.includes('No admin pool')) {
         errorMessage = 'No admin pool found for this event';
         errorMessageCn = '此赛事未找到管理员奖池';
+        statusCode = 400;
+      } else if (error.message.includes('Total stake is zero')) {
+        errorMessage = 'Total stake is zero, cannot calculate rewards';
+        errorMessageCn = '总质押金额为零，无法计算奖励';
         statusCode = 400;
       }
     }
