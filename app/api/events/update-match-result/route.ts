@@ -273,15 +273,52 @@ export async function POST(request: NextRequest) {
               tierCoefficient = 1.0;
           }
 
-          // Calculate reward using the formula
-          // 使用公式计算奖励
-          const baseReward = (adminPoolAmount / totalParticipants) * tierCoefficient;
+          // === 流动性挖矿奖励计算公式实现 ===
+          // Liquidity Mining Reward Calculation Formula Implementation
+          // 
+          // 公式：个人可领取奖励 = （奖池总额 × 用户质押占比 × 系数） × (1 - 平台手续费%)
+          // Formula: Personal Reward = (Pool Total × User Stake Ratio × Coefficient) × (1 - Platform Fee%)
+          //
+          // 其中：
+          // Where:
+          // - 奖池总额 = adminPoolAmount (管理员注入的奖池金额)
+          // - Pool Total = adminPoolAmount (Admin injected pool amount)
+          // - 用户质押占比 = 用户个人质押金额 ÷ 所有用户质押金额总和
+          // - User Stake Ratio = User's stake amount ÷ Total stake amount of all users
+          // - 系数 = 基于用户奖励档位的倍数 (一档1.0, 二档0.7, 三档0.3)
+          // - Coefficient = Multiplier based on user reward tier (Tier 1: 1.0, Tier 2: 0.7, Tier 3: 0.3)
+          // - 平台手续费% = 从平台配置中获取的手续费百分比
+          // - Platform Fee% = Fee percentage obtained from platform configuration
+
+          // Step 1: Calculate total stake amount for all users in this event
+          // 步骤1：计算此赛事所有用户的总质押金额
+          let totalStake = 0;
+          for (const stakeRecord of audienceStakes) {
+            totalStake += parseFloat(stakeRecord.stake_amount);
+          }
+
+          // Step 2: Calculate user stake ratio (liquidity contribution ratio)
+          // 步骤2：计算用户质押占比（流动性贡献比例）
+          const userStake = parseFloat(stake.stake_amount);
+          const userRatio = userStake / totalStake;
+
+          // Step 3: Calculate base reward using liquidity mining formula
+          // 步骤3：使用流动性挖矿公式计算基础奖励
+          // baseReward = adminPoolAmount × userRatio × tierCoefficient
+          // 基础奖励 = 奖池总额 × 用户质押占比 × 系数
+          const baseReward = adminPoolAmount * userRatio * tierCoefficient;
+          
+          // Step 4: Calculate platform fee
+          // 步骤4：计算平台手续费
           const platformFeeAmount = baseReward * (platformFeePercentage / 100);
+          
+          // Step 5: Calculate final reward after deducting platform fee
+          // 步骤5：扣除平台手续费后计算最终奖励
           const finalReward = baseReward - platformFeeAmount;
 
-          // Create calculation formula display
-          // 创建计算公式显示
-          const calculationFormula = `个人获得奖励 = (${adminPoolAmount} ÷ ${totalParticipants} × ${tierCoefficient}) - (${adminPoolAmount} ÷ ${totalParticipants} × ${tierCoefficient}) × ${platformFeePercentage}% = ${finalReward.toFixed(2)} CHZ`;
+          // Create calculation formula display with liquidity mining details
+          // 创建包含流动性挖矿详细信息的计算公式显示
+          const calculationFormula = `流动性挖矿奖励 = (${adminPoolAmount} × ${(userRatio * 100).toFixed(2)}% × ${tierCoefficient}) × (1 - ${platformFeePercentage}%) = ${finalReward.toFixed(2)} CHZ`;
 
           // Insert reward distribution record
           // 插入奖励分配记录

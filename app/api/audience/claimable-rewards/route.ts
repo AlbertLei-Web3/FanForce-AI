@@ -11,16 +11,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId') || request.headers.get('x-user-id') || 'fb7554e2-e6e5-48f2-ade0-d9510703e8de';
 
-    // Get user's claimable rewards
-    // 获取用户的可领取奖励
+    // Get user's claimable rewards from reward_calculations table (liquidity mining)
+    // 从reward_calculations表获取用户的可领取奖励（流动性挖矿）
     const rewardsResult = await query(
       `SELECT 
-        rd.id,
-        rd.event_id,
-        rd.final_reward,
-        rd.calculation_formula,
-        rd.distribution_status,
-        rd.created_at as calculated_at,
+        rc.id,
+        rc.event_id,
+        rc.final_reward,
+        rc.calculation_status as distribution_status,
+        rc.calculation_time as calculated_at,
         e.title as event_title,
         e.match_result,
         e.team_a_score,
@@ -32,31 +31,36 @@ export async function GET(request: NextRequest) {
         usr.stake_amount,
         usr.participation_tier,
         usr.team_choice,
-        usr.stake_time
-       FROM reward_distributions rd
-       JOIN events e ON rd.event_id = e.id
-       JOIN user_stake_records usr ON usr.event_id = rd.event_id AND usr.user_id = rd.user_id
-       WHERE rd.user_id = $1
-       ORDER BY rd.created_at DESC`,
+        usr.stake_time,
+        -- Create calculation formula display for liquidity mining
+        -- 为流动性挖矿创建计算公式显示
+        CONCAT('流动性挖矿奖励 = (', rc.admin_pool_amount, ' × ', 
+               ROUND((usr.stake_amount::numeric / (SELECT SUM(stake_amount::numeric) FROM user_stake_records WHERE event_id = rc.event_id)) * 100, 2), 
+               '% × ', rc.user_tier_coefficient, ') × (1 - ', rc.platform_fee_percentage, '%) = ', rc.final_reward, ' CHZ') as calculation_formula
+       FROM reward_calculations rc
+       JOIN events e ON rc.event_id = e.id
+       JOIN user_stake_records usr ON usr.id = rc.stake_record_id
+       WHERE rc.user_id = $1
+       ORDER BY rc.calculation_time DESC`,
       [userId]
     );
 
-    // Get user's total statistics
-    // 获取用户的总统计
+    // Get user's total statistics from reward_calculations table
+    // 从reward_calculations表获取用户的总统计
     const statsResult = await query(
       `SELECT 
         COUNT(*) as total_events_participated,
-        SUM(rd.final_reward) as total_rewards_earned,
+        SUM(rc.final_reward) as total_rewards_earned,
         SUM(usr.stake_amount) as total_stakes_placed,
-        AVG(rd.final_reward) as average_reward_per_event
-       FROM reward_distributions rd
-       JOIN user_stake_records usr ON rd.stake_record_id = usr.id
-       WHERE rd.user_id = $1`,
+        AVG(rc.final_reward) as average_reward_per_event
+       FROM reward_calculations rc
+       JOIN user_stake_records usr ON rc.stake_record_id = usr.id
+       WHERE rc.user_id = $1`,
       [userId]
     );
 
-    // Get user's recent activity
-    // 获取用户的最近活动
+    // Get user's recent activity from reward_calculations table
+    // 从reward_calculations表获取用户的最近活动
     const recentActivityResult = await query(
       `SELECT 
         e.title as event_title,
@@ -65,11 +69,11 @@ export async function GET(request: NextRequest) {
         usr.participation_tier,
         usr.team_choice,
         usr.stake_time,
-        rd.final_reward,
-        rd.distribution_status
+        rc.final_reward,
+        rc.calculation_status as distribution_status
        FROM user_stake_records usr
        JOIN events e ON usr.event_id = e.id
-       LEFT JOIN reward_distributions rd ON rd.stake_record_id = usr.id
+       LEFT JOIN reward_calculations rc ON rc.stake_record_id = usr.id
        WHERE usr.user_id = $1
        ORDER BY usr.stake_time DESC
        LIMIT 10`,
@@ -103,7 +107,7 @@ export async function GET(request: NextRequest) {
         rd.distribution_status
        FROM events e
        LEFT JOIN user_stake_records usr ON usr.event_id = e.id AND usr.user_id = $1
-       LEFT JOIN reward_distributions rd ON rd.event_id = e.id AND rd.user_id = $1
+               LEFT JOIN reward_calculations rc ON rc.event_id = e.id AND rc.user_id = $1
        WHERE e.status = 'completed' AND e.rewards_distributed = true
        ORDER BY e.rewards_distributed_at DESC
        LIMIT 1`,
@@ -220,14 +224,14 @@ export async function POST(request: NextRequest) {
     // Verify the reward belongs to the user and is claimable
     // 验证奖励属于用户且可领取
     const rewardCheck = await query(
-      `SELECT 
-        rd.id,
-        rd.final_reward,
-        rd.distribution_status,
-        e.title as event_title
-       FROM reward_distributions rd
-       JOIN events e ON rd.event_id = e.id
-       WHERE rd.id = $1 AND rd.user_id = $2`,
+              `SELECT 
+          rc.id,
+          rc.final_reward,
+          rc.calculation_status as distribution_status,
+          e.title as event_title
+                  FROM reward_calculations rc
+         JOIN events e ON rc.event_id = e.id
+         WHERE rc.id = $1 AND rc.user_id = $2`,
       [rewardId, userId]
     );
 
@@ -254,12 +258,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update reward status to distributed
-    // 将奖励状态更新为已分配
+    // Update reward status to claimed
+    // 将奖励状态更新为已领取
     await query(
-      `UPDATE reward_distributions 
-       SET distribution_status = 'distributed',
-           distributed_at = NOW(),
+      `UPDATE reward_calculations 
+       SET calculation_status = 'claimed',
            updated_at = NOW()
        WHERE id = $1`,
       [rewardId]
