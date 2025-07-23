@@ -1,4 +1,4 @@
-# 🏆 FanForce AI - Campus Sports Ecosystem | 校园体育生态系统
+# 🏆 FanForce - ICP-Powered Community Sports Platform | FanForce - ICP驱动的社区体育平台
 
 <p align="center">
   <img src="https://img.shields.io/badge/Next.js-14.0-blue" alt="Next.js">
@@ -6,41 +6,78 @@
   <img src="https://img.shields.io/badge/Tailwind-3.3-cyan" alt="Tailwind">
   <img src="https://img.shields.io/badge/PostgreSQL-17.5-blue" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/Chiliz-CHZ-green" alt="Chiliz">
-  <img src="https://img.shields.io/badge/Web2--First-Architecture-gold" alt="Web2-First">
+  <img src="https://img.shields.io/badge/ICP-Internet_Computer-purple" alt="ICP">
 </p>
 
 ## 🎯 Core Philosophy | 核心理念
 
-### Campus Sports Ecosystem with Web2-First Architecture
-### 采用Web2优先架构的校园体育生态系统
+### Community Sports Platform with Cross-Chain Architecture
+### 采用跨链架构的社区体育平台
 
-**FanForce AI** is a comprehensive campus sports ecosystem that combines traditional web technologies with blockchain for seamless user experience. The system manages the complete lifecycle of campus sports events, from athlete recruitment to audience engagement, using PostgreSQL for business logic and ultra-simple smart contracts for CHZ token transfers.
+**FanForce** is an experimental community sports platform that explores how **Internet Computer (ICP)** blockchain can enable decentralized, incentive-driven sports communities. The system combines traditional web technologies with blockchain for seamless user experience, using PostgreSQL for business logic, Chiliz for match betting, and ICP for community governance and season bonus management.
 
-**FanForce AI** 是一个综合性校园体育生态系统，结合传统网络技术与区块链，提供无缝用户体验。系统管理校园体育赛事的完整生命周期，从运动员招募到观众参与，使用PostgreSQL处理业务逻辑，超简化智能合约处理CHZ代币转账。
+**FanForce** 是一个实验性社区体育平台，探索**互联网计算机(ICP)**区块链如何实现去中心化、激励驱动的体育社区。系统结合传统网络技术与区块链，提供无缝用户体验，使用PostgreSQL处理业务逻辑，Chiliz处理比赛下注，ICP处理社区治理和赛季奖金管理。
 
 ## 📖 Project Overview | 项目概述
 
-### 🏫 Single University MVP | 单一大学MVP
+### 🏫 Campus Pilot with Universal Vision | 具有通用愿景的校园试点
 
-The system is designed as a **single university MVP** with a **Web2-first architecture** where:
-- **PostgreSQL database** handles ALL business logic
-- **Ultra-simple smart contract** only manages CHZ transfers with automatic fee deduction
+The system is designed as a **campus pilot** with a **cross-chain architecture** where:
+- **PostgreSQL database** handles business logic and user management
+- **Chiliz Chain** manages match betting and real-time sports engagement  
+- **ICP Network** handles community governance and season bonus management
 - **Seamless user experience** through familiar web interfaces
-- **Blockchain only for money movement** - no complex on-chain logic
+- **Experimental exploration** of decentralized community sports
 
-系统设计为**单一大学MVP**，采用**Web2优先架构**：
-- **PostgreSQL数据库**处理所有业务逻辑
-- **超简化智能合约**仅管理CHZ转账并自动扣除手续费
+系统设计为**校园试点**，采用**跨链架构**：
+- **PostgreSQL数据库**处理业务逻辑和用户管理
+- **Chiliz链**管理比赛下注和实时体育参与
+- **ICP网络**处理社区治理和赛季奖金管理
 - 通过熟悉的网络界面提供**无缝用户体验**
-- **区块链仅用于资金流动** - 无复杂链上逻辑
+- **实验性探索**去中心化社区体育
+
+### 🌍 Universal Community Sports Ecosystem | 通用社区体育生态系统
+
+Our platform is designed to serve **any community** where amateur sports events naturally occur:
+我们的平台旨在服务于**任何**业余体育赛事自然发生的社区：
+
+Campus Communities | 校园社区
+- University sports leagues
+- Student clubs and organizations
+- Inter-department competitions
+- Alumni engagement programs
+
+Neighborhood Communities | 邻里社区
+- Local sports clubs
+- Community centers
+- Park leagues and tournaments
+- Family sports events
+
+Corporate Communities | 企业社区
+- Company sports teams
+- Industry leagues
+- Corporate wellness programs
+- Professional networking through sports
+
+Cultural Communities | 文化社区
+- Ethnic sports associations
+- Cultural center programs
+- Heritage sports preservation
+- Cross-cultural sports exchange
+
+Commercial Communities | 商业社区
+- Gym and fitness communities
+- Sports facility memberships
+- Retail sports leagues
+- Brand-sponsored events
 
 ### 🎭 Four-Role System | 四角色系统
 
 #### 🔧 System Admin | 系统管理员
 **Database-driven system management | 数据库驱动的系统管理**
 - Deploy PostgreSQL database with all tables | 部署包含所有表的PostgreSQL数据库
-- Deploy ultra-simple contract (5 functions only) | 部署超简化合约（仅5个函数）
-- Configure virtual CHZ pool tracking | 配置虚拟CHZ池追踪
+- Deploy smart contracts on Chiliz and ICP networks | 在Chiliz和ICP网络上部署智能合约
+- Configure ICP season bonus pool tracking | 配置ICP赛季奖金池追踪
 - Set fee rules: 5% stake + 2% withdraw + 3% distribution | 设置手续费规则：5%质押 + 2%提取 + 3%分配
 - Generate JWT QR codes with 4-hour expiry timers | 生成4小时过期的JWT二维码
 - Monitor real-time check-ins via WebSocket | 通过WebSocket监控实时签到
@@ -57,11 +94,12 @@ The system is designed as a **single university MVP** with a **Web2-first archit
 #### 🏃‍♂️ Student Athlete | 学生运动员
 **Competition participation and career progression | 比赛参与和职业发展**
 - Register via web form with wallet signature | 通过网络表单注册并进行钱包签名
-- Receive virtual CHZ salary tracked in database | 获得在数据库中追踪的虚拟CHZ薪水
+- Receive ICP season bonus pool credits tracked in database | 获得在数据库中追踪的ICP赛季奖金池积分
 - Enter competition cycle with entry fees deducted from virtual balance | 进入比赛循环，从虚拟余额中扣除参赛费
 - Participate in matches with ranking updates | 参与比赛并更新排名
 - Complete season requirements: 10+ matches + social media posts | 完成赛季要求：10+场比赛 + 社交媒体帖子
-- Request mainnet CHZ payout after season completion | 赛季完成后申请主网CHZ支付
+- Claim ICP season bonuses after season completion | 赛季完成后领取ICP赛季奖金
+- View real-time ICP network status and canister statistics | 查看实时ICP网络状态和容器统计
 
 #### 🙋‍♂️ Audience Supporter | 观众支持者
 **Three-tier participation system | 三层参与系统**
@@ -71,7 +109,7 @@ The system is designed as a **single university MVP** with a **Web2-first archit
 
 ## 🏗️ Technical Architecture | 技术架构
 
-### Web2-First Architecture | Web2优先架构
+### Cross-Chain Architecture | 跨链架构
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -84,14 +122,14 @@ The system is designed as a **single university MVP** with a **Web2-first archit
 │                  Business Logic Layer                       │
 │        PostgreSQL Database + Express.js API Server         │
 │   • User Management  • Event Management  • Analytics       │
-│   • Virtual CHZ Pool  • Ranking System   • JWT Auth        │
+│   • ICP Bonus Pool   • Ranking System   • JWT Auth        │
 └─────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                   Blockchain Layer                          │
-│           Ultra-Simple Smart Contract (5 functions)        │
-│  receive() | withdraw() | batchTransfer() | getFeeBalance() │
+│           Chiliz Chain (Match Betting) + ICP Network       │
+│  (Community Governance & Season Bonus Management)          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -105,7 +143,7 @@ The system is designed as a **single university MVP** with a **Web2-first archit
 - `event_participants` - Event participation tracking | 活动参与追踪
 - `qr_codes` - JWT QR codes with expiry | 带过期时间的JWT二维码
 - `qr_scans` - QR code scanning records | 二维码扫描记录
-- `transactions` - Virtual CHZ transaction history | 虚拟CHZ交易历史
+- `transactions` - ICP bonus transaction history | ICP奖金交易历史
 - `rewards` - Reward distribution records | 奖励分配记录
 - `analytics` - System analytics and metrics | 系统分析和指标
 - `invite_codes` - Event invitation codes | 活动邀请码
@@ -121,6 +159,53 @@ The system is designed as a **single university MVP** with a **Web2-first archit
 - `compensation_records` - Compensation tracking | 补偿追踪
 - `schema_backup` - Database schema backup | 数据库架构备份
 
+## 🌐 ICP Integration | ICP集成
+
+### ICP Season Bonus Pool | ICP赛季奖金池
+
+**Replacing Virtual CHZ with ICP-based Season Bonuses | 用基于ICP的赛季奖金替换虚拟CHZ**
+
+```motoko
+// ICP Season Bonus Canister
+actor class FanForceSeasonBonus() = {
+    // Athlete profile management
+    type AthleteProfile = {
+        id: Text;
+        name: Text;
+        studentId: Text;
+        sport: Text;
+        position: Text;
+        team: Text;
+        rank: Text;
+        rankPoints: Nat;
+        status: Text;
+    };
+    
+    // Season bonus calculation
+    public func assignSeasonBonus(
+        athleteId: Text,
+        seasonId: Text,
+        baseSalary: Float,
+        seasonMatches: Nat,
+        socialPosts: Nat
+    ) : async Result.Result<Text, Text> {
+        // Immutable bonus assignment on ICP
+    };
+}
+```
+
+### ICP Service Layer | ICP服务层
+
+```typescript
+// ICP Service for frontend integration
+class ICPService {
+    async getAthleteProfile(athleteId: string): Promise<AthleteProfile | null>
+    async getSeasonBonus(athleteId: string, seasonId: string): Promise<SeasonBonus | null>
+    async claimSeasonBonus(athleteId: string, seasonId: string): Promise<boolean>
+    async getNetworkStatus(): Promise<ICPNetworkStatus>
+}
+```
+
 ## 🚀 Quick Start | 快速开始
 
 ### 1. Prerequisites | 环境要求
@@ -128,6 +213,7 @@ The system is designed as a **single university MVP** with a **Web2-first archit
 - Node.js 18.17+
 - PostgreSQL 12+
 - Web3 wallet (MetaMask recommended) | Web3钱包（推荐MetaMask）
+- DFX (for ICP development) | DFX（用于ICP开发）
 
 ### 2. Database Setup | 数据库设置
 
@@ -151,22 +237,35 @@ ALTER USER fanforce_user CREATEDB;
 node scripts/init-database.js
 ```
 
-### 3. Installation | 安装
+### 3. ICP Development Setup | ICP开发设置
+
+```bash
+# Install DFX | 安装DFX
+sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+
+# Start local ICP network | 启动本地ICP网络
+dfx start --background
+
+# Deploy ICP canisters | 部署ICP容器
+dfx deploy
+```
+
+### 4. Installation | 安装
 
 ```bash
 # Clone repository | 克隆仓库
-git clone https://github.com/your-username/fanforce-ai.git
-cd fanforce-ai
+git clone https://github.com/your-username/fanforce.git
+cd fanforce
 
 # Install dependencies | 安装依赖
 npm install
 
 # Configure environment | 配置环境变量
 cp .env.example .env.local
-# Edit .env.local with your database credentials
+# Edit .env.local with your database and ICP credentials
 ```
 
-### 4. Start Development | 启动开发
+### 5. Start Development | 启动开发
 
 ```bash
 # Start backend API server (port 3001) | 启动后端API服务器（端口3001）
@@ -179,11 +278,11 @@ npm run dev
 npm run dev-all
 ```
 
-### 5. Access Dashboards | 访问仪表板
+### 6. Access Dashboards | 访问仪表板
 
 - **Admin Dashboard**: `http://localhost:3000/dashboard/admin` | 管理员仪表板
 - **Ambassador Dashboard**: `http://localhost:3000/dashboard/ambassador` | 大使仪表板
-- **Athlete Dashboard**: `http://localhost:3000/dashboard/student-athlete` | 运动员仪表板
+- **Athlete Dashboard**: `http://localhost:3000/dashboard/athlete` | 运动员仪表板
 - **Audience Dashboard**: `http://localhost:3000/dashboard/audience` | 观众仪表板
 
 ## 🎮 Dashboard Features | 仪表板功能
@@ -191,7 +290,7 @@ npm run dev-all
 ### 🔧 Admin Dashboard | 管理员仪表板
 **Complete system oversight and management | 完整的系统监督和管理**
 - **Real-time Analytics**: User metrics, event statistics, revenue tracking | 实时分析：用户指标、活动统计、收入追踪
-- **Multi-region Management**: Oversee multiple campus regions | 多区域管理：监督多个校园区域
+- **ICP Network Status**: Live connection status and canister statistics | ICP网络状态：实时连接状态和容器统计
 - **Ambassador Approval**: Review and approve ambassador applications | 大使审批：审查和批准大使申请
 - **Venue Management**: Configure venues and QR code generation | 场馆管理：配置场馆和二维码生成
 - **User Management**: Role assignments and user oversight | 用户管理：角色分配和用户监督
@@ -208,9 +307,9 @@ npm run dev-all
 ### 🏃‍♂️ Athlete Dashboard | 运动员仪表板
 **Competition participation and career tracking | 比赛参与和职业追踪**
 - **Competition Center**: View available competitions and rankings | 比赛中心：查看可用比赛和排名
-- **Virtual CHZ Balance**: Track virtual earnings and season progress | 虚拟CHZ余额：追踪虚拟收入和赛季进度
+- **ICP Season Bonus Pool**: Track ICP earnings and season progress | ICP赛季奖金池：追踪ICP收入和赛季进度
 - **Match History**: Complete match history and performance analytics | 比赛历史：完整的比赛历史和表现分析
-- **Season Progress**: Track requirements for mainnet payout eligibility | 赛季进度：追踪主网支付资格要求
+- **Season Progress**: Track requirements for ICP bonus eligibility | 赛季进度：追踪ICP奖金资格要求
 - **Social Media Integration**: Post verification and engagement tracking | 社交媒体集成：帖子验证和参与度追踪
 
 ### 🙋‍♂️ Audience Dashboard | 观众仪表板
@@ -243,14 +342,14 @@ http://localhost:3000/websocket-demo
 - **Event Participation**: Real-time event joining and status updates | 活动参与：实时活动加入和状态更新
 - **Match Results**: Live match result broadcasting | 比赛结果：实时比赛结果广播
 - **QR Code Integration**: Real-time QR scanning notifications | 二维码集成：实时二维码扫描通知
-- **Reward Distribution**: Instant reward notifications | 奖励分配：即时奖励通知
+- **ICP Network Status**: Real-time ICP connection monitoring | ICP网络状态：实时ICP连接监控
 - **Health Monitoring**: Connection health and auto-reconnection | 健康监控：连接健康和自动重连
 
 ## 💰 Smart Contract Integration | 智能合约集成
 
-### Ultra-Simple Contract Design | 超简化合约设计
+### Cross-Chain Contract Design | 跨链合约设计
 
-**Only 5 functions for CHZ token management | 仅5个函数用于CHZ代币管理**
+**Chiliz Chain Contract - Match Betting | Chiliz链合约 - 比赛下注**
 
 ```solidity
 contract FanForcePredictionDemo {
@@ -262,9 +361,40 @@ contract FanForcePredictionDemo {
 }
 ```
 
+**ICP Network Canister - Community Governance | ICP网络容器 - 社区治理**
+
+```motoko
+actor class FanForceCommunitySports() = {
+    // Community-agnostic profile management
+    // 社区无关的档案管理
+    type CommunityProfile = {
+        id: Text;
+        communityType: Text; // campus, neighborhood, corporate, etc.
+        name: Text;
+        location: Text;
+        memberCount: Nat;
+        seasonBonuses: [SeasonBonus];
+    };
+    
+    // Universal bonus calculation
+    // 通用奖金计算
+    public func assignCommunityBonus(
+        communityId: Text,
+        memberId: Text,
+        baseSalary: Float,
+        participationBonus: Float,
+        contributionBonus: Float
+    ) : async Result.Result<Text, Text> {
+        // Immutable bonus assignment on ICP
+        // 在ICP上进行不可变奖金分配
+    };
+}
+```
+
 ### Contract Addresses | 合约地址
 
-- **Testnet (Chiliz Spicy)**: `0x90C9D004cB071064Ba9B9f091Dc96D76b09E8aBC`
+- **Chiliz Testnet (Spicy)**: `0x90C9D004cB071064Ba9B9f091Dc96D76b09E8aBC`
+- **ICP Canister ID**: `bkyz2-fmaaa-aaaaa-aaaqa-cai` (Mock for demo)
 - **Mainnet**: Coming soon | 即将推出
 
 ### Fee Structure | 手续费结构
@@ -293,6 +423,9 @@ npm run test-api
 
 # WebSocket testing | WebSocket测试
 npm run test-websocket
+
+# ICP integration testing | ICP集成测试
+npm run test-icp
 ```
 
 ### Test Coverage | 测试覆盖范围
@@ -301,13 +434,14 @@ npm run test-websocket
 - ✅ **Smart Contract**: CHZ transfers, fee deduction, batch operations | 智能合约：CHZ转账、手续费扣除、批量操作
 - ✅ **WebSocket**: Real-time communication, role-based permissions | WebSocket：实时通信、基于角色的权限
 - ✅ **Authentication**: JWT tokens, wallet signatures, role verification | 认证：JWT令牌、钱包签名、角色验证
+- ✅ **ICP Integration**: Canister communication, bonus management | ICP集成：容器通信、奖金管理
 - ✅ **UI/UX**: Responsive design, dashboard functionality, error handling | UI/UX：响应式设计、仪表板功能、错误处理
 
 ## 🛡️ Contingency Handling | 突发情况处理
 
 ### Real-World Scenario Management | 现实场景管理
 
-**Comprehensive contingency system for campus sports events | 校园体育赛事的综合突发情况系统**
+**Comprehensive contingency system for community sports events | 社区体育赛事的综合突发情况系统**
 
 - **🏃‍♂️ Substitute Player System**: 4-tier priority with automatic activation | 候补球员系统：4级优先级自动激活
 - **🌦️ Weather Monitoring**: Real-time weather API integration with safety assessment | 天气监控：实时天气API集成及安全评估
@@ -325,90 +459,57 @@ npm run test-websocket
 - **Context Integration**: Global language state via React Context | 上下文集成：通过React Context的全局语言状态
 - **Dynamic Switching**: Real-time language switching without page reload | 动态切换：无需页面重载的实时语言切换
 
-## 📊 Development Tools | 开发工具
-
-### Role Management | 角色管理
-
-**Comprehensive role switching system for development and testing | 用于开发和测试的综合角色切换系统**
-
-- **🔄 Role Switcher**: Instantly switch between all four roles | 角色切换器：在所有四个角色间即时切换
-- **📊 Mock Data Generator**: Generate realistic test data for all roles | 模拟数据生成器：为所有角色生成真实测试数据
-- **⚡ Quick Login**: Bypass wallet signing for development | 快速登录：开发时跳过钱包签名
-- **🛠️ Debug Mode**: Comprehensive debugging information display | 调试模式：综合调试信息显示
-
-### Performance Monitoring | 性能监控
-
-- **Database Query Optimization**: Connection pooling and query caching | 数据库查询优化：连接池和查询缓存
-- **WebSocket Performance**: <100ms message latency, 1000+ concurrent connections | WebSocket性能：<100ms消息延迟，1000+并发连接
-- **Smart Contract Gas**: Optimized gas usage for all operations | 智能合约Gas：所有操作的优化Gas使用
-- **Frontend Performance**: Lazy loading, code splitting, image optimization | 前端性能：懒加载、代码分割、图像优化
-
-## 🚀 Deployment | 部署
-
-### Production Setup | 生产环境设置
-
-```bash
-# Build for production | 构建生产版本
-npm run build
-
-# Start production server | 启动生产服务器
-npm start
-
-# Deploy database schema | 部署数据库架构
-node scripts/apply-phase2-schema.js
-
-# Verify deployment | 验证部署
-node verify-phase2.js
-```
-
-### Environment Configuration | 环境配置
-
-```env
-# Database | 数据库
-DATABASE_URL=postgresql://username:password@localhost:5432/fanforce_ai
-
-# JWT Secret | JWT密钥
-JWT_SECRET=your_jwt_secret_here
-
-# Chiliz Network | Chiliz网络
-CHILIZ_RPC_URL=https://spicy-rpc.chiliz.com
-CONTRACT_ADDRESS=0x90C9D004cB071064Ba9B9f091Dc96D76b09E8aBC
-
-# WebSocket | WebSocket
-WEBSOCKET_PORT=3001
-WEBSOCKET_CORS_ORIGIN=http://localhost:3000
-```
-
 ## 📈 Roadmap | 路线图
 
-### Phase 1: Single University MVP ✅
+### Phase 1: Campus Pilot (Current) ✅
+- [x] ICP Community Sports Platform MVP | ICP社区体育平台MVP
+- [x] Cross-chain integration exploration | 跨链集成探索
+- [x] Real-time network monitoring | 实时网络监控
+- [x] Decentralized community profiles | 去中心化社区档案
 - [x] Four-role dashboard system | 四角色仪表板系统
 - [x] PostgreSQL database integration | PostgreSQL数据库集成
-- [x] Ultra-simple smart contract | 超简化智能合约
+- [x] Chiliz smart contract integration | Chiliz智能合约集成
 - [x] WebSocket real-time engine | WebSocket实时引擎
-- [x] Comprehensive testing suite | 综合测试套件
 
-### Phase 2: Multi-University Expansion 🚧
+### Phase 2: Community Expansion (Planned) 🔄
+- [ ] Neighborhood sports communities | 邻里体育社区
+- [ ] Corporate wellness programs | 企业健康计划
+- [ ] Cultural sports associations | 文化体育协会
+- [ ] Commercial sports organizations | 商业体育组织
 - [ ] Multi-tenant architecture | 多租户架构
-- [ ] Inter-university competitions | 校际比赛
 - [ ] Advanced analytics dashboard | 高级分析仪表板
+
+### Phase 3: Global Ecosystem (Vision) 🔮
+- [ ] International community partnerships | 国际社区合作
+- [ ] Multi-language platform support | 多语言平台支持
+- [ ] Advanced cross-chain bridges | 高级跨链桥接
+- [ ] Community analytics and insights | 社区分析和洞察
 - [ ] Mobile app development | 移动应用开发
-
-### Phase 3: Ecosystem Enhancement 📋
-- [ ] NFT achievement system | NFT成就系统
-- [ ] Advanced AI match prediction | 高级AI比赛预测
-- [ ] Merchant integration platform | 商户集成平台
-- [ ] Community governance features | 社区治理功能
-
-### Phase 4: Global Expansion 📋
-- [ ] Multiple blockchain support | 多区块链支持
-- [ ] International university partnerships | 国际大学合作
 - [ ] Professional sports integration | 职业体育集成
-- [ ] Enterprise licensing model | 企业许可模式
+
+## 🎯 Why This Matters | 为什么这很重要
+
+### For the ICP Ecosystem | 对ICP生态系统
+- **Real-world Adoption Potential**: Could bring ICP to community sports worldwide | 真实世界采用潜力：可能将ICP带入全球社区体育
+- **User Onboarding**: Could convert traditional users to Web3 | 用户引导：可能将传统用户转换为Web3
+- **Use Case Validation**: Could prove ICP's value in social applications | 用例验证：可能证明ICP在社交应用中的价值
+- **Cultural Diversity**: Could support diverse community types globally | 文化多样性：可能支持全球多样化的社区类型
+
+### For the Sports Industry | 对体育行业
+- **Transparency Potential**: Could provide immutable records of achievements and rewards | 透明度潜力：可能提供成就和奖励的不可变记录
+- **Efficiency Potential**: Could enable automated reward distribution and governance | 效率潜力：可能实现自动奖励分配和治理
+- **Community Building**: Could enable decentralized ownership and participation | 社区建设：可能实现去中心化所有权和参与
+- **Universal Access**: Could break down geographic and cultural barriers | 通用访问：可能打破地理和文化障碍
+
+### For Community Members | 对社区成员
+- **Ownership Potential**: Could provide true ownership of achievements and rewards | 所有权潜力：可能提供对成就和奖励的真正所有权
+- **Transparency Potential**: Could provide clear visibility into reward calculations | 透明度潜力：可能提供对奖励计算的清晰可见性
+- **Community**: Could enable belonging to a global, decentralized sports community | 社区：可能实现属于全球去中心化体育社区
+- **Cultural Preservation**: Could help maintain local traditions through technology | 文化保护：可能通过技术帮助维护当地传统
 
 ## 🤝 Contributing | 贡献
 
-**Welcome to contribute to the FanForce AI ecosystem! | 欢迎为FanForce AI生态系统做出贡献！**
+**Welcome to contribute to the FanForce ecosystem! | 欢迎为FanForce生态系统做出贡献！**
 
 ### Development Standards | 开发标准
 
@@ -416,6 +517,7 @@ WEBSOCKET_CORS_ORIGIN=http://localhost:3000
 2. **Type Safety**: Use TypeScript for all components | 类型安全：所有组件使用TypeScript
 3. **Responsive Design**: Support mobile and desktop | 响应式设计：支持移动端和桌面端
 4. **Performance**: Optimize for production deployment | 性能：针对生产部署优化
+5. **ICP Integration**: Follow ICP development best practices | ICP集成：遵循ICP开发最佳实践
 
 ### Git Commit Standards | Git提交标准
 
@@ -428,6 +530,10 @@ feat(dashboard): add real-time analytics to admin dashboard
 fix(websocket): resolve connection timeout issues
 修复(websocket): 解决连接超时问题
 
+# ICP integration | ICP集成
+feat(icp): integrate season bonus management on Internet Computer
+功能(icp): 在互联网计算机上集成赛季奖金管理
+
 # Documentation | 文档
 docs(readme): update installation instructions
 文档(readme): 更新安装说明
@@ -439,6 +545,7 @@ MIT License - See [LICENSE](LICENSE) file for details | MIT许可证 - 详见[LI
 
 ## 🔗 Links | 相关链接
 
+- [Internet Computer Documentation](https://internetcomputer.org/docs/) | 互联网计算机文档
 - [Chiliz Documentation](https://docs.chiliz.com/) | Chiliz文档
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/) | PostgreSQL文档
 - [Next.js Documentation](https://nextjs.org/docs) | Next.js文档
@@ -446,10 +553,10 @@ MIT License - See [LICENSE](LICENSE) file for details | MIT许可证 - 详见[LI
 
 ## 📧 Contact | 联系方式
 
-- **Project Maintainer**: FanForce AI Team | 项目维护者：FanForce AI团队
-- **Email**: contact@fanforce.ai | 邮箱：contact@fanforce.ai
-- **GitHub**: [FanForce AI Repository](https://github.com/fanforce-ai) | GitHub仓库
+- **Project Maintainer**: FanForce Team | 项目维护者：FanForce团队
+- **Email**: albert.lei1975@gmail.com | 邮箱：calbert.lei1975@gmail.com
+- **GitHub**: [FanForce Repository](https://github.com/AlbertLei-Web3/FanForce-AI) | GitHub仓库
 
 ---
 
-**Built with ❤️ for campus sports communities worldwide | 为全球校园体育社区用心打造** 
+**Built with ❤️ for community sports worldwide | 为全球社区体育用心打造**
