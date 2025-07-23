@@ -1,0 +1,38 @@
+{
+  "canisters": {
+    "fanforce_season_bonus": {
+      "type": "motoko",
+      "main": "src/fanforce_season_bonus/main.mo"
+    },
+    "fanforce_season_bonus_assets": {
+      "type": "assets",
+      "source": ["dist", ".next/static"]
+    }
+  },
+  "defaults": {
+    "build": {
+      "packtool": "",
+      "args": ""
+    },
+    "canister_http": {
+      "enabled": false
+    },
+    "proguard": {
+      "enabled": false
+    },
+    "rust": {
+      "args": ""
+    }
+  },
+  "dfx": "0.15.0",
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:8000",
+      "type": "ephemeral"
+    },
+    "ic": {
+      "type": "persistent"
+    }
+  },
+  "version": 1
+} 

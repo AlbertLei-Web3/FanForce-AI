@@ -1,10 +1,11 @@
-// FanForce AI - 运动员仪表板主页（基于详细用户流程）
-// Athlete Dashboard Main Page - 运动员的主要仪表板页面，基于Web2优先架构的详细用户流程
-// Main dashboard page for athletes based on detailed Web2-first user flow
-// 运动员的主要仪表板页面，基于Web2优先架构的详细用户流程
+// FanForce AI - 运动员仪表板主页（基于ICP赛季奖金池系统）
+// Athlete Dashboard Main Page - 运动员的主要仪表板页面，基于ICP赛季奖金池系统
+// Main dashboard page for athletes based on ICP Season Bonus Pool system
+// 运动员的主要仪表板页面，基于ICP赛季奖金池系统
 // 关联文件:
 // - DashboardLayout.tsx: 仪表板布局组件
 // - UserContext.tsx: 用户角色验证
+// - app/utils/icpService.ts: ICP赛季奖金池服务
 // - app/api/athlete/profile/route.ts: 运动员档案API
 // - app/api/athlete/status/route.ts: 运动员状态API
 // - app/api/athlete/ranking/route.ts: 运动员排名API
@@ -13,9 +14,9 @@
 // - lib/athlete-schema.sql: 运动员数据库架构
 // 
 // 用户流程要点:
-// 1. 虚拟CHZ薪水系统（数据库余额追踪）
-// 2. 赛季要求：10+比赛 + X社交帖子才能解锁主网支付
-// 3. 入赛手续费（从虚拟余额扣除）
+// 1. ICP赛季奖金池系统（去中心化奖金管理）
+// 2. 赛季要求：10+比赛 + X社交帖子才能解锁ICP支付
+// 3. 入赛手续费（从ICP余额扣除）
 // 4. 休赛 → 活跃 → 等待选择 → 被选中的状态流程
 // 5. 社交媒体帖子验证（外部API检查）
 
@@ -27,6 +28,8 @@ import DashboardLayout from '@/app/components/shared/DashboardLayout'
 import DataTable from '@/app/components/shared/DataTable'
 import StatCard from '@/app/components/shared/StatCard'
 import { useRouter } from 'next/navigation'
+import { icpService, type AthleteProfile, type SeasonBonus } from '@/app/utils/icpService'
+import ICPIntegration from '@/app/components/ICPIntegration'
 import { 
   FaTrophy, 
   FaFistRaised, 
@@ -58,7 +61,7 @@ import {
 } from 'react-icons/fa'
 import Link from 'next/link'
 
-// Mock Data for Athlete Dashboard based on detailed user flow / 基于详细用户流程的运动员仪表板模拟数据
+// Mock Data for Athlete Dashboard based on ICP Season Bonus Pool / 基于ICP赛季奖金池的运动员仪表板模拟数据
 const mockAthleteProfile = {
   name: 'Mike "The Machine" Johnson',
   avatar: '/placeholder.svg',
@@ -70,29 +73,29 @@ const mockAthleteProfile = {
   rank: 'Gold',
   rankPoints: 1250,
   
-  // Virtual CHZ System (Database Balance Tracking) / 虚拟CHZ系统（数据库余额追踪）
-  virtualCHZBalance: 285.50, // Current virtual balance before mainnet payout
-  virtualSalaryMonthly: 120.75, // Monthly virtual salary
-  entryFeeAmount: 25.00, // Fee to enter competition
+  // ICP Season Bonus Pool System (Decentralized Bonus Management) / ICP赛季奖金池系统（去中心化奖金管理）
+  icpSeasonBonusBalance: 285.50, // Current ICP season bonus balance / 当前ICP赛季奖金余额
+  icpBaseSalary: 120.75, // Monthly ICP base salary / 月ICP基础薪资
+  entryFeeAmount: 25.00, // Fee to enter competition / 入赛手续费
   
   // Season Progress Requirements / 赛季进度要求
-  seasonMatches: 8, // Current matches this season
-  seasonMatchesRequired: 10, // Must complete 10+ matches
-  socialPosts: 3, // Current verified social posts
-  socialPostsRequired: 5, // Must have 5+ verified posts
+  seasonMatches: 8, // Current matches this season / 本赛季当前比赛数
+  seasonMatchesRequired: 10, // Must complete 10+ matches / 必须完成10+场比赛
+  socialPosts: 3, // Current verified social posts / 当前已验证社交媒体帖子
+  socialPostsRequired: 5, // Must have 5+ verified posts / 必须有5+个已验证帖子
   
   // Career Statistics / 职业统计
   totalMatches: 15,
   winRate: '73%',
-  careerEarnings: 450.25, // Total from previous seasons
+  careerEarnings: 450.25, // Total from previous seasons / 之前赛季总收入
   
   // Queue Information / 队列信息
   queuePosition: 3,
   estimatedWaitTime: '15 mins',
   
   // Season Status / 赛季状态
-  seasonCompleted: false, // Whether current season requirements are met
-  canRequestPayout: false // Whether eligible for mainnet CHZ payout
+  seasonCompleted: false, // Whether current season requirements are met / 当前赛季要求是否满足
+  canRequestPayout: false // Whether eligible for ICP payout / 是否有资格获得ICP支付
 }
 
 const mockAthleteStats = {
@@ -100,13 +103,13 @@ const mockAthleteStats = {
   wins: 11,
   losses: 4,
   mvpCount: 3,
-  virtualCHZBalance: 285.50,
-  virtualSalaryMonthly: 120.75,
+  icpSeasonBonusBalance: 285.50,
+  icpBaseSalary: 120.75,
   currentStreak: 4,
   bestStreak: 6,
   averagePerformance: 8.5,
   winRate: '73%',
-  feesFromMatches: 65.25 // 1% fee share from matches
+  feesFromMatches: 65.25 // 1% fee share from matches / 比赛1%费用分成
 }
 
 // Season Requirements Progress / 赛季要求进度
@@ -147,12 +150,12 @@ const mockSocialPosts = [
   },
 ]
 
-// Virtual CHZ Transaction History / 虚拟CHZ交易历史
+// ICP Season Bonus Transaction History / ICP赛季奖金交易历史
 const mockVirtualTransactions = {
   columns: [
     { key: 'date', headerEn: 'Date', headerCn: '日期' },
     { key: 'type', headerEn: 'Type', headerCn: '类型' },
-    { key: 'amount', headerEn: 'Amount (Virtual CHZ)', headerCn: '数量 (虚拟CHZ)' },
+    { key: 'amount', headerEn: 'Amount (ICP)', headerCn: '数量 (ICP)' },
     { key: 'balance', headerEn: 'Balance', headerCn: '余额' },
     { key: 'description', headerEn: 'Description', headerCn: '描述' },
   ],
@@ -183,7 +186,7 @@ const mockVirtualTransactions = {
       type: 'Monthly Salary', 
       amount: '+120.75', 
       balance: '249.75',
-      description: 'Virtual CHZ monthly salary' 
+      description: 'ICP monthly base salary' 
     },
     { 
       date: '2023-10-28', 
@@ -238,7 +241,7 @@ export default function AthleteDashboard() {
 
   // Handle entry fee payment / 处理入赛手续费支付
   const handlePayEntryFee = () => {
-    if (mockAthleteProfile.virtualCHZBalance >= mockAthleteProfile.entryFeeAmount) {
+    if (mockAthleteProfile.icpSeasonBonusBalance >= mockAthleteProfile.entryFeeAmount) {
       setCurrentStatus('active')
       setShowEntryFeeModal(false)
       // In real app, deduct from virtual balance / 在真实应用中，从虚拟余额扣除
@@ -377,16 +380,16 @@ export default function AthleteDashboard() {
             <div className="bg-gray-800/50 rounded-lg p-6">
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center">
                   <FaCoins className="mr-2 text-yellow-400" />
-                  {language === 'en' ? "Virtual CHZ Balance" : "虚拟CHZ余额"}
+                  {language === 'en' ? "ICP Season Bonus Pool" : "ICP赛季奖金池"}
                 </h3>
                 <div className="text-3xl font-bold text-green-400 mb-2">
-                  {mockAthleteProfile.virtualCHZBalance.toFixed(2)} CHZ
+                  {mockAthleteProfile.icpSeasonBonusBalance.toFixed(2)} ICP
                 </div>
                 <div className="text-sm text-gray-400 space-y-1">
-                  <div>{language === 'en' ? 'Monthly Salary:' : '月薪：'} {mockAthleteProfile.virtualSalaryMonthly} CHZ</div>
-                  <div>{language === 'en' ? 'Career Earnings:' : '职业收入：'} {mockAthleteProfile.careerEarnings} CHZ</div>
+                  <div>{language === 'en' ? 'Monthly Base Salary:' : '月基础薪资：'} {mockAthleteProfile.icpBaseSalary} ICP</div>
+                  <div>{language === 'en' ? 'Career Earnings:' : '职业收入：'} {mockAthleteProfile.careerEarnings} ICP</div>
                   <div className="text-orange-400">
-                    {language === 'en' ? 'Entry Fee:' : '入赛费用：'} {mockAthleteProfile.entryFeeAmount} CHZ
+                    {language === 'en' ? 'Entry Fee:' : '入赛费用：'} {mockAthleteProfile.entryFeeAmount} ICP
                   </div>
                 </div>
                 <div className="mt-4">
@@ -608,15 +611,15 @@ export default function AthleteDashboard() {
               </div>
               <div className="bg-gray-700/50 p-4 rounded-lg">
                 <p className="text-gray-300 text-sm">
-                  {language === 'en' ? "Current Balance:" : "当前余额："} 
+                  {language === 'en' ? "Current ICP Balance:" : "当前ICP余额："} 
                   <span className="text-green-400 font-bold ml-1">
-                    {mockAthleteProfile.virtualCHZBalance} Virtual CHZ
+                    {mockAthleteProfile.icpSeasonBonusBalance} ICP
                   </span>
                 </p>
                 <p className="text-gray-300 text-sm mt-1">
                   {language === 'en' ? "After Entry:" : "入赛后："} 
                   <span className="text-blue-400 font-bold ml-1">
-                    {(mockAthleteProfile.virtualCHZBalance - mockAthleteProfile.entryFeeAmount).toFixed(2)} Virtual CHZ
+                    {(mockAthleteProfile.icpSeasonBonusBalance - mockAthleteProfile.entryFeeAmount).toFixed(2)} ICP
                   </span>
                 </p>
               </div>
@@ -666,7 +669,7 @@ export default function AthleteDashboard() {
                   {language === 'en' ? "Virtual CHZ to Convert:" : "要转换的虚拟CHZ："}
                 </p>
                 <p className="text-white text-2xl font-bold">
-                  {mockAthleteProfile.virtualCHZBalance} → Real CHZ
+                  {mockAthleteProfile.icpSeasonBonusBalance} → Real ICP
                 </p>
               </div>
               <p className="text-gray-400 text-sm">
@@ -709,8 +712,8 @@ export default function AthleteDashboard() {
         </div>
         <StatCard 
           icon={<FaCoins />} 
-          title={language === 'en' ? "Virtual CHZ" : "虚拟CHZ"} 
-          value={`${mockAthleteStats.virtualCHZBalance} CHZ`} 
+                      title={language === 'en' ? "ICP Season Bonus" : "ICP赛季奖金"} 
+                          value={`${mockAthleteStats.icpSeasonBonusBalance} ICP`} 
         />
         <StatCard 
           icon={<FaTrophy />} 
@@ -781,6 +784,11 @@ export default function AthleteDashboard() {
           <div className="text-sm text-gray-400">{language === 'en' ? 'Current Streak' : '当前连胜'}</div>
         </div>
       </div>
+
+      {/* ICP Integration Section / ICP集成部分 */}
+      <div className="mb-8">
+        <ICPIntegration />
+      </div>
       
       {/* Tabs / 标签页 */}
       <div className="mb-6">
@@ -789,7 +797,7 @@ export default function AthleteDashboard() {
             {language === 'en' ? "Overview" : "概览"}
           </button>
           <button onClick={() => setActiveTab('virtual-transactions')} className={`py-2 px-4 text-sm font-medium whitespace-nowrap ${activeTab === 'virtual-transactions' ? 'border-b-2 border-yellow-500 text-white' : 'text-gray-400'}`}>
-            {language === 'en' ? "Virtual CHZ" : "虚拟CHZ"}
+            {language === 'en' ? "ICP Season Bonus" : "ICP赛季奖金"}
           </button>
           <button onClick={() => setActiveTab('social-media')} className={`py-2 px-4 text-sm font-medium whitespace-nowrap ${activeTab === 'social-media' ? 'border-b-2 border-yellow-500 text-white' : 'text-gray-400'}`}>
             {language === 'en' ? "Social Media" : "社交媒体"}
