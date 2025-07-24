@@ -21,6 +21,9 @@
     "icp-deploy": "dfx deploy --network ic"
   },
   "dependencies": {
+    "@dfinity/agent": "^3.0.2",
+    "@dfinity/auth-client": "^3.0.2",
+    "@dfinity/identity": "^3.0.2",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
     "@reown/appkit": "^1.7.10",

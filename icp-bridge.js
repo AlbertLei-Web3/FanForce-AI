@@ -21,13 +21,12 @@ app.use(cors({
 app.use(express.json());
 
 // Database connection (your existing PostgreSQL) / 数据库连接（您现有的PostgreSQL）
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'fanforce_ai',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD
-});
+// For MVP testing, we'll use mock data if database is not available / 对于MVP测试，如果数据库不可用，我们将使用模拟数据
+let pool = null;
+
+// Disable database connection for MVP testing / 为MVP测试禁用数据库连接
+console.log('Using mock data for MVP testing - database connection disabled');
+pool = null;
 
 // ========== ICP Status Endpoints / ICP状态端点 ==========
 
@@ -73,6 +72,31 @@ app.get('/api/icp/athlete-matches/:athleteId', async (req, res) => {
     
     console.log(`ICP Bridge: Fetching matches for athlete ${athleteId}`);
     console.log(`ICP桥梁: 获取运动员 ${athleteId} 的比赛数据`);
+    
+    // Use mock data if database is not available / 如果数据库不可用，使用模拟数据
+    if (!pool) {
+      console.log('Using mock data for athlete matches');
+      const mockMatchData = {
+        match_count: '12',
+        completed_matches: '10',
+        cancelled_matches: '2'
+      };
+      
+      const response = {
+        success: true,
+        athleteId,
+        matchCount: parseInt(mockMatchData.match_count),
+        completedMatches: parseInt(mockMatchData.completed_matches),
+        cancelledMatches: parseInt(mockMatchData.cancelled_matches),
+        message: `Athlete has participated in ${mockMatchData.match_count} matches (${mockMatchData.completed_matches} completed)`,
+        note: 'Using mock data - database not connected'
+      };
+      
+      console.log(`Found ${mockMatchData.match_count} matches for athlete ${athleteId} (mock data)`);
+      console.log(`为运动员 ${athleteId} 找到 ${mockMatchData.match_count} 场比赛（模拟数据）`);
+      
+      return res.json(response);
+    }
     
     // Query PostgreSQL for athlete's match participation / 查询PostgreSQL获取运动员的比赛参与
     const query = `
@@ -121,18 +145,33 @@ app.post('/api/icp/check-eligibility', async (req, res) => {
     console.log(`ICP Bridge: Checking eligibility for athlete ${athleteId}, season ${seasonId}`);
     console.log(`ICP桥梁: 检查运动员 ${athleteId} 赛季 ${seasonId} 的资格`);
     
-    // Get athlete match count / 获取运动员比赛数量
-    const matchQuery = `
-      SELECT COUNT(*) as match_count
-      FROM event_participants ep
-      JOIN events e ON ep.event_id = e.id
-      WHERE ep.user_id = $1 
-      AND e.event_type = 'match'
-      AND e.status = 'completed'
-    `;
+    // Use mock data if database is not available / 如果数据库不可用，使用模拟数据
+    let matchCount = 10; // Default mock data / 默认模拟数据
     
-    const matchResult = await pool.query(matchQuery, [athleteId]);
-    const matchCount = parseInt(matchResult.rows[0].match_count);
+    if (pool) {
+      // Get athlete match count from database / 从数据库获取运动员比赛数量
+      const matchQuery = `
+        SELECT COUNT(*) as match_count
+        FROM event_participants ep
+        JOIN events e ON ep.event_id = e.id
+        WHERE ep.user_id = $1 
+        AND e.event_type = 'match'
+        AND e.status = 'completed'
+      `;
+      
+      const matchResult = await pool.query(matchQuery, [athleteId]);
+      matchCount = parseInt(matchResult.rows[0].match_count);
+    } else {
+      console.log('Using mock data for eligibility check');
+      // Use different mock data for different athletes / 为不同运动员使用不同的模拟数据
+      if (athleteId === 'demo-athlete-1') {
+        matchCount = 12; // Eligible athlete / 符合资格的运动员
+      } else if (athleteId === 'demo-athlete-2') {
+        matchCount = 8; // Not eligible athlete / 不符合资格的运动员
+      } else {
+        matchCount = 10; // Default / 默认
+      }
+    }
     
     // For MVP, use fixed season requirements / 对于MVP，使用固定的赛季要求
     const requiredMatches = 10;
