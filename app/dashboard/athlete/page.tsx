@@ -30,6 +30,7 @@ import StatCard from '@/app/components/shared/StatCard'
 import { useRouter } from 'next/navigation'
 import { icpService, type AthleteProfile, type SeasonBonus } from '@/app/utils/icpService'
 import ICPIntegration from '@/app/components/ICPIntegration'
+import ICPBonusWidget from '@/app/components/ICPBonusWidget'
 import { 
   FaTrophy, 
   FaFistRaised, 
@@ -788,6 +789,11 @@ export default function AthleteDashboard() {
       {/* ICP Integration Section / ICP集成部分 */}
       <div className="mb-8">
         <ICPIntegration />
+        
+        {/* ICP Bonus Widget Integration / ICP奖金组件集成 */}
+        <div className="mt-6">
+          <ICPBonusWidget />
+        </div>
       </div>
       
       {/* Tabs / 标签页 */}
