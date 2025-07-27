@@ -115,12 +115,12 @@ const mockAthleteStats = {
 
 // Season Requirements Progress / 赛季要求进度
 const mockSeasonProgress = {
-  matchesCompleted: 8,
+  matchesCompleted: 10, // 修改为10，满足要求
   matchesRequired: 10,
-  postsCompleted: 3,
+  postsCompleted: 5, // 修改为5，满足要求
   postsRequired: 5,
-  progressPercentage: Math.min(((8/10) + (3/5)) / 2 * 100, 100),
-  canAdvanceToNextSeason: false
+  progressPercentage: Math.min(((10/10) + (5/5)) / 2 * 100, 100),
+  canAdvanceToNextSeason: true // 修改为true
 }
 
 // Social Media Verification / 社交媒体验证
@@ -224,6 +224,10 @@ export default function AthleteDashboard() {
   const [currentStatus, setCurrentStatus] = useState(mockAthleteProfile.status)
   const [showEntryFeeModal, setShowEntryFeeModal] = useState(false)
   const [showPayoutModal, setShowPayoutModal] = useState(false)
+  
+  // 新增：托管到基金会的状态管理
+  const [vaultTransferLoading, setVaultTransferLoading] = useState(false)
+  const [showVaultModal, setShowVaultModal] = useState(false)
 
   // Check if season requirements are met / 检查赛季要求是否满足
   const seasonRequirementsMet = mockSeasonProgress.matchesCompleted >= mockSeasonProgress.matchesRequired && 
@@ -260,6 +264,46 @@ export default function AthleteDashboard() {
       alert(language === 'en' 
         ? 'Complete season requirements first: 10+ matches and 5+ verified social posts' 
         : '请先完成赛季要求：10场比赛和5条已验证的社交帖子')
+    }
+  }
+
+  // 新增：处理托管到基金会的函数（预留合约接口）
+  const handleVaultTransfer = async () => {
+    if (!seasonRequirementsMet) {
+      alert(language === 'en' 
+        ? 'Complete season requirements first: 10+ matches and 5+ verified social posts' 
+        : '请先完成赛季要求：10场比赛和5条已验证的社交帖子')
+      return
+    }
+    
+    setShowVaultModal(true)
+  }
+
+  // 新增：确认托管到基金会
+  const handleConfirmVaultTransfer = async () => {
+    setVaultTransferLoading(true)
+    try {
+      // TODO: 实现合约调用接口
+      // const result = await transferToVault(mockAthleteProfile.icpSeasonBonusBalance, mockAthleteProfile.studentId)
+      
+      // 模拟合约调用
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      setShowVaultModal(false)
+      alert(language === 'en' 
+        ? 'Successfully transferred to Foundation Vault! Redirecting to Foundation page...' 
+        : '成功托管到基金会！正在跳转到基金会页面...')
+      
+      // TODO: 跳转到基金会页面
+      // router.push('/dashboard/foundation')
+      
+    } catch (error) {
+      console.error('Vault transfer failed:', error)
+      alert(language === 'en' 
+        ? 'Failed to transfer to Foundation Vault. Please try again.' 
+        : '托管到基金会失败，请重试。')
+    } finally {
+      setVaultTransferLoading(false)
     }
   }
 
@@ -414,6 +458,20 @@ export default function AthleteDashboard() {
                         {language === 'en' ? 'Complete Season First' : '先完成赛季'}
                       </>
                     )}
+                  </button>
+                  
+                  {/* 新增：托管到基金会按钮 */}
+                  <button 
+                    onClick={handleVaultTransfer}
+                    disabled={!seasonRequirementsMet}
+                    className={`w-full mt-2 px-4 py-2 rounded-lg font-bold transition-all duration-300 flex items-center justify-center space-x-2 ${
+                      seasonRequirementsMet 
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transform hover:scale-105 shadow-lg' 
+                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <span className="text-lg">🏦</span>
+                    <span>{language === 'en' ? 'Transfer to Foundation Vault' : '托管到基金会自动投资'}</span>
                   </button>
                 </div>
               </div>
@@ -693,6 +751,69 @@ export default function AthleteDashboard() {
               <button 
                 onClick={() => setShowPayoutModal(false)}
                 className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+              >
+                {language === 'en' ? 'Cancel' : '取消'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 新增：托管到基金会确认模态框 */}
+      {showVaultModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+              <span className="text-2xl mr-3">🏦</span>
+              {language === 'en' ? "Confirm Transfer to Foundation Vault" : "确认托管到基金会"}
+            </h3>
+            <div className="space-y-4">
+              <div className="bg-blue-600/20 p-4 rounded-lg border border-blue-500/30">
+                <p className="text-blue-400 mb-2">
+                  {language === 'en' ? "Foundation Vault Benefits:" : "基金会金库优势："}
+                </p>
+                <div className="text-white space-y-1 text-sm">
+                  <div>✅ {language === 'en' ? 'AI-powered investment management' : 'AI驱动的投资管理'}</div>
+                  <div>✅ {language === 'en' ? 'Expected returns: 8-15% APY' : '预期收益：8-15%年化'}</div>
+                  <div>✅ {language === 'en' ? 'Withdraw anytime' : '随时可提取'}</div>
+                </div>
+              </div>
+              <div className="bg-green-600/20 p-4 rounded-lg border border-green-500/30">
+                <p className="text-green-400 mb-2">
+                  {language === 'en' ? "Transfer Amount:" : "托管金额："}
+                </p>
+                <p className="text-white text-2xl font-bold">
+                  {mockAthleteProfile.icpSeasonBonusBalance} ICP
+                </p>
+              </div>
+              <p className="text-gray-400 text-sm">
+                {language === 'en' 
+                  ? "Your ICP will be automatically invested through OKX DEX using AI strategies for optimal returns." 
+                  : "您的ICP将通过OKX DEX使用AI策略自动投资，获得最优收益。"}
+              </p>
+            </div>
+            <div className="flex space-x-3 mt-6">
+              <button 
+                onClick={handleConfirmVaultTransfer}
+                disabled={vaultTransferLoading}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {vaultTransferLoading ? (
+                  <>
+                    <FaSpinner className="inline mr-2 animate-spin" />
+                    {language === 'en' ? 'Processing...' : '处理中...'}
+                  </>
+                ) : (
+                  <>
+                    <span className="mr-2">🏦</span>
+                    {language === 'en' ? 'Confirm Transfer' : '确认托管'}
+                  </>
+                )}
+              </button>
+              <button 
+                onClick={() => setShowVaultModal(false)}
+                disabled={vaultTransferLoading}
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
               >
                 {language === 'en' ? 'Cancel' : '取消'}
               </button>
