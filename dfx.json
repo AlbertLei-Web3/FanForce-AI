@@ -4,6 +4,10 @@
       "type": "motoko",
       "main": "src/fanforce_season_bonus/main.mo"
     },
+    "athlete_bonus_mvp": {
+      "type": "motoko",
+      "main": "src/athlete_bonus_mvp/main.mo"
+    },
     "fanforce_season_bonus_assets": {
       "type": "assets",
       "source": ["dist", ".next/static"]

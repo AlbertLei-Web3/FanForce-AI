@@ -30,6 +30,10 @@ import StatCard from '@/app/components/shared/StatCard'
 import { useRouter } from 'next/navigation'
 import { icpService, type AthleteProfile, type SeasonBonus } from '@/app/utils/icpService'
 import ICPIntegration from '@/app/components/ICPIntegration'
+import ICPBonusWidget from '@/app/components/ICPBonusWidget'
+import { walletService } from '@/app/services/walletService'
+import { vaultService } from '@/app/services/vaultService'
+import { okxDexService } from '@/app/services/okxDexService'
 import { 
   FaTrophy, 
   FaFistRaised, 
@@ -114,12 +118,12 @@ const mockAthleteStats = {
 
 // Season Requirements Progress / 赛季要求进度
 const mockSeasonProgress = {
-  matchesCompleted: 8,
+  matchesCompleted: 10, // 修改为10，满足要求
   matchesRequired: 10,
-  postsCompleted: 3,
+  postsCompleted: 5, // 修改为5，满足要求
   postsRequired: 5,
-  progressPercentage: Math.min(((8/10) + (3/5)) / 2 * 100, 100),
-  canAdvanceToNextSeason: false
+  progressPercentage: Math.min(((10/10) + (5/5)) / 2 * 100, 100),
+  canAdvanceToNextSeason: true // 修改为true
 }
 
 // Social Media Verification / 社交媒体验证
@@ -223,6 +227,14 @@ export default function AthleteDashboard() {
   const [currentStatus, setCurrentStatus] = useState(mockAthleteProfile.status)
   const [showEntryFeeModal, setShowEntryFeeModal] = useState(false)
   const [showPayoutModal, setShowPayoutModal] = useState(false)
+  
+  // 新增：托管到基金会的状态管理
+  const [vaultTransferLoading, setVaultTransferLoading] = useState(false)
+  const [showVaultModal, setShowVaultModal] = useState(false)
+  
+  // 新增：钱包连接状态
+  const [walletInfo, setWalletInfo] = useState<any>(null)
+  const [vaultInfo, setVaultInfo] = useState<any>(null)
 
   // Check if season requirements are met / 检查赛季要求是否满足
   const seasonRequirementsMet = mockSeasonProgress.matchesCompleted >= mockSeasonProgress.matchesRequired && 
@@ -259,6 +271,87 @@ export default function AthleteDashboard() {
       alert(language === 'en' 
         ? 'Complete season requirements first: 10+ matches and 5+ verified social posts' 
         : '请先完成赛季要求：10场比赛和5条已验证的社交帖子')
+    }
+  }
+
+  // 新增：连接钱包函数（使用服务层）
+  const connectWallet = async () => {
+    try {
+      const result = await walletService.autoConnect();
+      if (result.success && result.walletInfo) {
+        setWalletInfo(result.walletInfo);
+        console.log('Wallet connected:', result.walletInfo);
+      } else {
+        alert(language === 'en' ? result.error || 'Failed to connect wallet' : result.error || '连接钱包失败');
+      }
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+      alert(language === 'en' ? 'Failed to connect wallet' : '连接钱包失败');
+    }
+  };
+
+  // 初始化钱包和金库服务
+  useEffect(() => {
+    const initializeServices = async () => {
+      // 初始化OKX DEX服务
+      await okxDexService.initialize();
+      
+      // 设置钱包事件监听
+      walletService.setupEventListeners(
+        (address) => {
+          setWalletInfo(prev => prev ? { ...prev, address } : null);
+        },
+        (chainId) => {
+          setWalletInfo(prev => prev ? { ...prev, chainId } : null);
+        }
+      );
+    };
+
+    initializeServices();
+  }, []);
+
+  // 修改：处理托管到基金会的函数（使用服务层）
+  const handleVaultTransfer = async () => {
+    if (!seasonRequirementsMet) {
+      alert(language === 'en' 
+        ? 'Complete season requirements first: 10+ matches and 5+ verified social posts' 
+        : '请先完成赛季要求：10场比赛和5条已验证的社交帖子')
+      return
+    }
+    
+    if (!walletInfo?.isConnected) {
+      alert(language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包')
+      return
+    }
+    
+    setShowVaultModal(true)
+  }
+
+  // 修改：确认托管到基金会（使用钱包地址和USDC）
+  const handleConfirmVaultTransfer = async () => {
+    setVaultTransferLoading(true)
+    try {
+      // TODO: 实现合约调用接口
+      // const result = await vaultService.deposit(mockAthleteProfile.icpSeasonBonusBalance)
+      
+      // 模拟合约调用
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      setShowVaultModal(false)
+      alert(language === 'en' 
+        ? 'Successfully transferred to Foundation Vault! Redirecting to Foundation page...' 
+        : '成功托管到基金会！正在跳转到基金会页面...')
+      
+      // TODO: 跳转到基金会页面
+      // router.push('/dashboard/foundation')
+      
+    } catch (error) {
+      console.error('Vault transfer failed:', error)
+      alert(language === 'en' 
+        ? 'Failed to transfer to Foundation Vault. Please try again.' 
+        : '托管到基金会失败，请重试。')
+    } finally {
+      setVaultTransferLoading(false)
     }
   }
 
@@ -383,15 +476,37 @@ export default function AthleteDashboard() {
                   {language === 'en' ? "ICP Season Bonus Pool" : "ICP赛季奖金池"}
                 </h3>
                 <div className="text-3xl font-bold text-green-400 mb-2">
-                  {mockAthleteProfile.icpSeasonBonusBalance.toFixed(2)} ICP
+                  {mockAthleteProfile.icpSeasonBonusBalance.toFixed(2)} USDC
                 </div>
                 <div className="text-sm text-gray-400 space-y-1">
-                  <div>{language === 'en' ? 'Monthly Base Salary:' : '月基础薪资：'} {mockAthleteProfile.icpBaseSalary} ICP</div>
-                  <div>{language === 'en' ? 'Career Earnings:' : '职业收入：'} {mockAthleteProfile.careerEarnings} ICP</div>
+                  <div>{language === 'en' ? 'Monthly Base Salary:' : '月基础薪资：'} {mockAthleteProfile.icpBaseSalary} USDC</div>
+                  <div>{language === 'en' ? 'Career Earnings:' : '职业收入：'} {mockAthleteProfile.careerEarnings} USDC</div>
                   <div className="text-orange-400">
-                    {language === 'en' ? 'Entry Fee:' : '入赛费用：'} {mockAthleteProfile.entryFeeAmount} ICP
+                    {language === 'en' ? 'Entry Fee:' : '入赛费用：'} {mockAthleteProfile.entryFeeAmount} USDC
                   </div>
                 </div>
+                
+                {/* 新增：钱包连接状态显示 */}
+                <div className="mt-4 mb-4">
+                                  {walletInfo?.isConnected ? (
+                  <div className="bg-green-600/20 p-3 rounded-lg border border-green-500/30">
+                    <div className="text-green-400 text-sm font-medium">
+                      {language === 'en' ? 'Wallet Connected' : '钱包已连接'}
+                    </div>
+                    <div className="text-white text-xs truncate">
+                      {walletInfo.address}
+                    </div>
+                  </div>
+                ) : (
+                    <button 
+                      onClick={connectWallet}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                    >
+                      {language === 'en' ? 'Connect Wallet' : '连接钱包'}
+                    </button>
+                  )}
+                </div>
+                
                 <div className="mt-4">
                 <button 
                     onClick={handleRequestPayout}
@@ -413,6 +528,29 @@ export default function AthleteDashboard() {
                         {language === 'en' ? 'Complete Season First' : '先完成赛季'}
                       </>
                     )}
+                  </button>
+                  
+                  {/* 修改：托管到基金会按钮（需要钱包连接） */}
+                  <button 
+                    onClick={handleVaultTransfer}
+                    disabled={!seasonRequirementsMet || !walletInfo?.isConnected}
+                    className={`w-full mt-2 px-4 py-2 rounded-lg font-bold transition-all duration-300 flex items-center justify-center space-x-2 ${
+                      seasonRequirementsMet && walletInfo?.isConnected
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transform hover:scale-105 shadow-lg' 
+                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <span className="text-lg">🏦</span>
+                    <span>{language === 'en' ? 'Transfer to Foundation Vault' : '托管到基金会自动投资'}</span>
+                  </button>
+                  
+                  {/* 新增：跳转到金库页面按钮 */}
+                  <button 
+                    onClick={() => router.push('/dashboard/vault')}
+                    className="w-full mt-2 px-4 py-2 rounded-lg font-bold transition-all duration-300 flex items-center justify-center space-x-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white transform hover:scale-105 shadow-lg"
+                  >
+                    <span className="text-lg">📊</span>
+                    <span>{language === 'en' ? 'View Foundation Vault' : '查看基金会金库'}</span>
                   </button>
                 </div>
               </div>
@@ -700,6 +838,72 @@ export default function AthleteDashboard() {
         </div>
       )}
 
+      {/* 新增：托管到基金会确认模态框 */}
+      {showVaultModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+              <span className="text-2xl mr-3">🏦</span>
+              {language === 'en' ? "Confirm Transfer to Foundation Vault" : "确认托管到基金会"}
+            </h3>
+            <div className="space-y-4">
+              <div className="bg-blue-600/20 p-4 rounded-lg border border-blue-500/30">
+                <p className="text-blue-400 mb-2">
+                  {language === 'en' ? "Foundation Vault Benefits:" : "基金会金库优势："}
+                </p>
+                <div className="text-white space-y-1 text-sm">
+                  <div>✅ {language === 'en' ? 'AI-powered investment management' : 'AI驱动的投资管理'}</div>
+                  <div>✅ {language === 'en' ? 'Expected returns: 8-15% APY' : '预期收益：8-15%年化'}</div>
+                  <div>✅ {language === 'en' ? 'Withdraw anytime' : '随时可提取'}</div>
+                </div>
+              </div>
+              <div className="bg-green-600/20 p-4 rounded-lg border border-green-500/30">
+                <p className="text-green-400 mb-2">
+                  {language === 'en' ? "Transfer Amount:" : "托管金额："}
+                </p>
+                <p className="text-white text-2xl font-bold">
+                  {mockAthleteProfile.icpSeasonBonusBalance} USDC
+                </p>
+                <p className="text-gray-400 text-sm mt-1">
+                  {language === 'en' ? "Wallet Address:" : "钱包地址："} {walletInfo?.address || 'Not connected'}
+                </p>
+              </div>
+              <p className="text-gray-400 text-sm">
+                {language === 'en' 
+                  ? "Your USDC will be automatically invested through OKX DEX using AI strategies for optimal returns." 
+                  : "您的USDC将通过OKX DEX使用AI策略自动投资，获得最优收益。"}
+              </p>
+            </div>
+            <div className="flex space-x-3 mt-6">
+              <button 
+                onClick={handleConfirmVaultTransfer}
+                disabled={vaultTransferLoading}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {vaultTransferLoading ? (
+                  <>
+                    <FaSpinner className="inline mr-2 animate-spin" />
+                    {language === 'en' ? 'Processing...' : '处理中...'}
+                  </>
+                ) : (
+                  <>
+                    <span className="mr-2">🏦</span>
+                    {language === 'en' ? 'Confirm Transfer' : '确认托管'}
+                  </>
+                )}
+              </button>
+              <button 
+                onClick={() => setShowVaultModal(false)}
+                disabled={vaultTransferLoading}
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {language === 'en' ? 'Cancel' : '取消'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Profile Header Section / 档案头部部分 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="lg:col-span-1 bg-gray-800/50 rounded-lg p-4 flex items-center space-x-4">
@@ -788,6 +992,11 @@ export default function AthleteDashboard() {
       {/* ICP Integration Section / ICP集成部分 */}
       <div className="mb-8">
         <ICPIntegration />
+        
+        {/* ICP Bonus Widget Integration / ICP奖金组件集成 */}
+        <div className="mt-6">
+          <ICPBonusWidget />
+        </div>
       </div>
       
       {/* Tabs / 标签页 */}

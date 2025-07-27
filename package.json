@@ -6,16 +6,24 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build-static": "next build",
     "start": "next start",
     "lint": "next lint",
     "server": "node server.js",
+    "icp-bridge": "node icp-bridge.js",
+    "dev-all": "concurrently \"npm run dev\" \"npm run server\" \"npm run icp-bridge\"",
     "test-db": "node test-db-connection.js",
     "test-api": "node test-api.js",
     "test-websocket": "node test-websocket.js",
     "test-all": "concurrently \"npm run test-api\" \"npm run test-websocket\"",
-    "dev-all": "concurrently \"npm run dev\" \"npm run server\""
+    "icp-build": "npm run build-static",
+    "icp-deploy-local": "dfx deploy --network local",
+    "icp-deploy": "dfx deploy --network ic"
   },
   "dependencies": {
+    "@dfinity/agent": "^3.0.2",
+    "@dfinity/auth-client": "^3.0.2",
+    "@dfinity/identity": "^3.0.2",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
     "@reown/appkit": "^1.7.10",

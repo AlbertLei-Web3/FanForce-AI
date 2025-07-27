@@ -554,7 +554,7 @@ MIT License - See [LICENSE](LICENSE) file for details | MIT许可证 - 详见[LI
 ## 📧 Contact | 联系方式
 
 - **Project Maintainer**: FanForce Team | 项目维护者：FanForce团队
-- **Email**: albert.lei1975@gmail.com | 邮箱：calbert.lei1975@gmail.com
+- **Email**: albert.lei1975@gmail.com | 邮箱：albert.lei1975@gmail.com
 - **GitHub**: [FanForce Repository](https://github.com/AlbertLei-Web3/FanForce-AI) | GitHub仓库
 
 ---
