@@ -543,6 +543,15 @@ export default function AthleteDashboard() {
                     <span className="text-lg">🏦</span>
                     <span>{language === 'en' ? 'Transfer to Foundation Vault' : '托管到基金会自动投资'}</span>
                   </button>
+                  
+                  {/* 新增：跳转到金库页面按钮 */}
+                  <button 
+                    onClick={() => router.push('/dashboard/vault')}
+                    className="w-full mt-2 px-4 py-2 rounded-lg font-bold transition-all duration-300 flex items-center justify-center space-x-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white transform hover:scale-105 shadow-lg"
+                  >
+                    <span className="text-lg">📊</span>
+                    <span>{language === 'en' ? 'View Foundation Vault' : '查看基金会金库'}</span>
+                  </button>
                 </div>
               </div>
 
