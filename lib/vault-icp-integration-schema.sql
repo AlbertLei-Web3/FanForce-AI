@@ -183,9 +183,55 @@ CREATE TABLE IF NOT EXISTS vault_fees (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ========== 2. ICP INTEGRATION TABLES / ICP集成表 ==========
+-- ========== 2. SOCIAL MEDIA INTEGRATION TABLES / 社交媒体集成表 ==========
 
--- 2.1 ICP Accounts Table
+-- 2.1 Social Media Posts Table
+-- 社交媒体帖子表
+-- Tracks user social media posts for season bonus requirements
+-- 追踪用户社交媒体帖子以满足赛季奖金要求
+CREATE TABLE IF NOT EXISTS social_media_posts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) NOT NULL,
+    
+    -- Post Information
+    -- 帖子信息
+    platform VARCHAR(50) NOT NULL CHECK (platform IN ('instagram', 'twitter', 'facebook', 'tiktok', 'youtube')),
+    post_id VARCHAR(200) NOT NULL,
+    post_url TEXT,
+    post_content TEXT,
+    
+    -- Engagement Metrics
+    -- 参与度指标
+    likes_count INTEGER DEFAULT 0,
+    comments_count INTEGER DEFAULT 0,
+    shares_count INTEGER DEFAULT 0,
+    views_count INTEGER DEFAULT 0,
+    total_engagement INTEGER DEFAULT 0,
+    
+    -- Verification Status
+    -- 验证状态
+    verified BOOLEAN DEFAULT FALSE,
+    verified_by UUID REFERENCES users(id),
+    verified_at TIMESTAMP,
+    verification_notes TEXT,
+    
+    -- Post Metadata
+    -- 帖子元数据
+    posted_at TIMESTAMP NOT NULL,
+    hashtags TEXT[],
+    mentions TEXT[],
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Ensure unique posts per user per platform
+    -- 确保每个用户每个平台的帖子唯一
+    UNIQUE(user_id, platform, post_id)
+);
+
+-- ========== 3. ICP INTEGRATION TABLES / ICP集成表 ==========
+
+-- 3.1 ICP Accounts Table
 -- ICP账户表
 -- Stores ICP account information for users
 -- 存储用户的ICP账户信息
@@ -195,7 +241,7 @@ CREATE TABLE IF NOT EXISTS icp_accounts (
     
     -- ICP Account Information
     -- ICP账户信息
-    icp_principal VARCHAR(200) UNIQUE NOT NULL,
+    icp_principal VARCHAR(200) NOT NULL,
     icp_account_name VARCHAR(100),
     icp_wallet_address VARCHAR(200),
     
@@ -308,7 +354,7 @@ CREATE TABLE IF NOT EXISTS icp_transactions (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ========== 3. USDC INTEGRATION TABLES / USDC集成表 ==========
+-- ========== 4. USDC INTEGRATION TABLES / USDC集成表 ==========
 
 -- 3.1 USDC Balances Table
 -- USDC余额表
@@ -412,7 +458,34 @@ CREATE TABLE IF NOT EXISTS usdc_approvals (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ========== 4. ENHANCED ATHLETES TABLE / 增强的运动员表 ==========
+-- ========== 5. SYSTEM CONFIGURATION TABLE / 系统配置表 ==========
+
+-- System configuration table for vault and ICP settings
+-- 金库和ICP设置的系统配置表
+CREATE TABLE IF NOT EXISTS system_config (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    key VARCHAR(100) UNIQUE NOT NULL,
+    value TEXT NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert default configuration values
+-- 插入默认配置值
+INSERT INTO system_config (key, value, description) VALUES
+('vault_contract_address', '0x0000000000000000000000000000000000000000', 'Default vault contract address'),
+('usdc_contract_address', '0x0000000000000000000000000000000000000000', 'Default USDC contract address'),
+('default_network', 'sepolia', 'Default blockchain network'),
+('season_matches_required', '10', 'Required matches per season'),
+('season_social_posts_required', '5', 'Required social posts per season'),
+('vault_deposit_fee', '0', 'Vault deposit fee in basis points'),
+('vault_withdrawal_fee', '0', 'Vault withdrawal fee in basis points'),
+('vault_performance_fee', '200', 'Vault performance fee in basis points')
+ON CONFLICT (key) DO NOTHING;
+
+-- ========== 6. ENHANCED ATHLETES TABLE / 增强的运动员表 ==========
 
 -- Add vault and ICP related fields to existing athletes table
 -- 向现有运动员表添加金库和ICP相关字段
@@ -448,6 +521,12 @@ CREATE INDEX IF NOT EXISTS idx_vault_shares_last_updated ON vault_shares(last_up
 -- Vault Fees Indexes
 CREATE INDEX IF NOT EXISTS idx_vault_fees_type ON vault_fees(fee_type);
 CREATE INDEX IF NOT EXISTS idx_vault_fees_created_at ON vault_fees(created_at);
+
+-- Social Media Posts Indexes
+CREATE INDEX IF NOT EXISTS idx_social_media_posts_user_id ON social_media_posts(user_id);
+CREATE INDEX IF NOT EXISTS idx_social_media_posts_platform ON social_media_posts(platform);
+CREATE INDEX IF NOT EXISTS idx_social_media_posts_verified ON social_media_posts(verified);
+CREATE INDEX IF NOT EXISTS idx_social_media_posts_posted_at ON social_media_posts(posted_at);
 
 -- ICP Accounts Indexes
 CREATE INDEX IF NOT EXISTS idx_icp_accounts_user_id ON icp_accounts(user_id);
@@ -488,7 +567,21 @@ CREATE INDEX IF NOT EXISTS idx_athletes_vault_shares ON athletes(vault_shares);
 CREATE INDEX IF NOT EXISTS idx_athletes_season_bonus ON athletes(season_bonus_balance);
 CREATE INDEX IF NOT EXISTS idx_athletes_icp_verified ON athletes(icp_account_verified);
 
+-- System Config Indexes
+CREATE INDEX IF NOT EXISTS idx_system_config_key ON system_config(key);
+CREATE INDEX IF NOT EXISTS idx_system_config_active ON system_config(is_active);
+
 -- ========== 6. TRIGGERS / 触发器 ==========
+
+-- Create update_updated_at_column function if it doesn't exist
+-- 如果不存在则创建update_updated_at_column函数
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 -- Update timestamp triggers
 CREATE TRIGGER update_vault_deposits_updated_at 
@@ -505,6 +598,10 @@ CREATE TRIGGER update_vault_shares_updated_at
 
 CREATE TRIGGER update_vault_fees_updated_at 
     BEFORE UPDATE ON vault_fees 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_social_media_posts_updated_at 
+    BEFORE UPDATE ON social_media_posts 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_icp_accounts_updated_at 
@@ -531,6 +628,10 @@ CREATE TRIGGER update_usdc_approvals_updated_at
     BEFORE UPDATE ON usdc_approvals 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_system_config_updated_at 
+    BEFORE UPDATE ON system_config 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- ========== 7. FUNCTIONS / 函数 ==========
 
 -- Function to update vault shares after deposit
@@ -541,9 +642,11 @@ BEGIN
     -- Update or insert vault shares record
     INSERT INTO vault_shares (user_id, total_shares, total_assets_value, total_deposits, 
                              vault_total_assets, vault_total_shares, vault_price_per_share,
+                             average_price_per_share, unrealized_pnl, realized_pnl,
                              network, vault_contract_address)
     VALUES (NEW.user_id, NEW.shares_minted, NEW.net_assets, NEW.net_assets,
             NEW.vault_total_assets, NEW.vault_total_shares, NEW.vault_price_per_share,
+            NEW.vault_price_per_share, 0.0, 0.0,
             NEW.network, NEW.vault_contract_address)
     ON CONFLICT (user_id, network, vault_contract_address)
     DO UPDATE SET
@@ -553,6 +656,20 @@ BEGIN
         vault_total_assets = NEW.vault_total_assets,
         vault_total_shares = NEW.vault_total_shares,
         vault_price_per_share = NEW.vault_price_per_share,
+        -- Calculate new average price per share
+        average_price_per_share = CASE 
+            WHEN vault_shares.total_shares + NEW.shares_minted > 0 
+            THEN (vault_shares.total_assets_value + NEW.net_assets) / (vault_shares.total_shares + NEW.shares_minted)
+            ELSE NEW.vault_price_per_share
+        END,
+        -- Calculate unrealized PnL
+        unrealized_pnl = CASE 
+            WHEN vault_shares.total_shares + NEW.shares_minted > 0 
+            THEN (NEW.vault_price_per_share - 
+                  (vault_shares.total_assets_value + NEW.net_assets) / (vault_shares.total_shares + NEW.shares_minted)) 
+                 * (vault_shares.total_shares + NEW.shares_minted)
+            ELSE 0.0
+        END,
         last_updated_at = CURRENT_TIMESTAMP;
     
     -- Update athlete record
@@ -565,6 +682,11 @@ BEGIN
     WHERE user_id = NEW.user_id;
     
     RETURN NEW;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Log error and return NEW to allow transaction to continue
+        RAISE WARNING 'Error updating vault shares after deposit for user %: %', NEW.user_id, SQLERRM;
+        RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -587,6 +709,14 @@ BEGIN
         vault_total_assets = NEW.vault_total_assets,
         vault_total_shares = NEW.vault_total_shares,
         vault_price_per_share = NEW.vault_price_per_share,
+        -- Calculate realized PnL for withdrawn shares
+        realized_pnl = realized_pnl + (NEW.vault_price_per_share - average_price_per_share) * NEW.shares_redeemed,
+        -- Recalculate unrealized PnL for remaining shares
+        unrealized_pnl = CASE 
+            WHEN total_shares - NEW.shares_redeemed > 0 
+            THEN (NEW.vault_price_per_share - average_price_per_share) * (total_shares - NEW.shares_redeemed)
+            ELSE 0.0
+        END,
         last_updated_at = CURRENT_TIMESTAMP
     WHERE user_id = NEW.user_id 
       AND network = NEW.network 
@@ -601,6 +731,11 @@ BEGIN
     WHERE user_id = NEW.user_id;
     
     RETURN NEW;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Log error and return NEW to allow transaction to continue
+        RAISE WARNING 'Error updating vault shares after withdrawal for user %: %', NEW.user_id, SQLERRM;
+        RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -622,7 +757,29 @@ DECLARE
     matches_completed INTEGER;
     social_posts_completed INTEGER;
     requirements_met BOOLEAN;
+    matches_required INTEGER;
+    social_posts_required INTEGER;
 BEGIN
+    -- Get configuration values from system_config
+    SELECT value::INTEGER INTO matches_required 
+    FROM system_config 
+    WHERE key = 'season_matches_required' 
+    LIMIT 1;
+    
+    SELECT value::INTEGER INTO social_posts_required 
+    FROM system_config 
+    WHERE key = 'season_social_posts_required' 
+    LIMIT 1;
+    
+    -- Use default values if not found in config
+    IF matches_required IS NULL THEN
+        matches_required := 10;
+    END IF;
+    
+    IF social_posts_required IS NULL THEN
+        social_posts_required := 5;
+    END IF;
+    
     -- Get matches completed this season
     SELECT COUNT(*) INTO matches_completed
     FROM match_results mr
@@ -631,11 +788,15 @@ BEGIN
       AND EXTRACT(YEAR FROM e.event_date) = p_season_year
       AND e.status = 'completed';
     
-    -- Get social posts completed this season (placeholder - implement based on your social media system)
-    SELECT 5 INTO social_posts_completed; -- Placeholder value
+    -- Get social posts completed this season
+    SELECT COALESCE(COUNT(*), 0) INTO social_posts_completed
+    FROM social_media_posts smp
+    WHERE smp.user_id = p_user_id
+      AND EXTRACT(YEAR FROM smp.posted_at) = p_season_year
+      AND smp.verified = true;
     
     -- Check if requirements are met
-    requirements_met := (matches_completed >= 10) AND (social_posts_completed >= 5);
+    requirements_met := (matches_completed >= matches_required) AND (social_posts_completed >= social_posts_required);
     
     -- Update season bonus record
     UPDATE icp_season_bonuses 
@@ -648,6 +809,11 @@ BEGIN
       AND season_year = p_season_year;
     
     RETURN requirements_met;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Log error and return false
+        RAISE WARNING 'Error calculating season bonus requirements for user %: %', p_user_id, SQLERRM;
+        RETURN FALSE;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -668,13 +834,15 @@ SELECT
     a.icp_account_verified,
     a.last_vault_transaction,
     a.vault_transfer_count,
-    vs.total_assets_value as vault_assets_value,
-    vs.unrealized_pnl,
-    vs.realized_pnl,
-    vs.vault_price_per_share
+    COALESCE(vs.total_assets_value, 0.0) as vault_assets_value,
+    COALESCE(vs.unrealized_pnl, 0.0) as unrealized_pnl,
+    COALESCE(vs.realized_pnl, 0.0) as realized_pnl,
+    COALESCE(vs.vault_price_per_share, 0.0) as vault_price_per_share
 FROM athletes a
 JOIN users u ON a.user_id = u.id
-LEFT JOIN vault_shares vs ON a.user_id = vs.user_id
+LEFT JOIN vault_shares vs ON a.user_id = vs.user_id 
+    AND vs.network = (SELECT value FROM system_config WHERE key = 'default_network' LIMIT 1)
+    AND vs.vault_contract_address = (SELECT value FROM system_config WHERE key = 'vault_contract_address' LIMIT 1)
 WHERE u.role = 'athlete';
 
 -- View for vault transaction history
@@ -709,12 +877,14 @@ COMMENT ON TABLE vault_deposits IS 'Records all vault deposit transactions with 
 COMMENT ON TABLE vault_withdrawals IS 'Records all vault withdrawal transactions with detailed state information';
 COMMENT ON TABLE vault_shares IS 'Tracks user vault share balances and performance metrics';
 COMMENT ON TABLE vault_fees IS 'Records vault fee collections for different fee types';
+COMMENT ON TABLE social_media_posts IS 'Tracks user social media posts for season bonus requirements';
 COMMENT ON TABLE icp_accounts IS 'Stores ICP account information and verification status';
 COMMENT ON TABLE icp_season_bonuses IS 'Tracks ICP season bonus allocations and requirements';
 COMMENT ON TABLE icp_transactions IS 'Records all ICP blockchain transactions';
 COMMENT ON TABLE usdc_balances IS 'Tracks user USDC balances across different networks';
 COMMENT ON TABLE usdc_transactions IS 'Records all USDC token transactions';
 COMMENT ON TABLE usdc_approvals IS 'Tracks USDC token approval states';
+COMMENT ON TABLE system_config IS 'Stores system configuration for vault and ICP integration';
 
 COMMENT ON VIEW athlete_vault_summary IS 'Comprehensive view of athlete vault and ICP integration data';
 COMMENT ON VIEW vault_transaction_history IS 'Unified view of all vault transactions for history tracking'; 
