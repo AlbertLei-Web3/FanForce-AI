@@ -23,6 +23,13 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ========== 1. VAULT OPERATIONS TABLES / 金库操作表 ==========
+-- 
+-- Note: These tables are specific to vault operations and complement existing tables:
+-- 注意：这些表专门用于金库操作，是对现有表的补充：
+-- - vault_deposits: Specific to vault deposit transactions (complements basic-schema.sql transactions)
+-- - vault_withdrawals: Specific to vault withdrawal transactions (complements basic-schema.sql transactions)  
+-- - vault_shares: Tracks user vault share balances (new concept)
+-- - vault_fees: Tracks vault-specific fees (complements basic-schema.sql transactions)
 
 -- 1.1 Vault Deposits Table
 -- 金库存款表
@@ -184,6 +191,10 @@ CREATE TABLE IF NOT EXISTS vault_fees (
 );
 
 -- ========== 2. SOCIAL MEDIA INTEGRATION TABLES / 社交媒体集成表 ==========
+--
+-- Note: This table extends the social_posts field in athletes table (basic-schema.sql)
+-- 注意：此表扩展了athletes表中的social_posts字段（basic-schema.sql）
+-- - social_media_posts: Detailed tracking of social media posts (extends athletes.social_posts)
 
 -- 2.1 Social Media Posts Table
 -- 社交媒体帖子表
@@ -230,6 +241,12 @@ CREATE TABLE IF NOT EXISTS social_media_posts (
 );
 
 -- ========== 3. ICP INTEGRATION TABLES / ICP集成表 ==========
+--
+-- Note: These tables are specific to ICP blockchain integration and complement existing tables:
+-- 注意：这些表专门用于ICP区块链集成，是对现有表的补充：
+-- - icp_accounts: ICP account management (new concept)
+-- - icp_season_bonuses: ICP season bonuses (complements basic-schema.sql rewards and match-results-schema.sql reward_distributions)
+-- - icp_transactions: ICP blockchain transactions (complements basic-schema.sql transactions)
 
 -- 3.1 ICP Accounts Table
 -- ICP账户表
@@ -355,6 +372,12 @@ CREATE TABLE IF NOT EXISTS icp_transactions (
 );
 
 -- ========== 4. USDC INTEGRATION TABLES / USDC集成表 ==========
+--
+-- Note: These tables are specific to USDC token integration and complement existing tables:
+-- 注意：这些表专门用于USDC代币集成，是对现有表的补充：
+-- - usdc_balances: USDC balance tracking (complements users.virtual_chz_balance and users.real_chz_balance)
+-- - usdc_transactions: USDC token transactions (complements basic-schema.sql transactions)
+-- - usdc_approvals: USDC token approval tracking (new concept for ERC-20 approvals)
 
 -- 3.1 USDC Balances Table
 -- USDC余额表
@@ -489,6 +512,13 @@ ON CONFLICT (key) DO NOTHING;
 
 -- Add vault and ICP related fields to existing athletes table
 -- 向现有运动员表添加金库和ICP相关字段
+-- Note: Some fields like matches_won, social_posts, ranking already exist in basic-schema.sql
+-- 注意：某些字段如matches_won, social_posts, ranking已在basic-schema.sql中存在
+-- Note: current_ranking, win_rate already exist in match-results-schema.sql  
+-- 注意：current_ranking, win_rate已在match-results-schema.sql中存在
+
+-- Only add vault and ICP specific fields that don't exist elsewhere
+-- 只添加在其他地方不存在的金库和ICP特定字段
 ALTER TABLE athletes ADD COLUMN IF NOT EXISTS usdc_balance DECIMAL(18,6) DEFAULT 0.0;
 ALTER TABLE athletes ADD COLUMN IF NOT EXISTS vault_shares DECIMAL(18,18) DEFAULT 0.0;
 ALTER TABLE athletes ADD COLUMN IF NOT EXISTS vault_total_deposits DECIMAL(18,6) DEFAULT 0.0;

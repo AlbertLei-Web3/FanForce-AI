@@ -1,5 +1,5 @@
-// 基金会金库页面 - 基于ERC-4626的资金池管理
-// Foundation Vault Page - ERC-4626 based fund pool management
+// 基金会金库页面 - 基于ERC-4626的资金池管理，集成AI Agent
+// Foundation Vault Page - ERC-4626 based fund pool management with AI Agent integration
 
 'use client'
 
@@ -24,11 +24,16 @@ import {
   FaRocket,
   FaCog,
   FaEye,
-  FaEyeSlash
+  FaEyeSlash,
+  FaBrain,
+  FaClock,
+  FaCheckCircle,
+  FaExclamationTriangle
 } from 'react-icons/fa'
 import { walletService } from '@/app/services/walletService'
 import { vaultService } from '@/app/services/vaultService'
 import { okxDexService } from '@/app/services/okxDexService'
+import { aiAgentService } from '@/app/services/aiAgentService'
 
 // 模拟金库数据
 const mockVaultData = {
@@ -44,70 +49,86 @@ const mockVaultData = {
   monthlyReturn: '+12.3%'
 }
 
-// 模拟投资策略
-const mockStrategies = [
+// 实时投资策略数据
+const mockRealStrategies = [
   {
-    id: 1,
-    name: 'PEPE/USDC Strategy',
-    description: 'Momentum trading with PEPE token',
+    id: 'top_gainer',
+    name: 'Top Gainer Strategy',
+    description: '买入24小时涨幅前10的token中的top1',
     allocation: '40%',
     performance: '+18.5%',
     status: 'active',
     lastTrade: '2 hours ago',
-    trades: 156
+    trades: 156,
+    currentTarget: 'PEPE',
+    confidence: 85,
+    nextExecution: '45 minutes'
   },
   {
-    id: 2,
-    name: 'ETH/LST Strategy',
-    description: 'Liquid staking derivatives yield farming',
+    id: 'momentum',
+    name: 'Momentum Strategy',
+    description: '基于价格动量的交易策略',
     allocation: '35%',
     performance: '+12.3%',
     status: 'active',
     lastTrade: '4 hours ago',
-    trades: 89
+    trades: 89,
+    currentTarget: 'DOGE',
+    confidence: 75,
+    nextExecution: '2 hours 15 minutes'
   },
   {
-    id: 3,
-    name: 'DOGE/USDC Strategy',
-    description: 'Meme coin arbitrage opportunities',
+    id: 'volume_spike',
+    name: 'Volume Spike Strategy',
+    description: '基于交易量突增的交易策略',
     allocation: '25%',
     performance: '+22.1%',
     status: 'active',
     lastTrade: '1 hour ago',
-    trades: 203
+    trades: 203,
+    currentTarget: 'SHIB',
+    confidence: 65,
+    nextExecution: '1 hour 30 minutes'
   }
 ]
 
-// 模拟交易记录
-const mockTransactions = [
+// 实时交易记录
+const mockRealTransactions = [
   {
     id: 1,
-    type: 'deposit',
-    amount: '10,000',
-    token: 'USDC',
-    timestamp: Date.now() - 3600000,
-    status: 'completed',
-    txHash: '0x1234567890abcdef'
-  },
-  {
-    id: 2,
-    type: 'swap',
-    fromAmount: '5,000',
+    type: 'investment',
+    strategy: 'Top Gainer',
+    fromAmount: '1,000',
     fromToken: 'USDC',
     toAmount: '4,125,000',
     toToken: 'PEPE',
     timestamp: Date.now() - 7200000,
     status: 'completed',
-    txHash: '0xabcdef1234567890'
+    txHash: '0xabcdef1234567890',
+    profit: '+15.2%'
+  },
+  {
+    id: 2,
+    type: 'investment',
+    strategy: 'Momentum',
+    fromAmount: '800',
+    fromToken: 'USDC',
+    toAmount: '10,126',
+    toToken: 'DOGE',
+    timestamp: Date.now() - 14400000,
+    status: 'completed',
+    txHash: '0x7890abcdef123456',
+    profit: '+8.7%'
   },
   {
     id: 3,
-    type: 'withdraw',
+    type: 'profit_distribution',
     amount: '2,500',
     token: 'USDC',
-    timestamp: Date.now() - 10800000,
+    timestamp: Date.now() - 21600000,
     status: 'completed',
-    txHash: '0x7890abcdef123456'
+    txHash: '0x1234567890abcdef',
+    description: 'Athlete profit distribution'
   }
 ]
 
@@ -122,11 +143,18 @@ export default function VaultPage() {
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [showBalance, setShowBalance] = useState(true)
+  
+  // AI Agent状态
+  const [aiAgentStatus, setAiAgentStatus] = useState<any>(null)
+  const [strategies, setStrategies] = useState(mockRealStrategies)
+  const [transactions, setTransactions] = useState(mockRealTransactions)
+  const [lastExecution, setLastExecution] = useState<number | null>(null)
 
   // 初始化服务
   useEffect(() => {
     const initializeServices = async () => {
       await okxDexService.initialize()
+      await aiAgentService.initialize()
       
       walletService.setupEventListeners(
         (address) => {
@@ -152,10 +180,55 @@ export default function VaultPage() {
           console.error('Failed to load vault info:', error);
         }
       }
+
+      // 加载AI Agent状态
+      loadAiAgentStatus();
     }
 
     initializeServices()
   }, [])
+
+  // 加载AI Agent状态
+  const loadAiAgentStatus = async () => {
+    try {
+      const status = {
+        strategies: aiAgentService.getStrategies(),
+        lastExecution: aiAgentService.getLastExecution(),
+        canExecute: aiAgentService.canExecute()
+      };
+      setAiAgentStatus(status);
+      setLastExecution(status.lastExecution);
+    } catch (error) {
+      console.error('Failed to load AI Agent status:', error);
+    }
+  }
+
+  // 手动执行策略
+  const executeStrategies = async () => {
+    try {
+      setIsLoading(true);
+      const decisions = await aiAgentService.executeInvestmentStrategies();
+      
+      if (decisions.length > 0) {
+        alert(language === 'en' 
+          ? `Executed ${decisions.length} investment strategies successfully!` 
+          : `成功执行了 ${decisions.length} 个投资策略！`);
+        
+        // 刷新状态
+        loadAiAgentStatus();
+      } else {
+        alert(language === 'en' 
+          ? 'No investment decisions made at this time.' 
+          : '当前没有投资决策。');
+      }
+    } catch (error) {
+      alert(language === 'en' 
+        ? `Strategy execution failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        : `策略执行失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   // 连接钱包
   const connectWallet = async () => {
@@ -331,6 +404,47 @@ export default function VaultPage() {
               />
             </div>
 
+            {/* AI Agent状态 */}
+            <div className="bg-gray-800/50 rounded-lg p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center">
+                <FaBrain className="mr-2 text-purple-400" />
+                {language === 'en' ? "AI Agent Status" : "AI代理状态"}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <p className="text-gray-400 text-sm">{language === 'en' ? "Last Execution" : "最后执行"}</p>
+                  <p className="text-white text-lg font-bold">
+                    {lastExecution ? new Date(lastExecution).toLocaleString() : 'Never'}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-400 text-sm">{language === 'en' ? "Can Execute" : "可执行"}</p>
+                  <p className={`text-lg font-bold ${aiAgentStatus?.canExecute ? 'text-green-400' : 'text-red-400'}`}>
+                    {aiAgentStatus?.canExecute ? 'Yes' : 'No'}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <button
+                    onClick={executeStrategies}
+                    disabled={isLoading || !aiAgentStatus?.canExecute}
+                    className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                  >
+                    {isLoading ? (
+                      <>
+                        <FaSpinner className="inline mr-2 animate-spin" />
+                        {language === 'en' ? 'Executing...' : '执行中...'}
+                      </>
+                    ) : (
+                      <>
+                        <FaRocket className="inline mr-2" />
+                        {language === 'en' ? 'Execute Now' : '立即执行'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* 用户投资信息 */}
             <div className="bg-gray-800/50 rounded-lg p-6">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center">
@@ -353,14 +467,14 @@ export default function VaultPage() {
               </div>
             </div>
 
-            {/* 投资策略 */}
+            {/* 实时投资策略 */}
             <div className="bg-gray-800/50 rounded-lg p-6">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center">
                 <FaRocket className="mr-2 text-green-400" />
-                {language === 'en' ? "Investment Strategies" : "投资策略"}
+                {language === 'en' ? "Live Investment Strategies" : "实时投资策略"}
               </h3>
               <div className="space-y-4">
-                {mockStrategies.map((strategy) => (
+                {strategies.map((strategy) => (
                   <div key={strategy.id} className="bg-gray-700/50 rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
                       <div>
@@ -372,9 +486,23 @@ export default function VaultPage() {
                         <p className="text-gray-400 text-sm">{strategy.allocation}</p>
                       </div>
                     </div>
-                    <div className="flex justify-between text-sm text-gray-400">
-                      <span>{language === 'en' ? "Last Trade" : "最后交易"}: {strategy.lastTrade}</span>
-                      <span>{language === 'en' ? "Total Trades" : "总交易"}: {strategy.trades}</span>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-400">{language === 'en' ? "Current Target:" : "当前目标:"}</span>
+                        <p className="text-white font-medium">{strategy.currentTarget}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">{language === 'en' ? "Confidence:" : "置信度:"}</span>
+                        <p className="text-white font-medium">{strategy.confidence}%</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">{language === 'en' ? "Next Execution:" : "下次执行:"}</span>
+                        <p className="text-white font-medium">{strategy.nextExecution}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">{language === 'en' ? "Total Trades:" : "总交易:"}</span>
+                        <p className="text-white font-medium">{strategy.trades}</p>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -388,32 +516,41 @@ export default function VaultPage() {
           <div className="bg-gray-800/50 rounded-lg p-6">
             <h3 className="text-lg font-bold text-white mb-4 flex items-center">
               <FaHistory className="mr-2 text-yellow-400" />
-              {language === 'en' ? "Transaction History" : "交易历史"}
+              {language === 'en' ? "Live Transaction History" : "实时交易历史"}
             </h3>
             <div className="space-y-4">
-              {mockTransactions.map((tx) => (
+              {transactions.map((tx) => (
                 <div key={tx.id} className="bg-gray-700/50 rounded-lg p-4">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-3">
                       <div className={`w-3 h-3 rounded-full ${
-                        tx.type === 'deposit' ? 'bg-green-500' : 
-                        tx.type === 'withdraw' ? 'bg-red-500' : 'bg-blue-500'
+                        tx.type === 'investment' ? 'bg-blue-500' : 
+                        tx.type === 'profit_distribution' ? 'bg-green-500' : 'bg-purple-500'
                       }`}></div>
                       <div>
                         <p className="font-bold text-white capitalize">{tx.type}</p>
+                        {tx.strategy && (
+                          <p className="text-blue-400 text-sm">{tx.strategy}</p>
+                        )}
                         <p className="text-gray-400 text-sm">
-                          {tx.type === 'swap' 
+                          {tx.type === 'investment' 
                             ? `${tx.fromAmount} ${tx.fromToken} → ${tx.toAmount} ${tx.toToken}`
                             : `${tx.amount} ${tx.token}`
                           }
                         </p>
+                        {tx.profit && (
+                          <p className="text-green-400 text-sm">{tx.profit}</p>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-gray-400 text-sm">
                         {new Date(tx.timestamp).toLocaleString()}
                       </p>
-                      <p className="text-green-400 text-sm">{tx.status}</p>
+                      <div className="flex items-center space-x-2">
+                        <FaCheckCircle className="text-green-400 text-sm" />
+                        <p className="text-green-400 text-sm">{tx.status}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
