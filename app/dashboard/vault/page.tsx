@@ -136,6 +136,22 @@ export default function VaultPage() {
           setWalletInfo(prev => prev ? { ...prev, chainId } : null)
         }
       )
+
+      // 如果钱包已连接，加载金库信息
+      const walletInfo = walletService.getWalletInfo();
+      if (walletInfo?.isConnected) {
+        try {
+          const initialized = await vaultService.initialize();
+          if (initialized) {
+            const vaultInfo = await vaultService.getVaultInfo();
+            if (vaultInfo) {
+              setVaultInfo(vaultInfo);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load vault info:', error);
+        }
+      }
     }
 
     initializeServices()
@@ -170,13 +186,48 @@ export default function VaultPage() {
 
     setIsLoading(true)
     try {
-      // TODO: 实现真实存款逻辑
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      alert(language === 'en' ? 'Deposit successful!' : '存款成功！')
-      setShowDepositModal(false)
-      setDepositAmount('')
+      // 初始化金库服务
+      const initialized = await vaultService.initialize();
+      if (!initialized) {
+        throw new Error('Failed to initialize vault service');
+      }
+
+      // 检查金库健康状态
+      const isHealthy = await vaultService.isHealthy();
+      if (!isHealthy) {
+        throw new Error('Vault is not in healthy state');
+      }
+
+      // 获取用户USDC余额
+      const usdcBalance = await vaultService.getUSDCBalance();
+      const amount = parseFloat(depositAmount);
+      
+      if (parseFloat(usdcBalance) < amount) {
+        throw new Error('Insufficient USDC balance');
+      }
+
+      // 执行存款
+      const result = await vaultService.deposit(amount);
+      
+      if (result.success) {
+        alert(language === 'en' 
+          ? `Deposit successful! You received ${result.shares} shares. Transaction: ${result.transactionHash}` 
+          : `存款成功！您获得了 ${result.shares} 份额。交易哈希: ${result.transactionHash}`)
+        setShowDepositModal(false)
+        setDepositAmount('')
+        
+        // 刷新金库信息
+        const vaultInfo = await vaultService.getVaultInfo();
+        if (vaultInfo) {
+          setVaultInfo(vaultInfo);
+        }
+      } else {
+        throw new Error(result.error || 'Deposit failed');
+      }
     } catch (error) {
-      alert(language === 'en' ? 'Deposit failed' : '存款失败')
+      alert(language === 'en' 
+        ? `Deposit failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        : `存款失败: ${error instanceof Error ? error.message : '未知错误'}`)
     } finally {
       setIsLoading(false)
     }
@@ -196,13 +247,55 @@ export default function VaultPage() {
 
     setIsLoading(true)
     try {
-      // TODO: 实现真实提款逻辑
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      alert(language === 'en' ? 'Withdraw successful!' : '提款成功！')
-      setShowWithdrawModal(false)
-      setWithdrawAmount('')
+      // 初始化金库服务
+      const initialized = await vaultService.initialize();
+      if (!initialized) {
+        throw new Error('Failed to initialize vault service');
+      }
+
+      // 检查金库健康状态
+      const isHealthy = await vaultService.isHealthy();
+      if (!isHealthy) {
+        throw new Error('Vault is not in healthy state');
+      }
+
+      // 获取用户份额
+      const vaultInfo = await vaultService.getVaultInfo();
+      if (!vaultInfo) {
+        throw new Error('Failed to get vault info');
+      }
+
+      const amount = parseFloat(withdrawAmount);
+      const userShares = parseFloat(vaultInfo.userShares);
+      
+      // 计算需要的份额
+      const requiredShares = await vaultService.previewWithdraw(amount);
+      if (userShares < parseFloat(requiredShares)) {
+        throw new Error('Insufficient shares');
+      }
+
+      // 执行提款
+      const result = await vaultService.withdraw(amount);
+      
+      if (result.success) {
+        alert(language === 'en' 
+          ? `Withdraw successful! You received ${result.assets} USDC. Transaction: ${result.transactionHash}` 
+          : `提款成功！您获得了 ${result.assets} USDC。交易哈希: ${result.transactionHash}`)
+        setShowWithdrawModal(false)
+        setWithdrawAmount('')
+        
+        // 刷新金库信息
+        const newVaultInfo = await vaultService.getVaultInfo();
+        if (newVaultInfo) {
+          setVaultInfo(newVaultInfo);
+        }
+      } else {
+        throw new Error(result.error || 'Withdraw failed');
+      }
     } catch (error) {
-      alert(language === 'en' ? 'Withdraw failed' : '提款失败')
+      alert(language === 'en' 
+        ? `Withdraw failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        : `提款失败: ${error instanceof Error ? error.message : '未知错误'}`)
     } finally {
       setIsLoading(false)
     }

@@ -139,8 +139,47 @@ class VaultService {
     }
   }
 
-  // 从金库提款
-  async withdraw(shares: number): Promise<WithdrawResult> {
+  // 从金库提款（按资产数量）
+  async withdraw(assets: number): Promise<WithdrawResult> {
+    try {
+      if (!this.vaultContract || !this.signer) {
+        await this.initialize();
+      }
+
+      if (!this.vaultContract) {
+        throw new Error('Vault contract not initialized');
+      }
+
+      const address = await this.signer!.getAddress();
+      const assetsWei = ethers.parseUnits(assets.toString(), 6); // USDC有6位小数
+
+      // 检查用户份额是否足够
+      const userShares = await this.vaultContract.balanceOf(address);
+      const requiredShares = await this.vaultContract.previewWithdraw(assetsWei);
+      if (userShares < requiredShares) {
+        throw new Error('Insufficient shares');
+      }
+
+      // 执行提款
+      const tx = await this.vaultContract.withdraw(assetsWei, address, address);
+      const receipt = await tx.wait();
+
+      return {
+        success: true,
+        transactionHash: receipt?.hash,
+        assets: assets.toString()
+      };
+    } catch (error) {
+      console.error('Withdraw failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  // 从金库赎回（按份额数量）
+  async redeem(shares: number): Promise<WithdrawResult> {
     try {
       if (!this.vaultContract || !this.signer) {
         await this.initialize();
@@ -159,8 +198,8 @@ class VaultService {
         throw new Error('Insufficient shares');
       }
 
-      // 执行提款
-      const tx = await this.vaultContract.withdraw(sharesWei, address, address);
+      // 执行赎回
+      const tx = await this.vaultContract.redeem(sharesWei, address, address);
       const receipt = await tx.wait();
 
       // 获取获得的资产
@@ -172,7 +211,7 @@ class VaultService {
         assets: ethers.formatUnits(assets, 6) // USDC有6位小数
       };
     } catch (error) {
-      console.error('Withdraw failed:', error);
+      console.error('Redeem failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -220,8 +259,28 @@ class VaultService {
     }
   }
 
-  // 预览提款
-  async previewWithdraw(shares: number): Promise<string> {
+  // 预览提款（按资产数量）
+  async previewWithdraw(assets: number): Promise<string> {
+    try {
+      if (!this.vaultContract) {
+        await this.initialize();
+      }
+
+      if (!this.vaultContract) {
+        throw new Error('Vault contract not initialized');
+      }
+
+      const assetsWei = ethers.parseUnits(assets.toString(), 6);
+      const shares = await this.vaultContract.previewWithdraw(assetsWei);
+      return ethers.formatEther(shares);
+    } catch (error) {
+      console.error('Failed to preview withdraw:', error);
+      return '0';
+    }
+  }
+
+  // 预览赎回（按份额数量）
+  async previewRedeem(shares: number): Promise<string> {
     try {
       if (!this.vaultContract) {
         await this.initialize();
@@ -235,8 +294,90 @@ class VaultService {
       const assets = await this.vaultContract.previewRedeem(sharesWei);
       return ethers.formatUnits(assets, 6);
     } catch (error) {
-      console.error('Failed to preview withdraw:', error);
+      console.error('Failed to preview redeem:', error);
       return '0';
+    }
+  }
+
+  // 检查金库健康状态
+  async isHealthy(): Promise<boolean> {
+    try {
+      if (!this.vaultContract) {
+        await this.initialize();
+      }
+
+      if (!this.vaultContract) {
+        throw new Error('Vault contract not initialized');
+      }
+
+      return await this.vaultContract.isHealthy();
+    } catch (error) {
+      console.error('Failed to check vault health:', error);
+      return false;
+    }
+  }
+
+  // 获取金库状态信息
+  async getVaultStatus(): Promise<{
+    totalAssets: string;
+    totalShares: string;
+    valuePerShare: string;
+    healthy: boolean;
+    paused: boolean;
+    emergency: boolean;
+  } | null> {
+    try {
+      if (!this.vaultContract) {
+        await this.initialize();
+      }
+
+      if (!this.vaultContract) {
+        throw new Error('Vault contract not initialized');
+      }
+
+      const status = await this.vaultContract.getVaultStatus();
+      
+      return {
+        totalAssets: ethers.formatUnits(status.totalAssets_, 6),
+        totalShares: ethers.formatEther(status.totalShares),
+        valuePerShare: ethers.formatEther(status.valuePerShare),
+        healthy: status.healthy,
+        paused: status.paused_,
+        emergency: status.emergency
+      };
+    } catch (error) {
+      console.error('Failed to get vault status:', error);
+      return null;
+    }
+  }
+
+  // 获取费用信息
+  async getFeeInfo(): Promise<{
+    depositFee: string;
+    withdrawalFee: string;
+    performanceFee: string;
+  } | null> {
+    try {
+      if (!this.vaultContract) {
+        await this.initialize();
+      }
+
+      if (!this.vaultContract) {
+        throw new Error('Vault contract not initialized');
+      }
+
+      const depositFee = await this.vaultContract.depositFee();
+      const withdrawalFee = await this.vaultContract.withdrawalFee();
+      const performanceFee = await this.vaultContract.performanceFee();
+
+      return {
+        depositFee: (Number(depositFee) / 100).toString() + '%',
+        withdrawalFee: (Number(withdrawalFee) / 100).toString() + '%',
+        performanceFee: (Number(performanceFee) / 100).toString() + '%'
+      };
+    } catch (error) {
+      console.error('Failed to get fee info:', error);
+      return null;
     }
   }
 }

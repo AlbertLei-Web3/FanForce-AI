@@ -18,7 +18,12 @@
     "test-all": "concurrently \"npm run test-api\" \"npm run test-websocket\"",
     "icp-build": "npm run build-static",
     "icp-deploy-local": "dfx deploy --network local",
-    "icp-deploy": "dfx deploy --network ic"
+    "icp-deploy": "dfx deploy --network ic",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:vault": "hardhat run scripts/deploy-vault.js --network sepolia",
+    "deploy:vault:local": "hardhat run scripts/deploy-vault.js --network localhost",
+    "verify:vault": "hardhat verify --network sepolia"
   },
   "dependencies": {
     "@dfinity/agent": "^3.0.2",
@@ -60,8 +65,10 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.1.0",
     "@nomicfoundation/hardhat-toolbox": "^6.0.0",
     "@openzeppelin/contracts": "^5.3.0",
+    "@openzeppelin/contracts-upgradeable": "^5.4.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
@@ -69,6 +76,8 @@
     "eslint": "^8",
     "eslint-config-next": "14.0.0",
     "hardhat": "^2.25.0",
+    "hardhat-deploy": "^0.12.4",
+    "hardhat-deploy-ethers": "^0.4.2",
     "typescript": "^5"
   }
 }

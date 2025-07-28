@@ -24,9 +24,24 @@ module.exports = {
       timeout: 60000,
       gasPrice: 500000000, // 0.5 gwei - ultra low for testing
       gas: 8000000
+    },
+    sepolia: {
+      url: process.env.ETHEREUM_RPC_URL || "https://sepolia.infura.io/v3/your-project-id",
+      chainId: 11155111,
+      accounts: [ADMIN_PRIVATE_KEY].filter(Boolean),
+      timeout: 60000,
+      gasPrice: "auto"
+    },
+    hardhat: {
+      chainId: 31337
     }
   },
   mocha: {
     timeout: 100000
+  },
+  etherscan: {
+    apiKey: {
+      sepolia: process.env.ETHERSCAN_API_KEY || ""
+    }
   }
 }; 
