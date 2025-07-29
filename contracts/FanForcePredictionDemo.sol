@@ -1,4 +1,4 @@
-// FanForce AI Demo Prediction Contract / FanForce AI 预测Demo合约
+// FanForce AI Demo Prediction Contract / FanForce AI 预测Demo合约 2025-06-27
 // ---------------------------------------------
 // 1. 适用于Chiliz链EVM环境
 // 2. 管理员地址写死，便于演示

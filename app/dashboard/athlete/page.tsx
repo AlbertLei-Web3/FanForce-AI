@@ -331,25 +331,46 @@ export default function AthleteDashboard() {
   const handleConfirmVaultTransfer = async () => {
     setVaultTransferLoading(true)
     try {
-      // TODO: 实现合约调用接口
-      // const result = await vaultService.deposit(mockAthleteProfile.icpSeasonBonusBalance)
+      // 初始化金库服务
+      const initialized = await vaultService.initialize();
+      if (!initialized) {
+        throw new Error('Failed to initialize vault service');
+      }
+
+      // 检查金库健康状态
+      const isHealthy = await vaultService.isHealthy();
+      if (!isHealthy) {
+        throw new Error('Vault is not in healthy state');
+      }
+
+      // 获取用户USDC余额
+      const usdcBalance = await vaultService.getUSDCBalance();
+      const transferAmount = mockAthleteProfile.icpSeasonBonusBalance;
       
-      // 模拟合约调用
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      if (parseFloat(usdcBalance) < transferAmount) {
+        throw new Error('Insufficient USDC balance');
+      }
+
+      // 执行存款到金库
+      const result = await vaultService.deposit(transferAmount);
       
-      setShowVaultModal(false)
-      alert(language === 'en' 
-        ? 'Successfully transferred to Foundation Vault! Redirecting to Foundation page...' 
-        : '成功托管到基金会！正在跳转到基金会页面...')
-      
-      // TODO: 跳转到基金会页面
-      // router.push('/dashboard/foundation')
+      if (result.success) {
+        setShowVaultModal(false)
+        alert(language === 'en' 
+          ? `Successfully transferred ${transferAmount} USDC to Foundation Vault! Transaction: ${result.transactionHash}` 
+          : `成功托管 ${transferAmount} USDC到基金会！交易哈希: ${result.transactionHash}`)
+        
+        // 跳转到金库页面
+        router.push('/dashboard/vault')
+      } else {
+        throw new Error(result.error || 'Deposit failed');
+      }
       
     } catch (error) {
       console.error('Vault transfer failed:', error)
       alert(language === 'en' 
-        ? 'Failed to transfer to Foundation Vault. Please try again.' 
-        : '托管到基金会失败，请重试。')
+        ? `Failed to transfer to Foundation Vault: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        : `托管到基金会失败: ${error instanceof Error ? error.message : '未知错误'}`)
     } finally {
       setVaultTransferLoading(false)
     }
