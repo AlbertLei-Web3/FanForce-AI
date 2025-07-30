@@ -9,6 +9,24 @@ const USER_B_PRIVATE_KEY = process.env.PRIVATE_KEY_B;
 module.exports = {
   solidity: "0.8.20",
   networks: {
+    // X Layer Testnet Configuration / X Layer测试网配置
+    xlayerTestnet: {
+      url: "https://testrpc.xlayer.tech",
+      chainId: 195,
+      accounts: [ADMIN_PRIVATE_KEY, USER_A_PRIVATE_KEY, USER_B_PRIVATE_KEY].filter(Boolean),
+      timeout: 60000,
+      gasPrice: "auto", // X Layer使用OKB作为gas代币 / X Layer uses OKB as gas token
+      gas: 8000000
+    },
+    // X Layer Mainnet Configuration / X Layer主网配置
+    xlayerMainnet: {
+      url: "https://rpc.xlayer.tech",
+      chainId: 196,
+      accounts: [ADMIN_PRIVATE_KEY, USER_A_PRIVATE_KEY, USER_B_PRIVATE_KEY].filter(Boolean),
+      timeout: 60000,
+      gasPrice: "auto",
+      gas: 8000000
+    },
     chilizSpicy: {
       url: "https://spicy-rpc.chiliz.com",
       chainId: 88882,
@@ -41,7 +59,27 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      sepolia: process.env.ETHERSCAN_API_KEY || ""
-    }
+      sepolia: process.env.ETHERSCAN_API_KEY || "",
+      xlayerTestnet: process.env.XLAYER_API_KEY || "",
+      xlayerMainnet: process.env.XLAYER_API_KEY || ""
+    },
+    customChains: [
+      {
+        network: "xlayerTestnet",
+        chainId: 195,
+        urls: {
+          apiURL: "https://www.oklink.com/xlayer-testnet/api",
+          browserURL: "https://www.oklink.com/xlayer-testnet"
+        }
+      },
+      {
+        network: "xlayerMainnet", 
+        chainId: 196,
+        urls: {
+          apiURL: "https://www.oklink.com/xlayer/api",
+          browserURL: "https://www.oklink.com/xlayer"
+        }
+      }
+    ]
   }
 }; 
