@@ -1,7 +1,13 @@
 {
-  "contractAddress": "0x0Aa8861bd3691F8dd92291Dd639d43ACb17aB5f5",
-  "adminAddress": "0x0d87d8E1def9cA4A5f1BE181dc37c9ed9622c8d5",
-  "paymentMethod": "Native CHZ",
-  "network": "chilizSpicy",
-  "deploymentTime": "2025-06-25T08:41:09.945Z"
+  "contractName": "FanForceVault",
+  "contractAddress": "0xA45Ace6f96703D6DA760088412F8df81226ef51c",
+  "deployerAddress": "0xf2B697C02A5BFc8FF70517E07Cee9482EEB27d9A",
+  "foundationAddress": "0x9488277795f6d73773576cb93ed91f15fc011934",
+  "usdcTokenAddress": "0xe8926a7f935675e95c4881a0ffbb84ea320af6fd",
+  "vaultName": "FanForce AI Vault",
+  "vaultSymbol": "FFVAULT",
+  "network": "X Layer Testnet",
+  "chainId": 195,
+  "deploymentTime": "2025-07-30T01:52:30.784Z",
+  "deploymentTxHash": "0x875fde87b92bdf128bfca3310b269dbcfd872884872988a2fdbb50a1ca79abbe"
 }

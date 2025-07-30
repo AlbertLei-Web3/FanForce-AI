@@ -27,7 +27,12 @@
     "test": "hardhat test",
     "deploy:vault": "hardhat run scripts/deploy-vault.js --network sepolia",
     "deploy:vault:local": "hardhat run scripts/deploy-vault.js --network localhost",
-    "verify:vault": "hardhat verify --network sepolia"
+    "deploy:vault:xlayer": "hardhat run scripts/deploy-vault-xlayer.js --network xlayerTestnet",
+    "deploy:vault:xlayer-mainnet": "hardhat run scripts/deploy-vault-xlayer.js --network xlayerMainnet",
+    "verify:vault": "hardhat verify --network sepolia",
+    "verify:vault:xlayer": "hardhat verify --network xlayerTestnet",
+    "verify:vault:xlayer-mainnet": "hardhat verify --network xlayerMainnet",
+    "check:xlayer": "hardhat run scripts/check-xlayer-deployment.js"
   },
   "dependencies": {
     "@dfinity/agent": "^3.0.2",

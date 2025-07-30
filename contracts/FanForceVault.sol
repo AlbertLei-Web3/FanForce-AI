@@ -72,7 +72,7 @@ contract FanForceVault is ERC20, ReentrancyGuard, Ownable {
         _;
     }
     
-    modifier depositsEnabled() {
+    modifier depositsEnabledModifier() {
         require(depositsEnabled, "Deposits are currently disabled");
         _;
     }
@@ -110,7 +110,7 @@ contract FanForceVault is ERC20, ReentrancyGuard, Ownable {
     function deposit(uint256 assets, address receiver) 
         external 
         nonReentrant 
-        depositsEnabled
+        depositsEnabledModifier
         returns (uint256 shares) 
     {
         require(assets > 0, "Invalid assets amount");
@@ -291,19 +291,24 @@ contract FanForceVault is ERC20, ReentrancyGuard, Ownable {
      * @dev 获取金库信息 - 综合查询函数
      * @dev Get vault info - comprehensive query function
      * @param athlete 运动员地址 / Athlete address
-     * @return 运动员信息、金库状态、可投资金额 / Athlete info, vault status, available amount
+     * @return depositAmount 运动员托管金额 / Athlete deposit amount
+     * @return shareAmount 运动员份额 / Athlete shares
+     * @return profitAmount 运动员收益 / Athlete profits
+     * @return totalAssets_ 总资产 / Total assets
+     * @return totalInvested_ 总投资 / Total invested
+     * @return availableAmount 可投资金额 / Available amount
      */
     function getVaultInfo(address athlete) external view returns (
-        uint256 athleteDeposit,
-        uint256 athleteShares,
-        uint256 athleteProfits,
+        uint256 depositAmount,
+        uint256 shareAmount,
+        uint256 profitAmount,
         uint256 totalAssets_,
         uint256 totalInvested_,
         uint256 availableAmount
     ) {
-        athleteDeposit = athleteDeposits[athlete];
-        athleteShares = athleteShares[athlete];
-        athleteProfits = athleteProfits[athlete];
+        depositAmount = athleteDeposits[athlete];
+        shareAmount = athleteShares[athlete];
+        profitAmount = athleteProfits[athlete];
         totalAssets_ = totalAssets();
         totalInvested_ = totalInvested;
         availableAmount = totalAssets() - totalInvested;

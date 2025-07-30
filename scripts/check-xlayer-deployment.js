@@ -115,19 +115,44 @@ async function main() {
   const usdcAddress = process.env.USDC_TOKEN_ADDRESS;
   if (usdcAddress) {
     try {
-      const usdcContract = await ethers.getContractAt("IERC20", usdcAddress);
-      const name = await usdcContract.name();
-      const symbol = await usdcContract.symbol();
-      const decimals = await usdcContract.decimals();
+      // 连接到X Layer测试网来检查USDC合约
+      const xlayerProvider = new ethers.JsonRpcProvider("https://testrpc.xlayer.tech");
       
-      console.log(`✅ USDC Token Address: ${usdcAddress}`);
-      console.log(`✅ Token Name: ${name}`);
-      console.log(`✅ Token Symbol: ${symbol}`);
-      console.log(`✅ Token Decimals: ${decimals}`);
+      // 检查合约是否存在
+      const code = await xlayerProvider.getCode(usdcAddress);
+      if (code !== "0x") {
+        console.log(`✅ USDC Token Address: ${usdcAddress}`);
+        console.log(`✅ Contract exists on X Layer Testnet`);
+        
+        // 尝试获取ERC20信息
+        try {
+          const usdcContract = new ethers.Contract(usdcAddress, [
+            "function name() view returns (string)",
+            "function symbol() view returns (string)", 
+            "function decimals() view returns (uint8)"
+          ], xlayerProvider);
+          
+          const name = await usdcContract.name();
+          const symbol = await usdcContract.symbol();
+          const decimals = await usdcContract.decimals();
+          
+          console.log(`✅ Token Name: ${name}`);
+          console.log(`✅ Token Symbol: ${symbol}`);
+          console.log(`✅ Token Decimals: ${decimals}`);
+        } catch (interfaceError) {
+          console.log(`⚠️  Warning: Standard ERC20 interface not available`);
+          console.log(`   This is normal for some testnet tokens`);
+        }
+      } else {
+        console.log(`❌ USDC Token Address: ${usdcAddress} - Contract not found on X Layer Testnet`);
+        console.log(`   Please verify the address in your OKX wallet`);
+      }
       
     } catch (error) {
       console.log(`❌ USDC token contract check failed: ${error.message}`);
     }
+  } else {
+    console.log("❌ USDC_TOKEN_ADDRESS not set in environment variables");
   }
 
   // 部署建议 / Deployment recommendations
