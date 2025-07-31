@@ -13,6 +13,12 @@ export const NETWORKS = {
     name: 'Ethereum Mainnet',
     rpcUrl: 'https://mainnet.infura.io/v3/your-project-id',
     explorer: 'https://etherscan.io'
+  },
+  XLAYER_TESTNET: {
+    chainId: '0xc3', // 195
+    name: 'X Layer Testnet',
+    rpcUrl: 'https://testrpc.xlayer.tech',
+    explorer: 'https://testnet.xlayer.tech'
   }
 };
 
@@ -21,6 +27,7 @@ export const VAULT_CONTRACT = {
   // Sepolia测试网合约地址（部署后更新）
   SEPOLIA_ADDRESS: '0x0000000000000000000000000000000000000000', // TODO: 部署后更新
   MAINNET_ADDRESS: '0x0000000000000000000000000000000000000000', // TODO: 部署后更新
+  XLAYER_TESTNET_ADDRESS: '0xA45Ace6f96703D6DA760088412F8df81226ef51c', // X Layer Testnet Vault
   
   // ERC-4626标准ABI
   ABI: [
@@ -105,6 +112,7 @@ export const VAULT_CONTRACT = {
 export const USDC_TOKEN = {
   SEPOLIA_ADDRESS: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', // Sepolia USDC
   MAINNET_ADDRESS: '0xA0b86a33E6441b8c4C8C8C8C8C8C8C8C8C8C8C8C', // 主网USDC
+  XLAYER_TESTNET_ADDRESS: '0xe8926a7f935675e95c4881a0ffbb84ea320af6fd', // X Layer Testnet USDC
   
   ABI: [
     'function name() external view returns (string)',
@@ -126,8 +134,10 @@ export function getVaultContractAddress(chainId: string): string {
       return VAULT_CONTRACT.SEPOLIA_ADDRESS;
     case NETWORKS.MAINNET.chainId:
       return VAULT_CONTRACT.MAINNET_ADDRESS;
+    case NETWORKS.XLAYER_TESTNET.chainId:
+      return VAULT_CONTRACT.XLAYER_TESTNET_ADDRESS;
     default:
-      return VAULT_CONTRACT.SEPOLIA_ADDRESS; // 默认使用Sepolia
+      return VAULT_CONTRACT.XLAYER_TESTNET_ADDRESS; // 默认使用X Layer Testnet
   }
 }
 
@@ -138,7 +148,9 @@ export function getUSDCTokenAddress(chainId: string): string {
       return USDC_TOKEN.SEPOLIA_ADDRESS;
     case NETWORKS.MAINNET.chainId:
       return USDC_TOKEN.MAINNET_ADDRESS;
+    case NETWORKS.XLAYER_TESTNET.chainId:
+      return USDC_TOKEN.XLAYER_TESTNET_ADDRESS;
     default:
-      return USDC_TOKEN.SEPOLIA_ADDRESS; // 默认使用Sepolia
+      return USDC_TOKEN.XLAYER_TESTNET_ADDRESS; // 默认使用X Layer Testnet
   }
 } 

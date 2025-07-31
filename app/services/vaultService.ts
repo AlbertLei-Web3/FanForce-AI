@@ -47,8 +47,14 @@ class VaultService {
 
       const network = await this.provider.getNetwork();
       const chainId = network.chainId.toString();
+      console.log('Current network chainId:', chainId);
+      console.log('ChainId in hex:', `0x${parseInt(chainId).toString(16)}`);
+      
       const vaultAddress = getVaultContractAddress(`0x${parseInt(chainId).toString(16)}`);
       const usdcAddress = getUSDCTokenAddress(`0x${parseInt(chainId).toString(16)}`);
+      
+      console.log('Vault address:', vaultAddress);
+      console.log('USDC address:', usdcAddress);
 
       this.vaultContract = new ethers.Contract(vaultAddress, VAULT_CONTRACT.ABI, this.signer);
       this.usdcContract = new ethers.Contract(usdcAddress, USDC_TOKEN.ABI, this.signer);
@@ -231,8 +237,15 @@ class VaultService {
       }
 
       const address = await this.signer!.getAddress();
+      console.log('Checking USDC balance for address:', address);
+      
       const balance = await this.usdcContract.balanceOf(address);
-      return ethers.formatUnits(balance, 6);
+      console.log('Raw USDC balance:', balance.toString());
+      
+      const formattedBalance = ethers.formatUnits(balance, 6);
+      console.log('Formatted USDC balance:', formattedBalance);
+      
+      return formattedBalance;
     } catch (error) {
       console.error('Failed to get USDC balance:', error);
       return '0';
