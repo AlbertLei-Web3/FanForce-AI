@@ -237,8 +237,11 @@ export default function AthleteDashboard() {
   
   // 新增：钱包连接状态
   const [walletInfo, setWalletInfo] = useState<any>(null)
+  // 新增：查看托管信息的状态
   const [vaultInfo, setVaultInfo] = useState<any>(null)
-  
+  const [userVaultInfo, setUserVaultInfo] = useState<any>(null)
+  const [isLoadingVaultInfo, setIsLoadingVaultInfo] = useState(false)
+
   // 新增：真实USDC余额状态
   const [realUSDCBalance, setRealUSDCBalance] = useState<string>('0')
   const [isLoadingBalance, setIsLoadingBalance] = useState(false)
@@ -405,6 +408,37 @@ export default function AthleteDashboard() {
       setRealUSDCBalance('0');
     } finally {
       setIsLoadingBalance(false);
+    }
+  }
+
+  // 获取托管信息
+  const fetchVaultInfo = async () => {
+    setIsLoadingVaultInfo(true);
+    try {
+      const initialized = await vaultService.initialize();
+      if (initialized) {
+        // 获取合约总资产信息
+        const contractInfo = await vaultService.getContractTotalAssets();
+        setVaultInfo(contractInfo);
+        
+        // 获取用户托管信息
+        if (walletInfo?.isConnected) {
+          const userInfo = await vaultService.getUserVaultInfo(walletInfo.address);
+          setUserVaultInfo(userInfo);
+        }
+        
+        showToast({
+          type: 'success',
+          message: language === 'en' ? 'Vault info updated!' : '金库信息已更新！'
+        })
+      }
+    } catch (error) {
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Failed to fetch vault info' : '获取金库信息失败'
+      })
+    } finally {
+      setIsLoadingVaultInfo(false);
     }
   }
 
@@ -779,6 +813,77 @@ export default function AthleteDashboard() {
                     <span className="text-lg">📊</span>
                     <span>{language === 'en' ? 'View Foundation Vault' : '查看基金会金库'}</span>
                   </button>
+                  
+                  {/* 新增：查看托管信息按钮 */}
+                  <button 
+                    onClick={fetchVaultInfo}
+                    disabled={isLoadingVaultInfo}
+                    className="w-full mt-2 px-4 py-2 rounded-lg font-bold transition-all duration-300 flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white transform hover:scale-105 shadow-lg disabled:opacity-50"
+                  >
+                    <span className="text-lg">🔍</span>
+                    <span>
+                      {isLoadingVaultInfo ? (
+                        <span className="flex items-center">
+                          <FaSpinner className="animate-spin mr-2" />
+                          {language === 'en' ? 'Loading...' : '加载中...'}
+                        </span>
+                      ) : (
+                        language === 'en' ? 'Check Vault Status' : '查看托管状态'
+                      )}
+                    </span>
+                  </button>
+                  
+                  {/* 新增：托管信息显示 */}
+                  {vaultInfo && (
+                    <div className="mt-4 p-4 bg-blue-600/20 rounded-lg border border-blue-500/30">
+                      <h4 className="text-blue-400 font-bold mb-2">
+                        {language === 'en' ? 'Contract Status' : '合约状态'}
+                      </h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">{language === 'en' ? 'Total Assets:' : '总资产：'}</span>
+                          <span className="text-white font-bold">{vaultInfo.totalAssets} USDC</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">{language === 'en' ? 'Total Shares:' : '总份额：'}</span>
+                          <span className="text-white font-bold">{vaultInfo.totalShares} FFVAULT</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">{language === 'en' ? 'Contract:' : '合约地址：'}</span>
+                          <span className="text-blue-400 text-xs truncate">
+                            {vaultInfo.contractAddress.slice(0, 6)}...{vaultInfo.contractAddress.slice(-4)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 新增：用户托管信息显示 */}
+                  {userVaultInfo && (
+                    <div className="mt-4 p-4 bg-green-600/20 rounded-lg border border-green-500/30">
+                      <h4 className="text-green-400 font-bold mb-2">
+                        {language === 'en' ? 'Your Vault Status' : '您的托管状态'}
+                      </h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">{language === 'en' ? 'Your Deposits:' : '您的托管：'}</span>
+                          <span className="text-white font-bold">{userVaultInfo.userDeposits} USDC</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">{language === 'en' ? 'Your Shares:' : '您的份额：'}</span>
+                          <span className="text-white font-bold">{userVaultInfo.userShares} FFVAULT</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">{language === 'en' ? 'Your Profits:' : '您的收益：'}</span>
+                          <span className="text-green-400 font-bold">{userVaultInfo.userProfits} USDC</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">{language === 'en' ? 'Share %:' : '份额占比：'}</span>
+                          <span className="text-yellow-400 font-bold">{userVaultInfo.sharePercentage}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

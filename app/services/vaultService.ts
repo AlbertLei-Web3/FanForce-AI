@@ -411,6 +411,87 @@ class VaultService {
       return null;
     }
   }
+
+  // 获取合约总资产信息
+  async getContractTotalAssets(): Promise<{
+    totalAssets: string;
+    totalShares: string;
+    totalDeposits: string;
+    contractAddress: string;
+    rawTotalAssets: string;
+    rawTotalShares: string;
+  } | null> {
+    try {
+      if (!this.vaultContract) {
+        await this.initialize();
+      }
+
+      if (!this.vaultContract) {
+        throw new Error('Vault contract not initialized');
+      }
+
+      const totalAssets = await this.vaultContract.totalAssets();
+      const totalShares = await this.vaultContract.totalSupply();
+      
+      console.log('🔍 Contract Debug Info:');
+      console.log('Raw total assets (wei):', totalAssets.toString());
+      console.log('Raw total shares (wei):', totalShares.toString());
+      console.log('Formatted total assets (USDC):', ethers.formatUnits(totalAssets, 6));
+      console.log('Formatted total shares (FFVAULT):', ethers.formatEther(totalShares));
+
+      return {
+        totalAssets: ethers.formatUnits(totalAssets, 6),
+        totalShares: ethers.formatEther(totalShares),
+        totalDeposits: ethers.formatUnits(totalAssets, 6), // 简化版本
+        contractAddress: this.vaultContract.target as string,
+        rawTotalAssets: totalAssets.toString(),
+        rawTotalShares: totalShares.toString()
+      };
+    } catch (error) {
+      console.error('Failed to get contract total assets:', error);
+      return null;
+    }
+  }
+
+  // 获取用户在合约中的托管信息
+  async getUserVaultInfo(userAddress?: string): Promise<{
+    userDeposits: string;
+    userShares: string;
+    userProfits: string;
+    sharePercentage: string;
+  } | null> {
+    try {
+      if (!this.vaultContract || !this.signer) {
+        await this.initialize();
+      }
+
+      if (!this.vaultContract) {
+        throw new Error('Vault contract not initialized');
+      }
+
+      const address = userAddress || await this.signer!.getAddress();
+      
+      // 调用合约的getAthleteInfo函数
+      const athleteInfo = await this.vaultContract.getAthleteInfo(address);
+      
+      console.log('User vault info:', {
+        deposits: ethers.formatUnits(athleteInfo.depositAmount, 6),
+        shares: ethers.formatEther(athleteInfo.shares),
+        profits: ethers.formatUnits(athleteInfo.profits, 6),
+        sharePercentage: (Number(athleteInfo.sharePercentage) / 1e18 * 100).toFixed(2) + '%'
+      });
+
+      return {
+        userDeposits: ethers.formatUnits(athleteInfo.depositAmount, 6),
+        userShares: ethers.formatEther(athleteInfo.shares),
+        userProfits: ethers.formatUnits(athleteInfo.profits, 6),
+        sharePercentage: (Number(athleteInfo.sharePercentage) / 1e18 * 100).toFixed(2) + '%'
+      };
+    } catch (error) {
+      console.error('Failed to get user vault info:', error);
+      return null;
+    }
+  }
 }
 
 // 导出单例实例
