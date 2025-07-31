@@ -7,151 +7,141 @@ if (!process.env.OKX_DEX_API_KEY) {
   require('dotenv').config({ path: '.env' });
 }
 
-// 使用内置的https模块进行HTTP请求
-const https = require('https');
-const http = require('http');
+// 添加代理支持
+const axios = require('axios');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 
-async function testOKXAPI() {
-  console.log('🔍 Testing OKX DEX API Connection...\n');
+// 创建HTTP代理代理（V2Ray混合模式使用HTTP代理）
+const agent = new HttpsProxyAgent('http://127.0.0.1:10808');
+
+// 测试 OKX DEX 特定端点
+// Test OKX DEX specific endpoints
+async function testOKXDEXEndpoints() {
+  console.log('🔍 Testing OKX DEX Specific Endpoints...\n');
 
   // 检查环境变量
+  // Check environment variables
   console.log('📋 Environment Variables Check:');
-  console.log('OKX_DEX_API_KEY:', process.env.OKX_DEX_API_KEY ? '✅ Found' : '❌ Missing');
-  console.log('OKX_DEX_SECRET:', process.env.OKX_DEX_SECRET ? '✅ Found' : '❌ Missing');
-  console.log('OKX_DEX_PASSPHRASE:', process.env.OKX_DEX_PASSPHRASE ? '✅ Found' : '❌ Missing');
+  console.log('OKX_DEX_API_KEY:', process.env.OKX_DEX_API_KEY ? `✅ Found (${process.env.OKX_DEX_API_KEY.substring(0, 8)}...)` : '❌ Missing');
+  console.log('OKX_DEX_SECRET:', process.env.OKX_DEX_SECRET ? `✅ Found (${process.env.OKX_DEX_SECRET.substring(0, 8)}...)` : '❌ Missing');
+  console.log('OKX_DEX_PASSPHRASE:', process.env.OKX_DEX_PASSPHRASE ? `✅ Found (${process.env.OKX_DEX_PASSPHRASE.substring(0, 8)}...)` : '❌ Missing');
+  console.log('OKX_DEX_BASE_URL:', process.env.OKX_DEX_BASE_URL || '❌ Missing (using default)');
   console.log('');
 
   if (!process.env.OKX_DEX_API_KEY || !process.env.OKX_DEX_SECRET || !process.env.OKX_DEX_PASSPHRASE) {
-    console.log('❌ Missing required API credentials!');
-    console.log('Please check your .env.local file and ensure all OKX DEX credentials are set.');
+    console.log('❌ Missing required API credentials for DEX testing!');
     return;
   }
 
-  // 测试API连接
-  try {
-    console.log('🌐 Testing API Connection...');
-    
-    const timestamp = new Date().toISOString();
-    const method = 'GET';
-    const endpoint = '/api/v5/account/balance';
-    const url = `https://www.okx.com${endpoint}`;
-    
-    // 生成签名（简化版本）
-    const message = timestamp + method + endpoint;
-    const signature = Buffer.from(message + process.env.OKX_DEX_SECRET).toString('base64');
-    
-    const headers = {
-      'OK-ACCESS-KEY': process.env.OKX_DEX_API_KEY,
-      'OK-ACCESS-SIGN': signature,
-      'OK-ACCESS-TIMESTAMP': timestamp,
-      'OK-ACCESS-PASSPHRASE': process.env.OKX_DEX_PASSPHRASE,
-      'Content-Type': 'application/json'
-    };
+  const crypto = require('crypto');
+  const baseUrl = process.env.OKX_DEX_BASE_URL || 'https://web3.okx.com';
 
-    console.log('📤 Sending test request...');
-    
-    // 使用内置https模块发送请求
-    const data = await new Promise((resolve, reject) => {
-      const options = {
-        hostname: 'www.okx.com',
-        port: 443,
-        path: endpoint,
-        method: method,
-        headers: headers
-      };
-
-      const req = https.request(options, (res) => {
-        let body = '';
-        res.on('data', (chunk) => {
-          body += chunk;
-        });
-        res.on('end', () => {
-          try {
-            const jsonData = JSON.parse(body);
-            resolve(jsonData);
-          } catch (e) {
-            reject(e);
-          }
-        });
-      });
-
-      req.on('error', (e) => {
-        reject(e);
-      });
-
-      req.end();
-    });
-    
-    console.log('📥 Response Status: 200');
-    console.log('📥 Response Data:', JSON.stringify(data, null, 2));
-    
-    if (response.ok && data.code === '0') {
-      console.log('✅ OKX DEX API connection successful!');
-      console.log('🎉 Your API credentials are working correctly.');
-    } else {
-      console.log('❌ API connection failed!');
-      console.log('Error Code:', data.code);
-      console.log('Error Message:', data.msg);
-      
-      if (data.code === '50001') {
-        console.log('💡 This might be due to:');
-        console.log('   - Invalid API key');
-        console.log('   - Incorrect passphrase');
-        console.log('   - API key permissions');
+  // 定义要测试的 DEX 端点
+  // Define DEX endpoints to test
+  const dexEndpoints = [
+    {
+      name: 'All Token Balances by Address',
+      endpoint: '/api/v5/dex/balance/all-token-balances-by-address',
+      method: 'GET',
+      params: { address: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6' } // 示例地址 Example address
+    },
+    {
+      name: 'Supported Chain',
+      endpoint: '/api/v5/dex/balance/supported/chain',
+      method: 'GET',
+      params: {}
+    },
+    {
+      name: 'Token Balances by Address',
+      endpoint: '/api/v5/dex/balance/token-balances-by-address',
+      method: 'GET',
+      params: { 
+        address: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6',
+        chainId: '1' // Ethereum mainnet
       }
     }
+  ];
 
-  } catch (error) {
-    console.log('❌ Network error:', error.message);
-    console.log('💡 This might be due to:');
-    console.log('   - Network connectivity issues');
-    console.log('   - Firewall blocking the request');
-    console.log('   - Invalid API endpoint');
-  }
-
-  // 测试公开API（不需要认证）
-  console.log('\n🔍 Testing Public API (no authentication required)...');
-  try {
-    const publicData = await new Promise((resolve, reject) => {
-      const options = {
-        hostname: 'www.okx.com',
-        port: 443,
-        path: '/api/v5/market/ticker?instId=ETH-USDT',
-        method: 'GET'
+  // 测试每个端点
+  // Test each endpoint
+  for (const endpointInfo of dexEndpoints) {
+    console.log(`\n📊 Testing: ${endpointInfo.name}`);
+    console.log(`🌐 Endpoint: ${endpointInfo.endpoint}`);
+    
+    try {
+      const timestamp = new Date().toISOString();
+      const method = endpointInfo.method;
+      const endpoint = endpointInfo.endpoint;
+      
+      // 构建查询参数
+      // Build query parameters
+      const queryParams = new URLSearchParams(endpointInfo.params).toString();
+      const fullEndpoint = queryParams ? `${endpoint}?${queryParams}` : endpoint;
+      
+      // 构建签名字符串
+      // Build signature string
+      const body = ''; // GET 请求没有 body GET requests have no body
+      const message = timestamp + method + fullEndpoint + body;
+      
+      // 生成签名
+      // Generate signature
+      const signature = crypto
+        .createHmac('sha256', process.env.OKX_DEX_SECRET)
+        .update(message)
+        .digest('base64');
+      
+      const headers = {
+        'OK-ACCESS-KEY': process.env.OKX_DEX_API_KEY,
+        'OK-ACCESS-SIGN': signature,
+        'OK-ACCESS-TIMESTAMP': timestamp,
+        'OK-ACCESS-PASSPHRASE': process.env.OKX_DEX_PASSPHRASE,
+        'Content-Type': 'application/json'
       };
 
-      const req = https.request(options, (res) => {
-        let body = '';
-        res.on('data', (chunk) => {
-          body += chunk;
-        });
-        res.on('end', () => {
-          try {
-            const jsonData = JSON.parse(body);
-            resolve(jsonData);
-          } catch (e) {
-            reject(e);
-          }
-        });
+      console.log('🔐 Request Details:');
+      console.log('  Timestamp:', timestamp);
+      console.log('  Method:', method);
+      console.log('  Full Endpoint:', fullEndpoint);
+      console.log('  Message:', message);
+      console.log('  Signature:', signature);
+      console.log('  URL:', `${baseUrl}${fullEndpoint}`);
+
+      // 发送请求
+      // Send request
+      const response = await axios.get(`${baseUrl}${fullEndpoint}`, {
+        headers: headers,
+        httpAgent: agent,
+        httpsAgent: agent,
+        timeout: 15000
       });
 
-      req.on('error', (e) => {
-        reject(e);
-      });
+      console.log('✅ Response Status:', response.status);
+      console.log('📥 Response Data:', JSON.stringify(response.data, null, 2));
 
-      req.end();
-    });
-    
-    if (publicData.code === '0') {
-      console.log('✅ Public API connection successful!');
-      console.log('📊 Sample ETH price:', publicData.data[0]?.last);
-    } else {
-      console.log('❌ Public API connection failed!');
+      if (response.data.code === '0') {
+        console.log('🎉 Success!');
+      } else {
+        console.log('❌ API Error:', response.data.msg);
+        console.log('Error Code:', response.data.code);
+      }
+
+    } catch (error) {
+      console.log('❌ Request failed:', error.message);
+      if (error.response) {
+        console.log('Response status:', error.response.status);
+        console.log('Response data:', error.response.data);
+      }
     }
-  } catch (error) {
-    console.log('❌ Public API error:', error.message);
   }
 }
 
 // 运行测试
-testOKXAPI().catch(console.error); 
+async function runAllTests() {
+  console.log('🚀 Starting OKX DEX API tests...\n');
+  
+  // 运行 DEX 特定端点测试
+  // Run DEX specific endpoint tests
+  await testOKXDEXEndpoints();
+}
+
+runAllTests().catch(console.error); 

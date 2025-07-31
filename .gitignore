@@ -156,6 +156,15 @@ config/secrets.json
 public/uploads/
 public/temp/
 
+# Hardhat相关文件 / Hardhat related files
+artifacts/
+cache/
+typechain/
+typechain-types/
+
+# 部署信息文件（可选，根据需要决定是否忽略）/ Deployment info files (optional)
+# deployment-info.json
+
 # Lock文件（根据包管理器选择保留一个）/ Lock files
 # package-lock.json  # 如果使用yarn，取消注释这行
 # yarn.lock         # 如果使用npm，取消注释这行 

@@ -483,6 +483,157 @@ class OKXDexService {
     ];
   }
 
+  // Mock BTC历史数据
+  private getMockBTCHistoricalData(days: number): any[] {
+    console.log(`📊 Generating mock BTC historical data for ${days} days`);
+    
+    const mockData = [];
+    const basePrice = 45000; // 基础价格
+    const baseVolume = 25000; // 基础成交量
+    
+    for (let i = 0; i < days; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - (days - 1 - i));
+      
+      // 模拟价格波动
+      const priceChange = (Math.random() - 0.5) * 0.1; // ±5% 波动
+      const close = basePrice * (1 + priceChange);
+      const open = close * (1 + (Math.random() - 0.5) * 0.02);
+      const high = Math.max(open, close) * (1 + Math.random() * 0.03);
+      const low = Math.min(open, close) * (1 - Math.random() * 0.03);
+      
+      // 模拟成交量波动
+      const volumeChange = (Math.random() - 0.5) * 0.5; // ±25% 波动
+      const volume = baseVolume * (1 + volumeChange);
+      
+      mockData.push({
+        date: date,
+        timestamp: date.getTime(),
+        open: parseFloat(open.toFixed(2)),
+        high: parseFloat(high.toFixed(2)),
+        low: parseFloat(low.toFixed(2)),
+        close: parseFloat(close.toFixed(2)),
+        volume: parseFloat(volume.toFixed(2)),
+        currencyVolume: parseFloat((volume * close).toFixed(2)),
+        dayIndex: i + 1
+      });
+    }
+    
+    console.log('📈 Generated Mock BTC Historical Data:', mockData);
+    return mockData;
+  }
+
+  // Mock BTC当前数据
+  private getMockBTCCurrentData(): any {
+    console.log('📊 Generating mock BTC current data');
+    
+    const basePrice = 45000;
+    const priceChange = (Math.random() - 0.5) * 0.1;
+    const currentPrice = basePrice * (1 + priceChange);
+    
+    const mockData = {
+      symbol: 'BTC-USDT',
+      price: parseFloat(currentPrice.toFixed(2)),
+      priceChange24h: parseFloat((priceChange * 100).toFixed(2)),
+      volume24h: parseFloat((25000 + Math.random() * 10000).toFixed(2)),
+      high24h: parseFloat((currentPrice * 1.05).toFixed(2)),
+      low24h: parseFloat((currentPrice * 0.95).toFixed(2)),
+      timestamp: Date.now(),
+      lastUpdated: new Date().toISOString()
+    };
+    
+    console.log('📈 Generated Mock BTC Current Data:', mockData);
+    return mockData;
+  }
+
+  // 获取BTC历史数据
+  async getBTCHistoricalData(days: number = 28): Promise<any[]> {
+    try {
+      console.log(`🔍 Fetching BTC historical data for ${days} days...`);
+      
+      if (!this.isInitialized) {
+        console.warn('⚠️ Using mock BTC historical data');
+        return this.getMockBTCHistoricalData(days);
+      }
+
+      // 调用OKX API获取BTC历史K线数据
+      // 使用BTC-USDT交易对的K线数据
+      const response = await this.makeRequest('GET', `/api/v5/market/candles?instId=BTC-USDT&bar=1D&limit=${days}`);
+      
+      console.log('📊 OKX API Response:', response);
+      
+      if (response && response.code === '0' && response.data) {
+        console.log(`✅ Successfully fetched ${response.data.length} days of BTC data`);
+        
+        // 处理OKX API返回的数据格式
+        const historicalData = response.data.map((candle: any, index: number) => {
+          const [timestamp, open, high, low, close, volume, currencyVolume] = candle;
+          
+          return {
+            date: new Date(parseInt(timestamp)),
+            timestamp: parseInt(timestamp),
+            open: parseFloat(open),
+            high: parseFloat(high),
+            low: parseFloat(low),
+            close: parseFloat(close),
+            volume: parseFloat(volume),
+            currencyVolume: parseFloat(currencyVolume),
+            dayIndex: index + 1
+          };
+        }).reverse(); // 反转数组，让最新的数据在前面
+        
+        console.log('📈 Processed BTC Historical Data:', historicalData);
+        return historicalData;
+      }
+
+      console.warn('⚠️ Failed to get real BTC data, using mock data');
+      return this.getMockBTCHistoricalData(days);
+    } catch (error) {
+      console.error('❌ BTC historical data request failed:', error);
+      return this.getMockBTCHistoricalData(days);
+    }
+  }
+
+  // 获取BTC实时价格和成交量
+  async getBTCCurrentData(): Promise<any> {
+    try {
+      console.log('🔍 Fetching BTC current data...');
+      
+      if (!this.isInitialized) {
+        console.warn('⚠️ Using mock BTC current data');
+        return this.getMockBTCCurrentData();
+      }
+
+      // 调用OKX API获取BTC实时行情
+      const response = await this.makeRequest('GET', '/api/v5/market/ticker?instId=BTC-USDT');
+      
+      console.log('📊 OKX BTC Current Data Response:', response);
+      
+      if (response && response.code === '0' && response.data && response.data[0]) {
+        const btcData = response.data[0];
+        const currentData = {
+          symbol: 'BTC-USDT',
+          price: parseFloat(btcData.last),
+          priceChange24h: parseFloat(btcData.change24h || '0'),
+          volume24h: parseFloat(btcData.vol24h || '0'),
+          high24h: parseFloat(btcData.high24h || '0'),
+          low24h: parseFloat(btcData.low24h || '0'),
+          timestamp: Date.now(),
+          lastUpdated: new Date().toISOString()
+        };
+        
+        console.log('📈 Processed BTC Current Data:', currentData);
+        return currentData;
+      }
+
+      console.warn('⚠️ Failed to get real BTC current data, using mock data');
+      return this.getMockBTCCurrentData();
+    } catch (error) {
+      console.error('❌ BTC current data request failed:', error);
+      return this.getMockBTCCurrentData();
+    }
+  }
+
   // 获取服务状态
   getStatus() {
     return {

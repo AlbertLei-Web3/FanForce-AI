@@ -10,13 +10,9 @@ module.exports = {
   solidity: "0.8.20",
   networks: {
     // X Layer Testnet Configuration / X Layer测试网配置
-    xlayerTestnet: {
+    xlayer: {
       url: "https://testrpc.xlayer.tech",
-      chainId: 195,
-      accounts: [ADMIN_PRIVATE_KEY, USER_A_PRIVATE_KEY, USER_B_PRIVATE_KEY].filter(Boolean),
-      timeout: 60000,
-      gasPrice: "auto", // X Layer使用OKB作为gas代币 / X Layer uses OKB as gas token
-      gas: 8000000
+      accounts: [ADMIN_PRIVATE_KEY, USER_A_PRIVATE_KEY, USER_B_PRIVATE_KEY].filter(Boolean)
     },
     // X Layer Mainnet Configuration / X Layer主网配置
     xlayerMainnet: {
