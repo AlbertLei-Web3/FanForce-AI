@@ -46,7 +46,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/pg": "^8.15.4",
     "autoprefixer": "^10.0.1",
-    "axios": "^1.6.0",
+    "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",
     "colors": "^1.4.0",
     "cors": "^2.8.5",
