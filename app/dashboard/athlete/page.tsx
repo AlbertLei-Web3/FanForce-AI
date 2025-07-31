@@ -34,6 +34,7 @@ import ICPBonusWidget from '@/app/components/ICPBonusWidget'
 import { walletService } from '@/app/services/walletService'
 import { vaultService } from '@/app/services/vaultService'
 import { okxDexService } from '@/app/services/okxDexService'
+import { useToast } from '@/app/components/shared/Toast'
 import { 
   FaTrophy, 
   FaFistRaised, 
@@ -223,6 +224,7 @@ const mockMatchHistory = {
 export default function AthleteDashboard() {
   const { language } = useLanguage()
   const router = useRouter()
+  const { showToast, ToastContainer } = useToast()
   const [activeTab, setActiveTab] = useState('overview')
   const [currentStatus, setCurrentStatus] = useState(mockAthleteProfile.status)
   const [showEntryFeeModal, setShowEntryFeeModal] = useState(false)
@@ -256,26 +258,37 @@ export default function AthleteDashboard() {
     }
   }
 
-  // Handle entry fee payment / 处理入赛手续费支付
   const handlePayEntryFee = () => {
-    if (mockAthleteProfile.icpSeasonBonusBalance >= mockAthleteProfile.entryFeeAmount) {
-      setCurrentStatus('active')
-      setShowEntryFeeModal(false)
-      // In real app, deduct from virtual balance / 在真实应用中，从虚拟余额扣除
-      console.log(`Entry fee of ${mockAthleteProfile.entryFeeAmount} CHZ deducted from virtual balance`)
-    } else {
-      alert(language === 'en' ? 'Insufficient virtual CHZ balance!' : '虚拟CHZ余额不足！')
+    if (mockAthleteProfile.icpSeasonBonusBalance < mockAthleteProfile.entryFeeAmount) {
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Insufficient virtual CHZ balance!' : '虚拟CHZ余额不足！'
+      })
+      return
     }
+    
+    // 入赛费用支付成功后显示Toast
+    showToast({
+      type: 'success',
+      message: language === 'en' 
+        ? `Entry fee paid: ${mockAthleteProfile.entryFeeAmount} Virtual CHZ` 
+        : `已支付入赛费用：${mockAthleteProfile.entryFeeAmount} 虚拟CHZ`
+    })
+    setCurrentStatus('active')
+    setShowEntryFeeModal(false)
+    // In real app, deduct from virtual balance / 在真实应用中，从虚拟余额扣除
   }
 
-  // Request mainnet CHZ payout / 请求主网CHZ支付
   const handleRequestPayout = () => {
     if (seasonRequirementsMet) {
       setShowPayoutModal(true)
     } else {
-      alert(language === 'en' 
-        ? 'Complete season requirements first: 10+ matches and 5+ verified social posts' 
-        : '请先完成赛季要求：10场比赛和5条已验证的社交帖子')
+      showToast({
+        type: 'error',
+        message: language === 'en' 
+          ? 'Complete season requirements first: 10+ matches and 5+ verified social posts' 
+          : '请先完成赛季要求：10场比赛和5条已验证的社交帖子'
+      })
     }
   }
 
@@ -285,117 +298,113 @@ export default function AthleteDashboard() {
       const result = await walletService.autoConnect();
       if (result.success && result.walletInfo) {
         setWalletInfo(result.walletInfo);
-        console.log('Wallet connected:', result.walletInfo);
+        // 钱包连接成功后显示Toast
+        showToast({
+          type: 'success',
+          message: language === 'en' ? 'Wallet connected successfully!' : '钱包连接成功！'
+        })
       } else {
-        alert(language === 'en' ? result.error || 'Failed to connect wallet' : result.error || '连接钱包失败');
+        showToast({
+          type: 'error',
+          message: language === 'en' ? result.error || 'Failed to connect wallet' : result.error || '连接钱包失败'
+        })
       }
     } catch (error) {
-      console.error('Failed to connect wallet:', error);
-      alert(language === 'en' ? 'Failed to connect wallet' : '连接钱包失败');
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Failed to connect wallet' : '连接钱包失败'
+      })
     }
   };
 
   // 新增：切换到X Layer Testnet
   const switchToXLayerTestnet = async () => {
+    const { ethereum } = window as any;
+    
+    if (!ethereum) {
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'MetaMask not found' : '未找到MetaMask'
+      })
+      return;
+    }
+
+    // X Layer Testnet配置
+    const xLayerTestnet = {
+      chainId: '0xC3', // 195
+      chainName: 'X Layer Testnet',
+      nativeCurrency: {
+        name: 'ETH',
+        symbol: 'ETH',
+        decimals: 18
+      },
+      rpcUrls: ['https://testrpc.xlayer.tech'],
+      blockExplorerUrls: ['https://testnet.xlayer.tech']
+    };
+
     try {
-      const { ethereum } = window as any;
-      if (!ethereum) {
-        alert(language === 'en' ? 'MetaMask not found' : '未找到MetaMask');
-        return;
-      }
-
-      // X Layer Testnet配置
-      const xLayerTestnet = {
-        chainId: '0xc3', // 195
-        chainName: 'X Layer Testnet',
-        nativeCurrency: {
-          name: 'ETH',
-          symbol: 'ETH',
-          decimals: 18
-        },
-        rpcUrls: ['https://testrpc.xlayer.tech'],
-        blockExplorerUrls: ['https://testnet.xlayer.tech']
-      };
-
       // 尝试切换到X Layer Testnet
       await ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0xc3' }]
+        params: [{ chainId: '0xC3' }]
       });
-
-      // 刷新钱包信息
-      const result = await walletService.autoConnect();
-      if (result.success && result.walletInfo) {
-        setWalletInfo(result.walletInfo);
-        console.log('Switched to X Layer Testnet:', result.walletInfo);
-      }
-    } catch (error: any) {
-      console.error('Failed to switch network:', error);
       
-      // 如果网络不存在，尝试添加网络
-      if (error.code === 4902) {
+      // 网络切换成功后显示Toast
+      showToast({
+        type: 'success',
+        message: language === 'en' ? 'Switched to X Layer Testnet' : '已切换到X Layer测试网'
+      })
+    } catch (switchError: any) {
+      // 如果网络不存在，尝试添加它
+      if (switchError.code === 4902) {
         try {
-          const { ethereum } = window as any;
           await ethereum.request({
             method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: '0xc3',
-              chainName: 'X Layer Testnet',
-              nativeCurrency: {
-                name: 'ETH',
-                symbol: 'ETH',
-                decimals: 18
-              },
-              rpcUrls: ['https://testrpc.xlayer.tech'],
-              blockExplorerUrls: ['https://testnet.xlayer.tech']
-            }]
+            params: [xLayerTestnet]
           });
-          
-          // 重新尝试连接
-          const result = await walletService.autoConnect();
-          if (result.success && result.walletInfo) {
-            setWalletInfo(result.walletInfo);
-            console.log('Added and switched to X Layer Testnet:', result.walletInfo);
-          }
+          // 网络添加成功后显示Toast
+          showToast({
+            type: 'success',
+            message: language === 'en' ? 'X Layer Testnet added and switched' : '已添加并切换到X Layer测试网'
+          })
         } catch (addError) {
-          console.error('Failed to add network:', addError);
-          alert(language === 'en' ? 'Failed to add X Layer Testnet' : '添加X Layer测试网失败');
+          showToast({
+            type: 'error',
+            message: language === 'en' ? 'Failed to add X Layer Testnet' : '添加X Layer测试网失败'
+          })
         }
       } else {
-        alert(language === 'en' ? 'Failed to switch network' : '切换网络失败');
+        showToast({
+          type: 'error',
+          message: language === 'en' ? 'Failed to switch network' : '切换网络失败'
+        })
       }
     }
   };
 
   // 获取真实USDC余额
   const fetchRealUSDCBalance = async () => {
+    // 只在钱包已连接时才获取余额
     if (!walletInfo?.isConnected) {
-      console.log('Wallet not connected, setting balance to 0')
-      setRealUSDCBalance('0')
-      return
+      setRealUSDCBalance('0');
+      return;
     }
 
-    setIsLoadingBalance(true)
+    setIsLoadingBalance(true);
     try {
-      console.log('Fetching USDC balance...')
-      console.log('Wallet info:', walletInfo)
-      
-      const initialized = await vaultService.initialize()
-      console.log('Vault service initialized:', initialized)
-      
+      const initialized = await vaultService.initialize();
       if (initialized) {
-        const balance = await vaultService.getUSDCBalance()
-        console.log('USDC balance fetched:', balance)
-        setRealUSDCBalance(balance)
+        const balance = await vaultService.getUSDCBalance();
+        setRealUSDCBalance(balance);
       } else {
-        console.log('Vault service initialization failed')
-        setRealUSDCBalance('0')
+        // 静默处理初始化失败，不显示Toast
+        setRealUSDCBalance('0');
       }
     } catch (error) {
-      console.error('Failed to fetch USDC balance:', error)
-      setRealUSDCBalance('0')
+      // 静默处理错误，不显示Toast
+      setRealUSDCBalance('0');
     } finally {
-      setIsLoadingBalance(false)
+      setIsLoadingBalance(false);
     }
   }
 
@@ -421,7 +430,10 @@ export default function AthleteDashboard() {
 
   // 当钱包连接状态改变时，获取USDC余额
   useEffect(() => {
-    fetchRealUSDCBalance()
+    // 只在钱包已连接时才获取余额
+    if (walletInfo?.isConnected) {
+      fetchRealUSDCBalance()
+    }
   }, [walletInfo?.isConnected, walletInfo?.address])
 
   // 定期刷新余额（每30秒）
@@ -438,14 +450,20 @@ export default function AthleteDashboard() {
   // 修改：处理托管到基金会的函数（使用服务层）
   const handleVaultTransfer = async () => {
     if (!seasonRequirementsMet) {
-      alert(language === 'en' 
-        ? 'Complete season requirements first: 10+ matches and 5+ verified social posts' 
-        : '请先完成赛季要求：10场比赛和5条已验证的社交帖子')
+      showToast({
+        type: 'error',
+        message: language === 'en' 
+          ? 'Complete season requirements first: 10+ matches and 5+ verified social posts' 
+          : '请先完成赛季要求：10场比赛和5条已验证的社交帖子'
+      })
       return
     }
     
     if (!walletInfo?.isConnected) {
-      alert(language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包')
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包'
+      })
       return
     }
     
@@ -456,55 +474,77 @@ export default function AthleteDashboard() {
 
   // 修改：确认托管到基金会（使用钱包地址和USDC）
   const handleConfirmVaultTransfer = async () => {
+    console.log('🚀 Starting vault transfer process...');
+    console.log('Transfer amount:', transferAmount);
+    
     // 验证输入金额
     const amount = parseFloat(transferAmount)
     if (isNaN(amount) || amount <= 0) {
-      alert(language === 'en' ? 'Please enter a valid amount' : '请输入有效金额')
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Please enter a valid amount' : '请输入有效金额'
+      })
       return
     }
 
     setVaultTransferLoading(true)
     try {
+      console.log('📡 Initializing vault service...');
       // 初始化金库服务
       const initialized = await vaultService.initialize();
       if (!initialized) {
         throw new Error('Failed to initialize vault service');
       }
+      console.log('✅ Vault service initialized');
 
+      console.log('🔍 Checking vault health...');
       // 检查金库健康状态
       const isHealthy = await vaultService.isHealthy();
       if (!isHealthy) {
         throw new Error('Vault is not in healthy state');
       }
+      console.log('✅ Vault is healthy');
 
+      console.log('💰 Getting USDC balance...');
       // 获取用户USDC余额
       const usdcBalance = await vaultService.getUSDCBalance();
+      console.log('USDC balance:', usdcBalance);
       
       if (parseFloat(usdcBalance) < amount) {
-        throw new Error('Insufficient USDC balance');
+        throw new Error(`Insufficient USDC balance. Available: ${usdcBalance}, Required: ${amount}`);
       }
 
+      console.log('💸 Executing deposit...');
       // 执行存款到金库
       const result = await vaultService.deposit(amount);
+      console.log('Deposit result:', result);
       
       if (result.success) {
         setShowVaultModal(false)
         setTransferAmount('') // 清空输入
-        alert(language === 'en' 
-          ? `Successfully transferred ${amount} USDC to Foundation Vault! Transaction: ${result.transactionHash}` 
-          : `成功托管 ${amount} USDC到基金会！交易哈希: ${result.transactionHash}`)
         
-        // 跳转到金库页面
-        router.push('/dashboard/vault')
+        // 只在这里显示成功Toast通知
+        showToast({
+          type: 'success',
+          message: language === 'en' 
+            ? `Successfully transferred ${amount} USDC to Foundation Vault! Transaction: ${result.transactionHash}` 
+            : `成功托管 ${amount} USDC到基金会！交易哈希: ${result.transactionHash}`
+        })
+        
+        // 删除自动跳转到金库页面的代码
+        // router.push('/dashboard/vault')
       } else {
         throw new Error(result.error || 'Deposit failed');
       }
       
     } catch (error) {
-      console.error('Vault transfer failed:', error)
-      alert(language === 'en' 
-        ? `Failed to transfer to Foundation Vault: ${error instanceof Error ? error.message : 'Unknown error'}` 
-        : `托管到基金会失败: ${error instanceof Error ? error.message : '未知错误'}`)
+      console.error('❌ Vault transfer failed:', error)
+      showToast({
+        type: 'error',
+        message: language === 'en' 
+          ? `Failed to transfer to Foundation Vault: ${error instanceof Error ? error.message : 'Unknown error'}` 
+          : `托管到基金会失败: ${error instanceof Error ? error.message : '未知错误'}`
+      })
     } finally {
       setVaultTransferLoading(false)
     }
@@ -1008,11 +1048,14 @@ export default function AthleteDashboard() {
                 onClick={() => {
                   setShowPayoutModal(false)
                   // In real app, trigger mainnet payout process
-                  alert(language === 'en' ? 'Mainnet payout requested!' : '主网支付请求已提交！')
+                  showToast({
+                    type: 'success',
+                    message: language === 'en' ? 'Mainnet payout requested!' : '主网支付请求已提交！'
+                  })
                 }}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
               >
-                {language === 'en' ? 'Request Payout' : '请求支付'}
+                {language === 'en' ? 'Confirm Payout' : '确认支付'}
               </button>
               <button 
                 onClick={() => setShowPayoutModal(false)}
@@ -1269,6 +1312,7 @@ export default function AthleteDashboard() {
 
       {/* Tab Content / 标签页内容 */}
       {renderTabContent()}
+      <ToastContainer />
     </DashboardLayout>
   )
 } 

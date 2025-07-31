@@ -15,7 +15,7 @@ export const NETWORKS = {
     explorer: 'https://etherscan.io'
   },
   XLAYER_TESTNET: {
-    chainId: '0xc3', // 195
+    chainId: '0xC3', // 195
     name: 'X Layer Testnet',
     rpcUrl: 'https://testrpc.xlayer.tech',
     explorer: 'https://testnet.xlayer.tech'
@@ -50,14 +50,36 @@ export const VAULT_CONTRACT = {
     
     // 状态变量访问函数
     'function asset() external view returns (address)',
-    'function depositFee() external view returns (uint256)',
-    'function withdrawalFee() external view returns (uint256)',
-    'function performanceFee() external view returns (uint256)',
-    'function strategyManager() external view returns (address)',
-    'function autoInvestEnabled() external view returns (bool)',
-    'function emergencyMode() external view returns (bool)',
-    'function FEE_DENOMINATOR() external view returns (uint256)',
-    'function emergencyWithdrawFee() external view returns (uint256)',
+    'function foundationAddress() external view returns (address)',
+    'function authorizedAgent() external view returns (address)',
+    'function totalInvested() external view returns (uint256)',
+    'function depositsEnabled() external view returns (bool)',
+    
+    // 运动员相关函数
+    'function athleteDeposits(address) external view returns (uint256)',
+    'function athleteShares(address) external view returns (uint256)',
+    'function athleteProfits(address) external view returns (uint256)',
+    
+    // 策略执行函数
+    'function executeStrategy(uint256 strategyId, uint256 amount, address targetToken, uint8 marketCondition) external',
+    
+    // 查询函数
+    'function getVaultInfo(address athlete) external view returns (uint256 depositAmount, uint256 shareAmount, uint256 profitAmount, uint256 totalAssets_, uint256 totalInvested_, uint256 availableAmount)',
+    'function getAthleteInfo(address athlete) external view returns (uint256 depositAmount, uint256 shares, uint256 profits, uint256 currentValue, uint256 sharePercentage)',
+    'function getVaultStats() external view returns (uint256 totalAssets_, uint256 totalSupply_, uint256 totalInvested_)',
+    'function calculateCurrentProfit() external view returns (uint256)',
+    'function getTotalDeposits() external view returns (uint256)',
+    'function calculateUserProfit(address athlete, uint256 totalVaultProfit) external view returns (uint256 userPortion, uint256 athleteShare, uint256 foundationShare, uint256 sharePercentage)',
+    
+    // 收益分配函数
+    'function distributeProfitsToAthlete(address athlete, uint256 profitAmount) external',
+    
+    // 管理员函数
+    'function owner() external view returns (address)',
+    'function authorizeAgent(address agent) external',
+    'function setFoundationAddress(address _foundation) external',
+    'function toggleDeposits() external',
+    'function emergencyWithdraw() external',
     
     // 标准ERC-20函数
     'function name() external view returns (string)',
@@ -70,39 +92,15 @@ export const VAULT_CONTRACT = {
     'function approve(address spender, uint256 amount) external returns (bool)',
     'function transferFrom(address from, address to, uint256 amount) external returns (bool)',
     
-    // 安全检查函数
-    'function isHealthy() external view returns (bool)',
-    'function getVaultStatus() external view returns (uint256 totalAssets_, uint256 totalShares, uint256 valuePerShare, bool healthy, bool paused_, bool emergency)',
-    
-    // 策略管理函数
-    'function strategyInvest(uint256 amount) external',
-    'function strategyWithdraw(uint256 amount) external',
-    'function setStrategyManager(address _manager) external',
-    'function toggleEmergencyMode() external',
-    'function toggleAutoInvest() external',
-    
-    // 费用管理函数
-    'function setFeeStructure(uint256 _depositFee, uint256 _withdrawalFee, uint256 _performanceFee) external',
-    
-    // 管理员函数
-    'function owner() external view returns (address)',
-    'function pause() external',
-    'function unpause() external',
-    'function paused() external view returns (bool)',
-    'function emergencyWithdrawAll() external',
-    'function setMaxLimits(uint256 _maxDeposit, uint256 _maxWithdraw, uint256 _maxRedeem, uint256 _maxMint) external',
-    
     // 事件
     'event Deposit(address indexed caller, address indexed owner, uint256 assets, uint256 shares)',
     'event Withdraw(address indexed caller, address indexed receiver, address indexed owner, uint256 assets, uint256 shares)',
-    'event StrategyInvestment(address indexed strategy, uint256 amount, uint256 shares)',
-    'event StrategyWithdrawal(address indexed strategy, uint256 amount, uint256 shares)',
-    'event FeeCollected(uint256 feeAmount, uint256 feeType)',
-    'event EmergencyModeToggled(bool enabled)',
-    'event AutoInvestToggled(bool enabled)',
-    'event StrategyManagerUpdated(address indexed oldManager, address indexed newManager)',
-    'event MaxLimitsUpdated(uint256 maxDeposit, uint256 maxWithdraw, uint256 maxRedeem, uint256 maxMint)',
-    'event FeeStructureUpdated(uint256 depositFee, uint256 withdrawalFee, uint256 performanceFee)',
+    'event AthleteDeposit(address indexed athlete, uint256 usdcAmount, uint256 shares, uint256 timestamp)',
+    'event StrategyExecuted(uint256 indexed strategyId, address indexed executor, uint256 amount, bool success, uint256 timestamp)',
+    'event ProfitDistributed(address indexed athlete, uint256 athleteShare, uint256 foundationShare, uint256 timestamp)',
+    'event AgentAuthorized(address indexed oldAgent, address indexed newAgent)',
+    'event FoundationAddressUpdated(address indexed oldFoundation, address indexed newFoundation)',
+    'event DepositsToggled(bool enabled)',
     'event Transfer(address indexed from, address indexed to, uint256 value)',
     'event Approval(address indexed owner, address indexed spender, uint256 value)'
   ]
