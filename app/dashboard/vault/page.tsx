@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { useLanguage } from '@/app/context/LanguageContext'
 import DashboardLayout from '@/app/components/shared/DashboardLayout'
 import StatCard from '@/app/components/shared/StatCard'
+import { useToast } from '@/app/components/shared/Toast'
 import { 
   FaCoins, 
   FaChartLine, 
@@ -28,127 +29,95 @@ import {
   FaBrain,
   FaClock,
   FaCheckCircle,
-  FaExclamationTriangle
+  FaExclamationTriangle,
+  FaRedo,
+  FaUser,
+  FaDollarSign
 } from 'react-icons/fa'
 import { walletService } from '@/app/services/walletService'
 import { vaultService } from '@/app/services/vaultService'
 import { okxDexService } from '@/app/services/okxDexService'
 import { aiAgentService } from '@/app/services/aiAgentService'
 
-// 模拟金库数据
-const mockVaultData = {
-  totalAssets: '1,250,000',
-  totalShares: '1,000,000',
-  userShares: '50,000',
-  userAssets: '62,500',
-  apy: '15.2',
-  userPercentage: '5.0',
-  totalUsers: 1250,
-  dailyVolume: '450,000',
-  weeklyReturn: '+8.5%',
-  monthlyReturn: '+12.3%'
+// 用户托管信息接口 / User deposit info interface
+interface UserDepositInfo {
+  address: string;
+  deposits: string;
+  shares: string;
+  profits: string;
+  sharePercentage: string;
 }
-
-// 实时投资策略数据
-const mockRealStrategies = [
-  {
-    id: 'top_gainer',
-    name: 'Top Gainer Strategy',
-    description: '买入24小时涨幅前10的token中的top1',
-    allocation: '40%',
-    performance: '+18.5%',
-    status: 'active',
-    lastTrade: '2 hours ago',
-    trades: 156,
-    currentTarget: 'PEPE',
-    confidence: 85,
-    nextExecution: '45 minutes'
-  },
-  {
-    id: 'momentum',
-    name: 'Momentum Strategy',
-    description: '基于价格动量的交易策略',
-    allocation: '35%',
-    performance: '+12.3%',
-    status: 'active',
-    lastTrade: '4 hours ago',
-    trades: 89,
-    currentTarget: 'DOGE',
-    confidence: 75,
-    nextExecution: '2 hours 15 minutes'
-  },
-  {
-    id: 'volume_spike',
-    name: 'Volume Spike Strategy',
-    description: '基于交易量突增的交易策略',
-    allocation: '25%',
-    performance: '+22.1%',
-    status: 'active',
-    lastTrade: '1 hour ago',
-    trades: 203,
-    currentTarget: 'SHIB',
-    confidence: 65,
-    nextExecution: '1 hour 30 minutes'
-  }
-]
-
-// 实时交易记录
-const mockRealTransactions = [
-  {
-    id: 1,
-    type: 'investment',
-    strategy: 'Top Gainer',
-    fromAmount: '1,000',
-    fromToken: 'USDC',
-    toAmount: '4,125,000',
-    toToken: 'PEPE',
-    timestamp: Date.now() - 7200000,
-    status: 'completed',
-    txHash: '0xabcdef1234567890',
-    profit: '+15.2%'
-  },
-  {
-    id: 2,
-    type: 'investment',
-    strategy: 'Momentum',
-    fromAmount: '800',
-    fromToken: 'USDC',
-    toAmount: '10,126',
-    toToken: 'DOGE',
-    timestamp: Date.now() - 14400000,
-    status: 'completed',
-    txHash: '0x7890abcdef123456',
-    profit: '+8.7%'
-  },
-  {
-    id: 3,
-    type: 'profit_distribution',
-    amount: '2,500',
-    token: 'USDC',
-    timestamp: Date.now() - 21600000,
-    status: 'completed',
-    txHash: '0x1234567890abcdef',
-    description: 'Athlete profit distribution'
-  }
-]
 
 export default function VaultPage() {
   const { language } = useLanguage()
+  const { showToast } = useToast()
   const [activeTab, setActiveTab] = useState('overview')
   const [walletInfo, setWalletInfo] = useState<any>(null)
   const [vaultInfo, setVaultInfo] = useState<any>(null)
+  const [userVaultInfo, setUserVaultInfo] = useState<any>(null)
+  const [userDeposits, setUserDeposits] = useState<UserDepositInfo[]>([])
   const [showDepositModal, setShowDepositModal] = useState(false)
   const [showWithdrawModal, setShowWithdrawModal] = useState(false)
   const [depositAmount, setDepositAmount] = useState('')
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingVaultInfo, setIsLoadingVaultInfo] = useState(false)
   const [showBalance, setShowBalance] = useState(true)
   
   // AI Agent状态
   const [aiAgentStatus, setAiAgentStatus] = useState<any>(null)
-  const [strategies, setStrategies] = useState(mockRealStrategies)
-  const [transactions, setTransactions] = useState(mockRealTransactions)
   const [lastExecution, setLastExecution] = useState<number | null>(null)
+
+  // 获取金库信息
+  const fetchVaultInfo = async () => {
+    setIsLoadingVaultInfo(true);
+    try {
+      const initialized = await vaultService.initialize();
+      if (initialized) {
+        // 获取合约总资产信息
+        const contractInfo = await vaultService.getContractTotalAssets();
+        setVaultInfo(contractInfo);
+        
+        // 获取用户托管信息
+        if (walletInfo?.isConnected) {
+          const userInfo = await vaultService.getUserVaultInfo(walletInfo.address);
+          setUserVaultInfo(userInfo);
+        }
+        
+        showToast({
+          type: 'success',
+          message: language === 'en' ? 'Vault info updated!' : '金库信息已更新！'
+        })
+      }
+    } catch (error) {
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Failed to fetch vault info' : '获取金库信息失败'
+      })
+    } finally {
+      setIsLoadingVaultInfo(false);
+    }
+  }
+
+  // 获取所有用户托管信息（模拟数据，实际需要从合约获取）
+  const fetchAllUserDeposits = async () => {
+    try {
+      // 这里应该从合约获取所有用户的托管信息
+      // 目前使用模拟数据，后续需要实现真实的合约调用
+      const mockUsers: UserDepositInfo[] = [
+        {
+          address: '0x36b8ad2ffbf5fed807c1c61bde0effac58fdec85',
+          deposits: '3.1',
+          shares: '0.0000000000031',
+          profits: '0.0',
+          sharePercentage: '100.00%'
+        }
+      ];
+      setUserDeposits(mockUsers);
+    } catch (error) {
+      console.error('Failed to fetch user deposits:', error);
+    }
+  }
 
   // 初始化服务
   useEffect(() => {
@@ -165,21 +134,9 @@ export default function VaultPage() {
         }
       )
 
-      // 如果钱包已连接，加载金库信息
-      const walletInfo = walletService.getWalletInfo();
-      if (walletInfo?.isConnected) {
-        try {
-          const initialized = await vaultService.initialize();
-          if (initialized) {
-            const vaultInfo = await vaultService.getVaultInfo();
-            if (vaultInfo) {
-              setVaultInfo(vaultInfo);
-            }
-          }
-        } catch (error) {
-          console.error('Failed to load vault info:', error);
-        }
-      }
+      // 加载金库信息
+      await fetchVaultInfo();
+      await fetchAllUserDeposits();
 
       // 加载AI Agent状态
       loadAiAgentStatus();
@@ -188,13 +145,29 @@ export default function VaultPage() {
     initializeServices()
   }, [])
 
+  // 当钱包连接状态改变时，获取用户信息
+  useEffect(() => {
+    if (walletInfo?.isConnected) {
+      fetchVaultInfo();
+    }
+  }, [walletInfo?.isConnected, walletInfo?.address])
+
+  // 定期刷新金库信息（每30秒）
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchVaultInfo();
+    }, 30000) // 30秒
+
+    return () => clearInterval(interval)
+  }, [])
+
   // 加载AI Agent状态
   const loadAiAgentStatus = async () => {
     try {
       const status = {
-        strategies: aiAgentService.getStrategies(),
-        lastExecution: aiAgentService.getLastExecution(),
-        canExecute: aiAgentService.canExecute()
+        strategies: aiAgentService.getCurrentStrategy() ? [aiAgentService.getCurrentStrategy()] : [],
+        lastExecution: aiAgentService.getStatus().lastUpdate ? new Date(aiAgentService.getStatus().lastUpdate).getTime() : null,
+        canExecute: aiAgentService.getStatus().isRunning
       };
       setAiAgentStatus(status);
       setLastExecution(status.lastExecution);
@@ -207,24 +180,26 @@ export default function VaultPage() {
   const executeStrategies = async () => {
     try {
       setIsLoading(true);
-      const decisions = await aiAgentService.executeInvestmentStrategies();
       
-      if (decisions.length > 0) {
-        alert(language === 'en' 
-          ? `Executed ${decisions.length} investment strategies successfully!` 
-          : `成功执行了 ${decisions.length} 个投资策略！`);
-        
-        // 刷新状态
-        loadAiAgentStatus();
-      } else {
-        alert(language === 'en' 
-          ? 'No investment decisions made at this time.' 
-          : '当前没有投资决策。');
-      }
+      // 启动AI Agent服务
+      aiAgentService.start();
+      
+      showToast({
+        type: 'success',
+        message: language === 'en' 
+          ? 'AI Agent service started successfully!' 
+          : 'AI代理服务启动成功！'
+      });
+      
+      // 刷新状态
+      loadAiAgentStatus();
     } catch (error) {
-      alert(language === 'en' 
-        ? `Strategy execution failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
-        : `策略执行失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      showToast({
+        type: 'error',
+        message: language === 'en' 
+          ? `Strategy execution failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+          : `策略执行失败: ${error instanceof Error ? error.message : '未知错误'}`
+      });
     } finally {
       setIsLoading(false);
     }
@@ -237,23 +212,35 @@ export default function VaultPage() {
       if (result.success && result.walletInfo) {
         setWalletInfo(result.walletInfo)
       } else {
-        alert(language === 'en' ? result.error || 'Failed to connect wallet' : result.error || '连接钱包失败')
+        showToast({
+          type: 'error',
+          message: language === 'en' ? result.error || 'Failed to connect wallet' : result.error || '连接钱包失败'
+        })
       }
     } catch (error) {
       console.error('Failed to connect wallet:', error)
-      alert(language === 'en' ? 'Failed to connect wallet' : '连接钱包失败')
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Failed to connect wallet' : '连接钱包失败'
+      })
     }
   }
 
   // 处理存款
   const handleDeposit = async () => {
     if (!walletInfo?.isConnected) {
-      alert(language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包')
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包'
+      })
       return
     }
 
     if (!depositAmount || parseFloat(depositAmount) <= 0) {
-      alert(language === 'en' ? 'Please enter a valid amount' : '请输入有效金额')
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Please enter a valid amount' : '请输入有效金额'
+      })
       return
     }
 
@@ -283,24 +270,27 @@ export default function VaultPage() {
       const result = await vaultService.deposit(amount);
       
       if (result.success) {
-        alert(language === 'en' 
-          ? `Deposit successful! You received ${result.shares} shares. Transaction: ${result.transactionHash}` 
-          : `存款成功！您获得了 ${result.shares} 份额。交易哈希: ${result.transactionHash}`)
+        showToast({
+          type: 'success',
+          message: language === 'en' 
+            ? `Deposit successful! You received ${result.shares} shares.` 
+            : `存款成功！您获得了 ${result.shares} 份额。`
+        })
         setShowDepositModal(false)
         setDepositAmount('')
         
         // 刷新金库信息
-        const vaultInfo = await vaultService.getVaultInfo();
-        if (vaultInfo) {
-          setVaultInfo(vaultInfo);
-        }
+        await fetchVaultInfo();
       } else {
         throw new Error(result.error || 'Deposit failed');
       }
     } catch (error) {
-      alert(language === 'en' 
-        ? `Deposit failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
-        : `存款失败: ${error instanceof Error ? error.message : '未知错误'}`)
+      showToast({
+        type: 'error',
+        message: language === 'en' 
+          ? `Deposit failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+          : `存款失败: ${error instanceof Error ? error.message : '未知错误'}`
+      })
     } finally {
       setIsLoading(false)
     }
@@ -309,12 +299,18 @@ export default function VaultPage() {
   // 处理提款
   const handleWithdraw = async () => {
     if (!walletInfo?.isConnected) {
-      alert(language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包')
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包'
+      })
       return
     }
 
     if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
-      alert(language === 'en' ? 'Please enter a valid amount' : '请输入有效金额')
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Please enter a valid amount' : '请输入有效金额'
+      })
       return
     }
 
@@ -351,24 +347,27 @@ export default function VaultPage() {
       const result = await vaultService.withdraw(amount);
       
       if (result.success) {
-        alert(language === 'en' 
-          ? `Withdraw successful! You received ${result.assets} USDC. Transaction: ${result.transactionHash}` 
-          : `提款成功！您获得了 ${result.assets} USDC。交易哈希: ${result.transactionHash}`)
+        showToast({
+          type: 'success',
+          message: language === 'en' 
+            ? `Withdraw successful! You received ${result.assets} USDC.` 
+            : `提款成功！您获得了 ${result.assets} USDC。`
+        })
         setShowWithdrawModal(false)
         setWithdrawAmount('')
         
         // 刷新金库信息
-        const newVaultInfo = await vaultService.getVaultInfo();
-        if (newVaultInfo) {
-          setVaultInfo(newVaultInfo);
-        }
+        await fetchVaultInfo();
       } else {
         throw new Error(result.error || 'Withdraw failed');
       }
     } catch (error) {
-      alert(language === 'en' 
-        ? `Withdraw failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
-        : `提款失败: ${error instanceof Error ? error.message : '未知错误'}`)
+      showToast({
+        type: 'error',
+        message: language === 'en' 
+          ? `Withdraw failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+          : `提款失败: ${error instanceof Error ? error.message : '未知错误'}`
+      })
     } finally {
       setIsLoading(false)
     }
@@ -385,24 +384,62 @@ export default function VaultPage() {
               <StatCard 
                 icon={<FaCoins />} 
                 title={language === 'en' ? "Total Assets" : "总资产"} 
-                value={`$${mockVaultData.totalAssets}`} 
+                value={vaultInfo ? `${vaultInfo.totalAssets} USDC` : 'Loading...'} 
               />
               <StatCard 
                 icon={<FaChartLine />} 
-                title={language === 'en' ? "APY" : "年化收益率"} 
-                value={`${mockVaultData.apy}%`} 
+                title={language === 'en' ? "Total Shares" : "总份额"} 
+                value={vaultInfo ? `${vaultInfo.totalShares} FFVAULT` : 'Loading...'} 
               />
               <StatCard 
                 icon={<FaUsers />} 
-                title={language === 'en' ? "Total Users" : "总用户数"} 
-                value={mockVaultData.totalUsers.toLocaleString()} 
+                title={language === 'en' ? "Active Users" : "活跃用户"} 
+                value={userDeposits.length.toString()} 
               />
               <StatCard 
                 icon={<FaExchangeAlt />} 
-                title={language === 'en' ? "Daily Volume" : "日交易量"} 
-                value={`$${mockVaultData.dailyVolume}`} 
+                title={language === 'en' ? "Contract Address" : "合约地址"} 
+                value={vaultInfo ? `${vaultInfo.contractAddress.slice(0, 6)}...${vaultInfo.contractAddress.slice(-4)}` : 'Loading...'} 
               />
             </div>
+
+            {/* 合约状态详情 */}
+            {vaultInfo && (
+              <div className="bg-gray-800/50 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center">
+                  <FaInfoCircle className="mr-2 text-blue-400" />
+                  {language === 'en' ? "Contract Status Details" : "合约状态详情"}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">{language === 'en' ? 'Total Assets:' : '总资产：'}</span>
+                      <span className="text-white font-bold">{vaultInfo.totalAssets} USDC</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">{language === 'en' ? 'Total Shares:' : '总份额：'}</span>
+                      <span className="text-white font-bold">{vaultInfo.totalShares} FFVAULT</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">{language === 'en' ? 'Contract:' : '合约地址：'}</span>
+                      <span className="text-blue-400 text-xs truncate">
+                        {vaultInfo.contractAddress}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">{language === 'en' ? 'Raw Assets:' : '原始资产：'}</span>
+                      <span className="text-white font-bold text-xs">{vaultInfo.rawTotalAssets}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">{language === 'en' ? 'Raw Shares:' : '原始份额：'}</span>
+                      <span className="text-white font-bold text-xs">{vaultInfo.rawTotalShares}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* AI Agent状态 */}
             <div className="bg-gray-800/50 rounded-lg p-6">
@@ -446,116 +483,104 @@ export default function VaultPage() {
             </div>
 
             {/* 用户投资信息 */}
-            <div className="bg-gray-800/50 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center">
-                <FaWallet className="mr-2 text-blue-400" />
-                {language === 'en' ? "Your Investment" : "您的投资"}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <p className="text-gray-400 text-sm">{language === 'en' ? "Your Shares" : "您的份额"}</p>
-                  <p className="text-white text-2xl font-bold">{mockVaultData.userShares}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-gray-400 text-sm">{language === 'en' ? "Your Assets" : "您的资产"}</p>
-                  <p className="text-white text-2xl font-bold">${mockVaultData.userAssets}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-gray-400 text-sm">{language === 'en' ? "Your Percentage" : "您的占比"}</p>
-                  <p className="text-white text-2xl font-bold">{mockVaultData.userPercentage}%</p>
+            {userVaultInfo && (
+              <div className="bg-gray-800/50 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center">
+                  <FaWallet className="mr-2 text-blue-400" />
+                  {language === 'en' ? "Your Investment" : "您的投资"}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="text-center">
+                    <p className="text-gray-400 text-sm">{language === 'en' ? "Your Deposits" : "您的托管"}</p>
+                    <p className="text-white text-2xl font-bold">{userVaultInfo.userDeposits} USDC</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-gray-400 text-sm">{language === 'en' ? "Your Shares" : "您的份额"}</p>
+                    <p className="text-white text-2xl font-bold">{userVaultInfo.userShares} FFVAULT</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-gray-400 text-sm">{language === 'en' ? "Your Profits" : "您的收益"}</p>
+                    <p className="text-green-400 text-2xl font-bold">{userVaultInfo.userProfits} USDC</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-gray-400 text-sm">{language === 'en' ? "Share %" : "份额占比"}</p>
+                    <p className="text-yellow-400 text-2xl font-bold">{userVaultInfo.sharePercentage}</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+          </div>
+        )
 
-            {/* 实时投资策略 */}
-            <div className="bg-gray-800/50 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center">
-                <FaRocket className="mr-2 text-green-400" />
-                {language === 'en' ? "Live Investment Strategies" : "实时投资策略"}
+      case 'users':
+        return (
+          <div className="bg-gray-800/50 rounded-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center">
+                <FaUsers className="mr-2 text-green-400" />
+                {language === 'en' ? "User Deposit List" : "用户托管列表"}
               </h3>
+              <button
+                onClick={fetchAllUserDeposits}
+                disabled={isLoadingVaultInfo}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center"
+              >
+                {isLoadingVaultInfo ? (
+                  <>
+                    <FaSpinner className="inline mr-2 animate-spin" />
+                    {language === 'en' ? 'Loading...' : '加载中...'}
+                  </>
+                ) : (
+                  <>
+                    <FaRedo className="inline mr-2" />
+                    {language === 'en' ? 'Refresh' : '刷新'}
+                  </>
+                )}
+              </button>
+            </div>
+            
+            {userDeposits.length > 0 ? (
               <div className="space-y-4">
-                {strategies.map((strategy) => (
-                  <div key={strategy.id} className="bg-gray-700/50 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-bold text-white">{strategy.name}</h4>
-                        <p className="text-gray-400 text-sm">{strategy.description}</p>
+                {userDeposits.map((user, index) => (
+                  <div key={index} className="bg-gray-700/50 rounded-lg p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                      <div className="flex items-center space-x-3">
+                        <FaUser className="text-blue-400" />
+                        <div>
+                          <p className="font-bold text-white text-sm">
+                            {user.address.slice(0, 6)}...{user.address.slice(-4)}
+                          </p>
+                          <p className="text-gray-400 text-xs">{user.address}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-green-400 font-bold">{strategy.performance}</p>
-                        <p className="text-gray-400 text-sm">{strategy.allocation}</p>
+                      <div className="text-center">
+                        <p className="text-gray-400 text-xs">{language === 'en' ? 'Deposits' : '托管金额'}</p>
+                        <p className="text-white font-bold">{user.deposits} USDC</p>
                       </div>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-400">{language === 'en' ? "Current Target:" : "当前目标:"}</span>
-                        <p className="text-white font-medium">{strategy.currentTarget}</p>
+                      <div className="text-center">
+                        <p className="text-gray-400 text-xs">{language === 'en' ? 'Shares' : '份额'}</p>
+                        <p className="text-white font-bold">{user.shares} FFVAULT</p>
                       </div>
-                      <div>
-                        <span className="text-gray-400">{language === 'en' ? "Confidence:" : "置信度:"}</span>
-                        <p className="text-white font-medium">{strategy.confidence}%</p>
+                      <div className="text-center">
+                        <p className="text-gray-400 text-xs">{language === 'en' ? 'Profits' : '收益'}</p>
+                        <p className="text-green-400 font-bold">{user.profits} USDC</p>
                       </div>
-                      <div>
-                        <span className="text-gray-400">{language === 'en' ? "Next Execution:" : "下次执行:"}</span>
-                        <p className="text-white font-medium">{strategy.nextExecution}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-400">{language === 'en' ? "Total Trades:" : "总交易:"}</span>
-                        <p className="text-white font-medium">{strategy.trades}</p>
+                      <div className="text-center">
+                        <p className="text-gray-400 text-xs">{language === 'en' ? 'Share %' : '份额占比'}</p>
+                        <p className="text-yellow-400 font-bold">{user.sharePercentage}</p>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        )
-
-      case 'transactions':
-        return (
-          <div className="bg-gray-800/50 rounded-lg p-6">
-            <h3 className="text-lg font-bold text-white mb-4 flex items-center">
-              <FaHistory className="mr-2 text-yellow-400" />
-              {language === 'en' ? "Live Transaction History" : "实时交易历史"}
-            </h3>
-            <div className="space-y-4">
-              {transactions.map((tx) => (
-                <div key={tx.id} className="bg-gray-700/50 rounded-lg p-4">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-3 h-3 rounded-full ${
-                        tx.type === 'investment' ? 'bg-blue-500' : 
-                        tx.type === 'profit_distribution' ? 'bg-green-500' : 'bg-purple-500'
-                      }`}></div>
-                      <div>
-                        <p className="font-bold text-white capitalize">{tx.type}</p>
-                        {tx.strategy && (
-                          <p className="text-blue-400 text-sm">{tx.strategy}</p>
-                        )}
-                        <p className="text-gray-400 text-sm">
-                          {tx.type === 'investment' 
-                            ? `${tx.fromAmount} ${tx.fromToken} → ${tx.toAmount} ${tx.toToken}`
-                            : `${tx.amount} ${tx.token}`
-                          }
-                        </p>
-                        {tx.profit && (
-                          <p className="text-green-400 text-sm">{tx.profit}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-gray-400 text-sm">
-                        {new Date(tx.timestamp).toLocaleString()}
-                      </p>
-                      <div className="flex items-center space-x-2">
-                        <FaCheckCircle className="text-green-400 text-sm" />
-                        <p className="text-green-400 text-sm">{tx.status}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            ) : (
+              <div className="text-center py-8">
+                <FaUsers className="text-gray-400 text-4xl mx-auto mb-4" />
+                <p className="text-gray-400">
+                  {language === 'en' ? 'No user deposits found' : '暂无用户托管记录'}
+                </p>
+              </div>
+            )}
           </div>
         )
 
@@ -619,6 +644,23 @@ export default function VaultPage() {
           >
             {language === 'en' ? 'Withdraw' : '提款'}
           </button>
+          <button
+            onClick={fetchVaultInfo}
+            disabled={isLoadingVaultInfo}
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-lg transition-colors flex items-center"
+          >
+            {isLoadingVaultInfo ? (
+              <>
+                <FaSpinner className="inline mr-2 animate-spin" />
+                {language === 'en' ? 'Loading...' : '加载中...'}
+              </>
+            ) : (
+                                <>
+                    <FaRedo className="inline mr-2" />
+                    {language === 'en' ? 'Refresh' : '刷新'}
+                  </>
+            )}
+          </button>
         </div>
 
         {/* 标签页导航 */}
@@ -635,14 +677,14 @@ export default function VaultPage() {
               {language === 'en' ? 'Overview' : '概览'}
             </button>
             <button
-              onClick={() => setActiveTab('transactions')}
+              onClick={() => setActiveTab('users')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'transactions'
+                activeTab === 'users'
                   ? 'border-blue-500 text-blue-400'
                   : 'border-transparent text-gray-400 hover:text-gray-300'
               }`}
             >
-              {language === 'en' ? 'Transactions' : '交易记录'}
+              {language === 'en' ? 'Users' : '用户列表'}
             </button>
           </nav>
         </div>
