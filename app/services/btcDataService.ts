@@ -23,6 +23,18 @@ export interface MarketHeatResult {
   description: string;
 }
 
+// 动态资金配置策略结果
+// Dynamic Fund Allocation Strategy Result
+export interface StrategyResult {
+  marketState: string;
+  buyBTC: number;
+  stake: number;
+  summary: string;
+  riskLevel: string;
+  recommendation: string;
+  timestamp: number;
+}
+
 // BTC 数据服务类
 // BTC Data Service Class
 export class BTCDataService {
@@ -30,6 +42,7 @@ export class BTCDataService {
   private updateInterval: NodeJS.Timeout | null = null;
   private currentData: BTCData | null = null;
   private dataCallbacks: ((data: BTCData) => void)[] = [];
+  private strategyCallbacks: ((strategy: StrategyResult) => void)[] = [];
 
   // 初始化服务
   // Initialize service
@@ -161,9 +174,16 @@ export class BTCDataService {
         const marketHeat = this.judgeMarketHeat();
         console.log(`   Market Heat: ${marketHeat.status} (${marketHeat.description})`);
 
+        // 获取动态资金配置策略
+        // Get dynamic fund allocation strategy
+        const strategy = this.getStrategyRefined(marketHeat.status);
+        console.log(`   Strategy: ${strategy.summary}`);
+        console.log(`   Allocation: ${(strategy.buyBTC * 100).toFixed(0)}% BTC, ${(strategy.stake * 100).toFixed(0)}% Stake`);
+
         // 通知所有回调函数
         // Notify all callback functions
         this.notifyDataCallbacks();
+        this.notifyStrategyCallbacks(strategy);
       } else {
         console.warn('⚠️ Failed to fetch BTC data');
       }
@@ -237,10 +257,79 @@ export class BTCDataService {
     };
   }
 
+  // 获取动态资金配置策略
+  // Get dynamic fund allocation strategy
+  getStrategyRefined(marketState: string): StrategyResult {
+    const refinedMap = {
+      '🔥 火热': {
+        buyBTC: 0.30,
+        stake: 0.70,
+        summary: '市场疯狂上涨，最大允许30%投机，其余用于锁仓稳健增长。',
+        riskLevel: 'HIGH',
+        recommendation: 'Market is in frenzy mode, max 30% for speculation, rest for stable staking growth.'
+      },
+      '🌤️ 正常偏热': {
+        buyBTC: 0.20,
+        stake: 0.80,
+        summary: '市场偏热但尚未疯狂，继续偏保守，逐步获利。',
+        riskLevel: 'MEDIUM-HIGH',
+        recommendation: 'Market is moderately hot but not frenzied, remain conservative and take profits gradually.'
+      },
+      '🌥️ 平静期': {
+        buyBTC: 0.10,
+        stake: 0.90,
+        summary: '无明显趋势，仅保留最小投机敞口，剩余全部质押稳健获取收益。',
+        riskLevel: 'LOW',
+        recommendation: 'No clear trend, maintain minimal speculation exposure, rest for stable staking returns.'
+      },
+      '😱 恐慌下跌': {
+        buyBTC: 0.05,
+        stake: 0.95,
+        summary: '极端防守，仅留极少量博弈短期反弹，大部分进入防御状态。',
+        riskLevel: 'VERY_LOW',
+        recommendation: 'Extreme defense mode, minimal exposure for short-term bounce, majority in defensive position.'
+      },
+      '🧊 极冷': {
+        buyBTC: 0.0,
+        stake: 1.0,
+        summary: '市场无交易活力，全体进入"冬眠模式"，等待拐点。',
+        riskLevel: 'MINIMAL',
+        recommendation: 'Market lacks trading activity, enter "hibernation mode" and wait for turning point.'
+      },
+      '❓ 未知': {
+        buyBTC: 0.05,
+        stake: 0.95,
+        summary: '数据不可用，采用最保守策略。',
+        riskLevel: 'UNKNOWN',
+        recommendation: 'Data unavailable, adopt most conservative strategy.'
+      }
+    };
+
+    const strategy = refinedMap[marketState] || refinedMap['❓ 未知'];
+    
+    return {
+      marketState: marketState,
+      buyBTC: strategy.buyBTC,
+      stake: strategy.stake,
+      summary: strategy.summary,
+      riskLevel: strategy.riskLevel,
+      recommendation: strategy.recommendation,
+      timestamp: Date.now()
+    };
+  }
+
   // 获取当前数据
   // Get current data
   getCurrentData(): BTCData | null {
     return this.currentData;
+  }
+
+  // 获取当前策略
+  // Get current strategy
+  getCurrentStrategy(): StrategyResult | null {
+    if (!this.currentData) return null;
+    const marketHeat = this.judgeMarketHeat();
+    return this.getStrategyRefined(marketHeat.status);
   }
 
   // 获取JSON格式的数据
@@ -250,18 +339,25 @@ export class BTCDataService {
       return JSON.stringify({ error: 'No data available' }, null, 2);
     }
     
-    const dataWithHeat = {
+    const dataWithAnalysis = {
       ...this.currentData,
-      marketHeat: this.judgeMarketHeat()
+      marketHeat: this.judgeMarketHeat(),
+      strategy: this.getStrategyRefined(this.judgeMarketHeat().status)
     };
     
-    return JSON.stringify(dataWithHeat, null, 2);
+    return JSON.stringify(dataWithAnalysis, null, 2);
   }
 
   // 注册数据更新回调
   // Register data update callback
   onDataUpdate(callback: (data: BTCData) => void): void {
     this.dataCallbacks.push(callback);
+  }
+
+  // 注册策略更新回调
+  // Register strategy update callback
+  onStrategyUpdate(callback: (strategy: StrategyResult) => void): void {
+    this.strategyCallbacks.push(callback);
   }
 
   // 移除数据更新回调
@@ -273,8 +369,17 @@ export class BTCDataService {
     }
   }
 
-  // 通知所有回调函数
-  // Notify all callback functions
+  // 移除策略更新回调
+  // Remove strategy update callback
+  removeStrategyCallback(callback: (strategy: StrategyResult) => void): void {
+    const index = this.strategyCallbacks.indexOf(callback);
+    if (index > -1) {
+      this.strategyCallbacks.splice(index, 1);
+    }
+  }
+
+  // 通知所有数据回调函数
+  // Notify all data callback functions
   private notifyDataCallbacks(): void {
     if (this.currentData) {
       this.dataCallbacks.forEach(callback => {
@@ -285,6 +390,18 @@ export class BTCDataService {
         }
       });
     }
+  }
+
+  // 通知所有策略回调函数
+  // Notify all strategy callback functions
+  private notifyStrategyCallbacks(strategy: StrategyResult): void {
+    this.strategyCallbacks.forEach(callback => {
+      try {
+        callback(strategy);
+      } catch (error) {
+        console.error('❌ Error in strategy callback:', error);
+      }
+    });
   }
 
   // 获取服务状态
