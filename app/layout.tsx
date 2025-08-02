@@ -9,6 +9,7 @@ import { LanguageProvider } from './context/LanguageContext'
 import { Web3Provider } from './context/Web3Context'
 import { ContractProvider } from './context/ContractContext'
 import { UserProvider } from './context/UserContext'
+import { WalletProvider } from './context/WalletContext'
 import { ClientOnly } from './components/ClientLayout'
 import { Toaster } from 'react-hot-toast'
 
@@ -32,30 +33,32 @@ export default function RootLayout({
             <Web3Provider>
               <ContractProvider>
                 <UserProvider>
-                  {children}
-                  <Toaster 
-                    position="top-right"
-                    toastOptions={{
-                      duration: 4000,
-                      style: {
-                        background: '#1f2937',
-                        color: '#fff',
-                        border: '1px solid #374151',
-                      },
-                      success: {
+                  <WalletProvider>
+                    {children}
+                    <Toaster 
+                      position="top-right"
+                      toastOptions={{
+                        duration: 4000,
                         style: {
-                          background: '#059669',
+                          background: '#1f2937',
                           color: '#fff',
+                          border: '1px solid #374151',
                         },
-                      },
-                      error: {
-                        style: {
-                          background: '#dc2626',
-                          color: '#fff',
+                        success: {
+                          style: {
+                            background: '#059669',
+                            color: '#fff',
+                          },
                         },
-                      },
-                    }}
-                  />
+                        error: {
+                          style: {
+                            background: '#dc2626',
+                            color: '#fff',
+                          },
+                        },
+                      }}
+                    />
+                  </WalletProvider>
                 </UserProvider>
               </ContractProvider>
             </Web3Provider>

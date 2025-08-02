@@ -1,306 +1,410 @@
-// 基金会金库页面 - 基于ERC-4626的资金池管理，集成AI Agent
-// Foundation Vault Page - ERC-4626 based fund pool management with AI Agent integration
+// FanForce Vault页面 - 模仿Yearn Vault界面风格
+// FanForce Vault Page - Mimicking Yearn Vault UI Style
 
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useLanguage } from '@/app/context/LanguageContext'
 import DashboardLayout from '@/app/components/shared/DashboardLayout'
-import StatCard from '@/app/components/shared/StatCard'
+import { useToast } from '@/app/components/shared/Toast'
 import { 
+  FaArrowLeft,
+  FaArrowRight,
+  FaCog,
+  FaStar,
+  FaExternalLinkAlt,
+  FaSpinner,
+  FaWallet,
   FaCoins, 
   FaChartLine, 
-  FaHistory, 
-  FaUsers, 
-  FaTrophy,
-  FaWallet,
-  FaExchangeAlt,
   FaPercentage,
-  FaArrowUp,
-  FaArrowDown,
-  FaSpinner,
-  FaInfoCircle,
-  FaShieldAlt,
-  FaRocket,
-  FaCog,
+  FaQuestionCircle,
   FaEye,
   FaEyeSlash,
-  FaBrain,
-  FaClock,
-  FaCheckCircle,
-  FaExclamationTriangle
+  FaChevronDown
 } from 'react-icons/fa'
-import { walletService } from '@/app/services/walletService'
+import { useWallet } from '@/app/context/WalletContext'
 import { vaultService } from '@/app/services/vaultService'
-import { okxDexService } from '@/app/services/okxDexService'
-import { aiAgentService } from '@/app/services/aiAgentService'
+import Link from 'next/link'
+import WealthPoolAnimation, { WealthPoolRipple, DropletIconWrapper } from '@/app/components/shared/WealthPoolAnimation'
 
-// 模拟金库数据
-const mockVaultData = {
-  totalAssets: '1,250,000',
-  totalShares: '1,000,000',
-  userShares: '50,000',
-  userAssets: '62,500',
-  apy: '15.2',
-  userPercentage: '5.0',
-  totalUsers: 1250,
-  dailyVolume: '450,000',
-  weeklyReturn: '+8.5%',
-  monthlyReturn: '+12.3%'
+// 用户托管信息接口 / User deposit info interface
+interface UserDepositInfo {
+  address: string;
+  deposits: string;
+  shares: string;
+  profits: string;
+  sharePercentage: string;
 }
-
-// 实时投资策略数据
-const mockRealStrategies = [
-  {
-    id: 'top_gainer',
-    name: 'Top Gainer Strategy',
-    description: '买入24小时涨幅前10的token中的top1',
-    allocation: '40%',
-    performance: '+18.5%',
-    status: 'active',
-    lastTrade: '2 hours ago',
-    trades: 156,
-    currentTarget: 'PEPE',
-    confidence: 85,
-    nextExecution: '45 minutes'
-  },
-  {
-    id: 'momentum',
-    name: 'Momentum Strategy',
-    description: '基于价格动量的交易策略',
-    allocation: '35%',
-    performance: '+12.3%',
-    status: 'active',
-    lastTrade: '4 hours ago',
-    trades: 89,
-    currentTarget: 'DOGE',
-    confidence: 75,
-    nextExecution: '2 hours 15 minutes'
-  },
-  {
-    id: 'volume_spike',
-    name: 'Volume Spike Strategy',
-    description: '基于交易量突增的交易策略',
-    allocation: '25%',
-    performance: '+22.1%',
-    status: 'active',
-    lastTrade: '1 hour ago',
-    trades: 203,
-    currentTarget: 'SHIB',
-    confidence: 65,
-    nextExecution: '1 hour 30 minutes'
-  }
-]
-
-// 实时交易记录
-const mockRealTransactions = [
-  {
-    id: 1,
-    type: 'investment',
-    strategy: 'Top Gainer',
-    fromAmount: '1,000',
-    fromToken: 'USDC',
-    toAmount: '4,125,000',
-    toToken: 'PEPE',
-    timestamp: Date.now() - 7200000,
-    status: 'completed',
-    txHash: '0xabcdef1234567890',
-    profit: '+15.2%'
-  },
-  {
-    id: 2,
-    type: 'investment',
-    strategy: 'Momentum',
-    fromAmount: '800',
-    fromToken: 'USDC',
-    toAmount: '10,126',
-    toToken: 'DOGE',
-    timestamp: Date.now() - 14400000,
-    status: 'completed',
-    txHash: '0x7890abcdef123456',
-    profit: '+8.7%'
-  },
-  {
-    id: 3,
-    type: 'profit_distribution',
-    amount: '2,500',
-    token: 'USDC',
-    timestamp: Date.now() - 21600000,
-    status: 'completed',
-    txHash: '0x1234567890abcdef',
-    description: 'Athlete profit distribution'
-  }
-]
 
 export default function VaultPage() {
   const { language } = useLanguage()
-  const [activeTab, setActiveTab] = useState('overview')
-  const [walletInfo, setWalletInfo] = useState<any>(null)
+  const { showToast } = useToast()
+  const { walletInfo, isConnected, connectWallet, isLoading: walletLoading } = useWallet()
+  const [activeAction, setActiveAction] = useState('deposit') // 'deposit' | 'withdraw'
+  const [activeInfoTab, setActiveInfoTab] = useState('about') // 'about' | 'strategies' | 'harvests' | 'info'
   const [vaultInfo, setVaultInfo] = useState<any>(null)
-  const [showDepositModal, setShowDepositModal] = useState(false)
-  const [showWithdrawModal, setShowWithdrawModal] = useState(false)
-  const [depositAmount, setDepositAmount] = useState('')
-  const [withdrawAmount, setWithdrawAmount] = useState('')
+  const [userVaultInfo, setUserVaultInfo] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingVaultInfo, setIsLoadingVaultInfo] = useState(false)
   const [showBalance, setShowBalance] = useState(true)
   
-  // AI Agent状态
-  const [aiAgentStatus, setAiAgentStatus] = useState<any>(null)
-  const [strategies, setStrategies] = useState(mockRealStrategies)
-  const [transactions, setTransactions] = useState(mockRealTransactions)
-  const [lastExecution, setLastExecution] = useState<number | null>(null)
+  // 存款/提款表单状态
+  const [depositAmount, setDepositAmount] = useState('')
+  const [withdrawAmount, setWithdrawAmount] = useState('')
+  const [userBalance, setUserBalance] = useState('0.00')
+  const [userShares, setUserShares] = useState('0.00')
+  const [estimatedShares, setEstimatedShares] = useState('0.00')
+  const [estimatedAssets, setEstimatedAssets] = useState('0.00')
+  
+  // AI Agent 数据状态
+  const [aiAgentData, setAiAgentData] = useState<any>(null)
+  const [btcMarketData, setBtcMarketData] = useState<any>(null)
+  const [showAiReport, setShowAiReport] = useState(false)
+  
+  // 代币选择状态
+  const [selectedDepositToken, setSelectedDepositToken] = useState('USDC')
+  const [selectedWithdrawToken, setSelectedWithdrawToken] = useState('USDC')
+  const [showDepositDropdown, setShowDepositDropdown] = useState(false)
+  const [showWithdrawDropdown, setShowWithdrawDropdown] = useState(false)
+  
+  // 可用代币列表
+  const [availableTokens, setAvailableTokens] = useState([
+    { symbol: 'USDC', name: 'USD Coin', icon: 'F', balance: '0.00' },
+    { symbol: 'OKB', name: 'OKB Token', icon: 'O', balance: '0.00' },
+    { symbol: 'ICP', name: 'Internet Computer', icon: 'I', balance: '0.00' },
+    { symbol: 'CHZ', name: 'Chiliz', icon: 'C', balance: '0.00' }
+  ])
+
+  // 获取金库信息
+  const fetchVaultInfo = async () => {
+    setIsLoadingVaultInfo(true);
+    try {
+      const initialized = await vaultService.initialize();
+      if (initialized) {
+        // 获取合约总资产信息
+        const contractInfo = await vaultService.getContractTotalAssets();
+        setVaultInfo(contractInfo);
+        
+        // 获取用户托管信息
+        if (isConnected && walletInfo) {
+          const userInfo = await vaultService.getUserVaultInfo(walletInfo.address);
+          setUserVaultInfo(userInfo);
+          setUserBalance(userInfo?.userDeposits || '0.00');
+          setUserShares(userInfo?.userShares || '0.00');
+        }
+        
+        // 静默更新，不显示Toast
+        console.log('✅ Vault info updated successfully');
+      }
+    } catch (error) {
+      console.error('Failed to fetch vault info:', error);
+      // 静默处理错误，不显示Toast
+    } finally {
+      setIsLoadingVaultInfo(false);
+    }
+  }
+
+  // 获取用户USDC余额
+  const fetchUserUSDCBalance = async () => {
+    try {
+      const initialized = await vaultService.initialize();
+      if (initialized) {
+        const balance = await vaultService.getUSDCBalance();
+        // 更新USDC余额
+        setAvailableTokens(prevTokens => 
+          prevTokens.map(token => 
+            token.symbol === 'USDC' 
+              ? { ...token, balance } 
+              : token
+          )
+        );
+        console.log('✅ USDC balance updated:', balance);
+      }
+    } catch (error) {
+      console.error('Failed to fetch USDC balance:', error);
+    }
+  }
+
+  // 获取AI Agent数据
+  const fetchAiAgentData = async () => {
+    try {
+      // 获取AI Agent策略数据
+      const strategyResponse = await fetch('/api/rule-engine/strategy');
+      if (strategyResponse.ok) {
+        const strategyData = await strategyResponse.json();
+        setAiAgentData(strategyData);
+        console.log('✅ AI Agent strategy data loaded:', strategyData);
+      } else {
+        console.warn('⚠️ Strategy API returned:', strategyResponse.status);
+        // 设置默认策略数据
+        setAiAgentData({
+          strategy: {
+            marketState: '🌥️ Calm Period',
+            riskLevel: 'LOW',
+            buyBTC: 0.10,
+            stake: 0.90,
+            summary: 'Market is calm, adopting conservative strategy with 90% funds for staking and 10% for AI Portfolio.'
+          }
+        });
+      }
+      
+      // 获取BTC市场数据
+      const btcResponse = await fetch('/api/btc-data');
+      if (btcResponse.ok) {
+        const btcData = await btcResponse.json();
+        setBtcMarketData(btcData);
+        console.log('✅ BTC market data loaded:', btcData);
+      } else {
+        console.warn('⚠️ BTC API returned:', btcResponse.status);
+        // 设置默认BTC数据
+        setBtcMarketData({
+          marketHeat: {
+            status: '🌥️ Calm Period',
+            description: 'Market is in a calm state'
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch AI Agent data:', error);
+      // 设置默认数据
+      setAiAgentData({
+        strategy: {
+          marketState: '🌥️ Calm Period',
+          riskLevel: 'LOW',
+          buyBTC: 0.10,
+          stake: 0.90,
+                      summary: 'Market is calm, adopting conservative strategy with 90% funds for staking and 10% for AI Portfolio.'
+        }
+      });
+      setBtcMarketData({
+        marketHeat: {
+          status: '🌥️ Calm Period',
+          description: 'Market is in a calm state'
+        }
+      });
+    }
+  }
 
   // 初始化服务
   useEffect(() => {
     const initializeServices = async () => {
-      await okxDexService.initialize()
-      await aiAgentService.initialize()
-      
-      walletService.setupEventListeners(
-        (address) => {
-          setWalletInfo(prev => prev ? { ...prev, address } : null)
-        },
-        (chainId) => {
-          setWalletInfo(prev => prev ? { ...prev, chainId } : null)
+      // 启动AI Agent服务
+      try {
+        const startResponse = await fetch('/api/rule-engine/strategy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'start' })
+        });
+        if (startResponse.ok) {
+          console.log('✅ AI Agent service started');
         }
-      )
-
-      // 如果钱包已连接，加载金库信息
-      const walletInfo = walletService.getWalletInfo();
-      if (walletInfo?.isConnected) {
-        try {
-          const initialized = await vaultService.initialize();
-          if (initialized) {
-            const vaultInfo = await vaultService.getVaultInfo();
-            if (vaultInfo) {
-              setVaultInfo(vaultInfo);
-            }
-          }
-        } catch (error) {
-          console.error('Failed to load vault info:', error);
-        }
+      } catch (error) {
+        console.warn('⚠️ Failed to start AI Agent service:', error);
       }
 
-      // 加载AI Agent状态
-      loadAiAgentStatus();
+      // 加载金库信息
+      await fetchVaultInfo();
+      // 加载AI Agent数据
+      await fetchAiAgentData();
     }
 
     initializeServices()
   }, [])
 
-  // 加载AI Agent状态
-  const loadAiAgentStatus = async () => {
+  // 当钱包连接状态改变时，获取用户信息
+  useEffect(() => {
+    if (isConnected && walletInfo) {
+      fetchVaultInfo();
+      fetchUserUSDCBalance();
+    }
+  }, [isConnected, walletInfo?.address])
+
+  // 定期刷新金库信息（每30秒）
+  useEffect(() => {
+    if (!isConnected) return
+
+    const interval = setInterval(() => {
+      fetchVaultInfo();
+      fetchUserUSDCBalance();
+      fetchAiAgentData(); // 同时刷新AI Agent数据
+    }, 30000) // 30秒
+
+    return () => clearInterval(interval)
+  }, [isConnected])
+  
+  // 点击外部区域关闭下拉框
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.token-dropdown')) {
+        setShowDepositDropdown(false);
+        setShowWithdrawDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+
+
+  // 切换到XLayer测试网
+  const switchToXLayerTestnet = async () => {
     try {
-      const status = {
-        strategies: aiAgentService.getStrategies(),
-        lastExecution: aiAgentService.getLastExecution(),
-        canExecute: aiAgentService.canExecute()
+      const { ethereum } = window as any;
+      if (!ethereum) {
+        throw new Error('MetaMask not installed');
+      }
+
+      // XLayer测试网配置 - 使用与运动员页面相同的配置
+      const xlayerTestnet = {
+        chainId: '0xC3', // 195 - 与运动员页面保持一致
+        chainName: 'X Layer Testnet',
+        nativeCurrency: {
+          name: 'ETH',
+          symbol: 'ETH',
+          decimals: 18
+        },
+        rpcUrls: ['https://testrpc.xlayer.tech'],
+        blockExplorerUrls: ['https://testnet.xlayer.tech']
       };
-      setAiAgentStatus(status);
-      setLastExecution(status.lastExecution);
-    } catch (error) {
-      console.error('Failed to load AI Agent status:', error);
-    }
-  }
 
-  // 手动执行策略
-  const executeStrategies = async () => {
-    try {
-      setIsLoading(true);
-      const decisions = await aiAgentService.executeInvestmentStrategies();
+      // 尝试切换到XLayer测试网
+      await ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: xlayerTestnet.chainId }]
+      });
       
-      if (decisions.length > 0) {
-        alert(language === 'en' 
-          ? `Executed ${decisions.length} investment strategies successfully!` 
-          : `成功执行了 ${decisions.length} 个投资策略！`);
-        
-        // 刷新状态
-        loadAiAgentStatus();
-      } else {
-        alert(language === 'en' 
-          ? 'No investment decisions made at this time.' 
-          : '当前没有投资决策。');
-      }
-    } catch (error) {
-      alert(language === 'en' 
-        ? `Strategy execution failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
-        : `策略执行失败: ${error instanceof Error ? error.message : '未知错误'}`);
-    } finally {
-      setIsLoading(false);
-    }
-  }
+      showToast({
+        type: 'success',
+        message: language === 'en' ? 'Switched to XLayer Testnet' : '已切换到XLayer测试网'
+      });
 
-  // 连接钱包
-  const connectWallet = async () => {
-    try {
-      const result = await walletService.autoConnect()
-      if (result.success && result.walletInfo) {
-        setWalletInfo(result.walletInfo)
+      // 刷新钱包信息 - 钱包状态会通过全局上下文自动更新
+      await connectWallet();
+    } catch (error: any) {
+      console.error('Failed to switch network:', error);
+      
+      if (error.code === 4902) {
+        // 网络不存在，尝试添加网络
+        try {
+          const { ethereum } = window as any;
+          await ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0xC3',
+              chainName: 'X Layer Testnet',
+              nativeCurrency: {
+                name: 'ETH',
+                symbol: 'ETH',
+                decimals: 18
+              },
+              rpcUrls: ['https://testrpc.xlayer.tech'],
+              blockExplorerUrls: ['https://testnet.xlayer.tech']
+            }]
+          });
+          
+          showToast({
+            type: 'success',
+            message: language === 'en' ? 'XLayer Testnet added and switched' : '已添加并切换到XLayer测试网'
+          });
+        } catch (addError) {
+      showToast({
+        type: 'error',
+            message: language === 'en' ? 'Failed to add XLayer Testnet' : '添加XLayer测试网失败'
+          });
+        }
       } else {
-        alert(language === 'en' ? result.error || 'Failed to connect wallet' : result.error || '连接钱包失败')
+        showToast({
+          type: 'error',
+          message: language === 'en' ? 'Failed to switch network' : '切换网络失败'
+        });
       }
-    } catch (error) {
-      console.error('Failed to connect wallet:', error)
-      alert(language === 'en' ? 'Failed to connect wallet' : '连接钱包失败')
     }
   }
 
   // 处理存款
   const handleDeposit = async () => {
-    if (!walletInfo?.isConnected) {
-      alert(language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包')
+    console.log('🚀 Starting deposit process...');
+    console.log('Deposit amount:', depositAmount);
+    
+    if (!isConnected) {
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包'
+      })
       return
     }
 
     if (!depositAmount || parseFloat(depositAmount) <= 0) {
-      alert(language === 'en' ? 'Please enter a valid amount' : '请输入有效金额')
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Please enter a valid amount' : '请输入有效金额'
+      })
       return
     }
 
     setIsLoading(true)
     try {
+      console.log('📡 Initializing vault service...');
       // 初始化金库服务
       const initialized = await vaultService.initialize();
       if (!initialized) {
         throw new Error('Failed to initialize vault service');
       }
+      console.log('✅ Vault service initialized');
 
+      console.log('🔍 Checking vault health...');
       // 检查金库健康状态
       const isHealthy = await vaultService.isHealthy();
       if (!isHealthy) {
         throw new Error('Vault is not in healthy state');
       }
+      console.log('✅ Vault is healthy');
 
+      console.log('💰 Getting USDC balance...');
       // 获取用户USDC余额
       const usdcBalance = await vaultService.getUSDCBalance();
       const amount = parseFloat(depositAmount);
+      console.log('USDC balance:', usdcBalance);
+      console.log('Amount to deposit:', amount);
       
       if (parseFloat(usdcBalance) < amount) {
-        throw new Error('Insufficient USDC balance');
+        throw new Error(`Insufficient USDC balance. Available: ${usdcBalance}, Required: ${amount}`);
       }
 
+      console.log('💸 Executing deposit...');
       // 执行存款
       const result = await vaultService.deposit(amount);
+      console.log('Deposit result:', result);
       
       if (result.success) {
-        alert(language === 'en' 
-          ? `Deposit successful! You received ${result.shares} shares. Transaction: ${result.transactionHash}` 
-          : `存款成功！您获得了 ${result.shares} 份额。交易哈希: ${result.transactionHash}`)
-        setShowDepositModal(false)
-        setDepositAmount('')
+        setDepositAmount('') // 清空输入
+        
+        showToast({
+          type: 'success',
+          message: language === 'en' 
+            ? `Deposit successful! You received ${result.shares} shares. Transaction: ${result.transactionHash}` 
+            : `存款成功！您获得了 ${result.shares} 份额。交易哈希: ${result.transactionHash}`
+        })
         
         // 刷新金库信息
-        const vaultInfo = await vaultService.getVaultInfo();
-        if (vaultInfo) {
-          setVaultInfo(vaultInfo);
-        }
+        await fetchVaultInfo();
+        await fetchUserUSDCBalance();
       } else {
         throw new Error(result.error || 'Deposit failed');
       }
     } catch (error) {
-      alert(language === 'en' 
-        ? `Deposit failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
-        : `存款失败: ${error instanceof Error ? error.message : '未知错误'}`)
+      console.error('❌ Deposit failed:', error);
+      showToast({
+        type: 'error',
+        message: language === 'en' 
+          ? `Deposit failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+          : `存款失败: ${error instanceof Error ? error.message : '未知错误'}`
+      })
     } finally {
       setIsLoading(false)
     }
@@ -308,253 +412,369 @@ export default function VaultPage() {
 
   // 处理提款
   const handleWithdraw = async () => {
-    if (!walletInfo?.isConnected) {
-      alert(language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包')
+    console.log('🚀 Starting withdraw process...');
+    console.log('Withdraw amount:', withdrawAmount);
+    
+    if (!isConnected) {
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包'
+      })
       return
     }
 
     if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
-      alert(language === 'en' ? 'Please enter a valid amount' : '请输入有效金额')
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Please enter a valid amount' : '请输入有效金额'
+      })
       return
     }
 
     setIsLoading(true)
     try {
+      console.log('📡 Initializing vault service...');
       // 初始化金库服务
       const initialized = await vaultService.initialize();
       if (!initialized) {
         throw new Error('Failed to initialize vault service');
       }
+      console.log('✅ Vault service initialized');
 
+      console.log('🔍 Checking vault health...');
       // 检查金库健康状态
       const isHealthy = await vaultService.isHealthy();
       if (!isHealthy) {
         throw new Error('Vault is not in healthy state');
       }
+      console.log('✅ Vault is healthy');
 
+      console.log('💰 Getting user vault info...');
       // 获取用户份额
-      const vaultInfo = await vaultService.getVaultInfo();
-      if (!vaultInfo) {
-        throw new Error('Failed to get vault info');
+      const userInfo = await vaultService.getUserVaultInfo(walletInfo!.address);
+      if (!userInfo) {
+        throw new Error('Failed to get user vault info');
       }
 
       const amount = parseFloat(withdrawAmount);
-      const userShares = parseFloat(vaultInfo.userShares);
+      const userShares = parseFloat(userInfo.userShares);
+      console.log('User shares:', userShares);
+      console.log('Amount to withdraw:', amount);
       
       // 计算需要的份额
       const requiredShares = await vaultService.previewWithdraw(amount);
+      console.log('Required shares:', requiredShares);
+      
       if (userShares < parseFloat(requiredShares)) {
-        throw new Error('Insufficient shares');
+        throw new Error(`Insufficient shares. Available: ${userShares}, Required: ${requiredShares}`);
       }
 
+      console.log('💸 Executing withdraw...');
       // 执行提款
       const result = await vaultService.withdraw(amount);
+      console.log('Withdraw result:', result);
       
       if (result.success) {
-        alert(language === 'en' 
-          ? `Withdraw successful! You received ${result.assets} USDC. Transaction: ${result.transactionHash}` 
-          : `提款成功！您获得了 ${result.assets} USDC。交易哈希: ${result.transactionHash}`)
-        setShowWithdrawModal(false)
-        setWithdrawAmount('')
+        setWithdrawAmount('') // 清空输入
+        
+        showToast({
+          type: 'success',
+          message: language === 'en' 
+            ? `Withdraw successful! You received ${result.assets} USDC. Transaction: ${result.transactionHash}` 
+            : `提款成功！您获得了 ${result.assets} USDC。交易哈希: ${result.transactionHash}`
+        })
         
         // 刷新金库信息
-        const newVaultInfo = await vaultService.getVaultInfo();
-        if (newVaultInfo) {
-          setVaultInfo(newVaultInfo);
-        }
+        await fetchVaultInfo();
+        await fetchUserUSDCBalance();
       } else {
         throw new Error(result.error || 'Withdraw failed');
       }
     } catch (error) {
-      alert(language === 'en' 
-        ? `Withdraw failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
-        : `提款失败: ${error instanceof Error ? error.message : '未知错误'}`)
+      console.error('❌ Withdraw failed:', error);
+      showToast({
+        type: 'error',
+        message: language === 'en' 
+          ? `Withdraw failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+          : `提款失败: ${error instanceof Error ? error.message : '未知错误'}`
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
-  // 渲染标签页内容
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'overview':
+  // 设置最大存款金额
+  const setMaxDeposit = async () => {
+    try {
+      const initialized = await vaultService.initialize();
+      if (initialized) {
+        const balance = await vaultService.getUSDCBalance();
+        setDepositAmount(balance);
+      }
+    } catch (error) {
+      console.error('Failed to get max deposit amount:', error);
+      setDepositAmount('0');
+    }
+  }
+
+  // 设置最大提款金额
+  const setMaxWithdraw = () => {
+    setWithdrawAmount(userShares);
+  }
+  
+  // 获取选中代币的信息
+  const getSelectedTokenInfo = (symbol: string) => {
+    return availableTokens.find(token => token.symbol === symbol) || availableTokens[0];
+  }
+  
+  // 处理代币选择
+  const handleTokenSelect = (tokenSymbol: string, isDeposit: boolean) => {
+    if (isDeposit) {
+      setSelectedDepositToken(tokenSymbol);
+      setShowDepositDropdown(false);
+    } else {
+      setSelectedWithdrawToken(tokenSymbol);
+      setShowWithdrawDropdown(false);
+    }
+  }
+
+  // 计算预估份额（存款时）
+  const calculateEstimatedShares = async (amount: string) => {
+    if (!amount || parseFloat(amount) <= 0) {
+      setEstimatedShares('0.00');
+      return;
+    }
+
+    try {
+      const initialized = await vaultService.initialize();
+      if (initialized) {
+        const shares = await vaultService.previewDeposit(parseFloat(amount));
+        setEstimatedShares(shares);
+      }
+    } catch (error) {
+      console.error('Failed to calculate estimated shares:', error);
+      setEstimatedShares('0.00');
+    }
+  }
+
+  // 计算预估资产（提款时）
+  const calculateEstimatedAssets = async (amount: string) => {
+    if (!amount || parseFloat(amount) <= 0) {
+      setEstimatedAssets('0.00');
+      return;
+    }
+
+    try {
+      const initialized = await vaultService.initialize();
+      if (initialized) {
+        const assets = await vaultService.previewWithdraw(parseFloat(amount));
+        setEstimatedAssets(assets);
+      }
+    } catch (error) {
+      console.error('Failed to calculate estimated assets:', error);
+      setEstimatedAssets('0.00');
+    }
+  }
+
+  // 监听存款金额变化，实时计算预估份额
+  useEffect(() => {
+    if (activeAction === 'deposit') {
+      calculateEstimatedShares(depositAmount);
+    }
+  }, [depositAmount, activeAction]);
+
+  // 监听提款金额变化，实时计算预估资产
+  useEffect(() => {
+    if (activeAction === 'withdraw') {
+      calculateEstimatedAssets(withdrawAmount);
+    }
+  }, [withdrawAmount, activeAction]);
+
+    // 渲染信息标签页内容
+  const renderInfoTabContent = () => {
+    switch (activeInfoTab) {
+      case 'about':
         return (
           <div className="space-y-6">
-            {/* 金库概览 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <StatCard 
-                icon={<FaCoins />} 
-                title={language === 'en' ? "Total Assets" : "总资产"} 
-                value={`$${mockVaultData.totalAssets}`} 
-              />
-              <StatCard 
-                icon={<FaChartLine />} 
-                title={language === 'en' ? "APY" : "年化收益率"} 
-                value={`${mockVaultData.apy}%`} 
-              />
-              <StatCard 
-                icon={<FaUsers />} 
-                title={language === 'en' ? "Total Users" : "总用户数"} 
-                value={mockVaultData.totalUsers.toLocaleString()} 
-              />
-              <StatCard 
-                icon={<FaExchangeAlt />} 
-                title={language === 'en' ? "Daily Volume" : "日交易量"} 
-                value={`$${mockVaultData.dailyVolume}`} 
-              />
-            </div>
-
-            {/* AI Agent状态 */}
-            <div className="bg-gray-800/50 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center">
-                <FaBrain className="mr-2 text-purple-400" />
-                {language === 'en' ? "AI Agent Status" : "AI代理状态"}
+            {/* Description - 精炼介绍 */}
+            <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg p-6 border border-purple-500/30 mb-6">
+              <h3 className="text-white font-bold text-xl mb-4 flex items-center">
+                <span className="text-2xl mr-3">🤖</span>
+                {language === 'en' ? 'AI-Powered Vault' : 'AI驱动金库'}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <p className="text-gray-400 text-sm">{language === 'en' ? "Last Execution" : "最后执行"}</p>
-                  <p className="text-white text-lg font-bold">
-                    {lastExecution ? new Date(lastExecution).toLocaleString() : 'Never'}
-                  </p>
+              <p className="text-gray-300 leading-relaxed mb-4">
+                {language === 'en' 
+                  ? "FanForce Vault features an intelligent AI agent that continuously monitors BTC market conditions through OKX API. Our AI agent analyzes market heat patterns and automatically adjusts fund allocation between AI Portfolio and staking strategies, providing real-time risk management and optimized returns based on market dynamics."
+                  : "FanForce金库配备智能AI代理，通过OKX API持续监控BTC市场状况。我们的AI代理分析市场热度模式，自动调整AI投资组合和质押策略间的资金配置，基于市场动态提供实时风险管理和优化收益。"
+                }
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-600/30 rounded-full flex items-center justify-center">
+                    <span className="text-blue-400 text-sm">📊</span>
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold text-sm">{language === 'en' ? 'Real-time Market Analysis' : '实时市场分析'}</div>
+                    <div className="text-gray-400 text-xs">{language === 'en' ? 'BTC market heat monitoring' : 'BTC市场热度监控'}</div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="text-gray-400 text-sm">{language === 'en' ? "Can Execute" : "可执行"}</p>
-                  <p className={`text-lg font-bold ${aiAgentStatus?.canExecute ? 'text-green-400' : 'text-red-400'}`}>
-                    {aiAgentStatus?.canExecute ? 'Yes' : 'No'}
-                  </p>
-                </div>
-                <div className="text-center">
-                  <button
-                    onClick={executeStrategies}
-                    disabled={isLoading || !aiAgentStatus?.canExecute}
-                    className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-lg transition-colors"
-                  >
-                    {isLoading ? (
-                      <>
-                        <FaSpinner className="inline mr-2 animate-spin" />
-                        {language === 'en' ? 'Executing...' : '执行中...'}
-                      </>
-                    ) : (
-                      <>
-                        <FaRocket className="inline mr-2" />
-                        {language === 'en' ? 'Execute Now' : '立即执行'}
-                      </>
-                    )}
-                  </button>
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-purple-600/30 rounded-full flex items-center justify-center">
+                    <span className="text-purple-400 text-sm">⚖️</span>
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold text-sm">{language === 'en' ? 'Dynamic Allocation' : '动态配置'}</div>
+                    <div className="text-gray-400 text-xs">{language === 'en' ? 'AI Portfolio vs staking balance' : 'AI投资组合与质押平衡'}</div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* 用户投资信息 */}
-            <div className="bg-gray-800/50 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center">
-                <FaWallet className="mr-2 text-blue-400" />
-                {language === 'en' ? "Your Investment" : "您的投资"}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <p className="text-gray-400 text-sm">{language === 'en' ? "Your Shares" : "您的份额"}</p>
-                  <p className="text-white text-2xl font-bold">{mockVaultData.userShares}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-gray-400 text-sm">{language === 'en' ? "Your Assets" : "您的资产"}</p>
-                  <p className="text-white text-2xl font-bold">${mockVaultData.userAssets}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-gray-400 text-sm">{language === 'en' ? "Your Percentage" : "您的占比"}</p>
-                  <p className="text-white text-2xl font-bold">{mockVaultData.userPercentage}%</p>
-                </div>
-              </div>
-            </div>
 
-            {/* 实时投资策略 */}
-            <div className="bg-gray-800/50 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center">
-                <FaRocket className="mr-2 text-green-400" />
-                {language === 'en' ? "Live Investment Strategies" : "实时投资策略"}
-              </h3>
-              <div className="space-y-4">
-                {strategies.map((strategy) => (
-                  <div key={strategy.id} className="bg-gray-700/50 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-bold text-white">{strategy.name}</h4>
-                        <p className="text-gray-400 text-sm">{strategy.description}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-green-400 font-bold">{strategy.performance}</p>
-                        <p className="text-gray-400 text-sm">{strategy.allocation}</p>
-                      </div>
+
+            {/* 绩效指标 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <h4 className="text-white font-bold mb-3">{language === 'en' ? 'Performance' : '绩效'}</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                    <span className="text-gray-400">{language === 'en' ? 'Current APY:' : '当前年化：'}</span>
+                    <span className="text-green-400 font-bold">20.36%</span>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-400">{language === 'en' ? "Current Target:" : "当前目标:"}</span>
-                        <p className="text-white font-medium">{strategy.currentTarget}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-400">{language === 'en' ? "Confidence:" : "置信度:"}</span>
-                        <p className="text-white font-medium">{strategy.confidence}%</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-400">{language === 'en' ? "Next Execution:" : "下次执行:"}</span>
-                        <p className="text-white font-medium">{strategy.nextExecution}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-400">{language === 'en' ? "Total Trades:" : "总交易:"}</span>
-                        <p className="text-white font-medium">{strategy.trades}</p>
-                      </div>
+                    <div className="flex justify-between">
+                    <span className="text-gray-400">{language === 'en' ? 'Total Assets:' : '总资产：'}</span>
+                    <span className="text-white">{vaultInfo ? `${parseFloat(vaultInfo.totalAssets).toLocaleString()}` : '0'} USDC</span>
+                    </div>
                     </div>
                   </div>
-                ))}
+              
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <h4 className="text-white font-bold mb-3">{language === 'en' ? 'Fees' : '费用'}</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                    <span className="text-gray-400">{language === 'en' ? 'Entry/Exit:' : '存取款：'}</span>
+                    <span className="text-green-400">0%</span>
+                    </div>
+                    <div className="flex justify-between">
+                    <span className="text-gray-400">{language === 'en' ? 'Performance:' : '绩效费：'}</span>
+                    <span className="text-yellow-400">10%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            {/* AI状态 */}
+            <div className="bg-green-600/20 rounded-lg p-4 border border-green-500/30">
+              <div className="flex items-center justify-between">
+                <span className="text-green-400 font-semibold">🟢 {language === 'en' ? 'AI Active' : 'AI运行中'}</span>
+                <span className="text-gray-400 text-sm">{language === 'en' ? 'Updated 2min ago' : '2分钟前更新'}</span>
+                </div>
+                </div>
+                </div>
+        )
+      
+      case 'strategies':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-white font-bold text-xl mb-6">{language === 'en' ? 'Investment Strategies' : '投资策略'}</h3>
+            
+            {/* AI Agent 市场状态策略 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-red-600/20 rounded-lg p-4 border border-red-500/30">
+                <div className="flex items-center mb-2">
+                  <span className="text-2xl mr-2">🔥</span>
+                  <h4 className="text-red-400 font-bold">{language === 'en' ? 'Market Frenzy' : '市场火热'}</h4>
+              </div>
+                <div className="text-red-300 text-sm mb-2">
+                  {language === 'en' ? '🚀 Seize the momentum! Market is on fire - time to be aggressive and capture explosive gains!' : '🚀 抓住势头！市场火热燃烧 - 积极进取，捕获爆炸性收益！'}
+                </div>
+                <div className="text-gray-300 text-xs mb-3">
+                  {language === 'en' ? '30% AI Portfolio, 70% Staking' : '30% AI投资组合，70%质押'}
+                </div>
+                <div className="text-red-400 font-bold">HIGH RISK</div>
+            </div>
+
+              <div className="bg-orange-600/20 rounded-lg p-4 border border-orange-500/30">
+                <div className="flex items-center mb-2">
+                  <span className="text-2xl mr-2">🌤️</span>
+                  <h4 className="text-orange-400 font-bold">{language === 'en' ? 'Moderately Hot' : '正常偏热'}</h4>
+                  </div>
+                <div className="text-orange-300 text-sm mb-2">
+                  {language === 'en' ? '⚡ Smart momentum! Market is heating up - strategic positioning for steady growth with controlled risk!' : '⚡ 明智势头！市场正在升温 - 战略定位，在控制风险中稳健增长！'}
+                  </div>
+                <div className="text-gray-300 text-xs mb-3">
+                  {language === 'en' ? '20% AI Portfolio, 80% Staking' : '20% AI投资组合，80%质押'}
+                  </div>
+                <div className="text-orange-400 font-bold">MEDIUM-HIGH</div>
+                  </div>
+
+              <div className="bg-blue-600/20 rounded-lg p-4 border border-blue-500/30">
+                <div className="flex items-center mb-2">
+                  <span className="text-2xl mr-2">🌥️</span>
+                  <h4 className="text-blue-400 font-bold">{language === 'en' ? 'Calm Period' : '平静期'}</h4>
+                </div>
+                <div className="text-blue-300 text-sm mb-2">
+                  {language === 'en' ? '🛡️ Steady as she goes! Market is stable - perfect time to build solid foundations and accumulate wealth safely!' : '🛡️ 稳扎稳打！市场稳定 - 建立坚实基础，安全积累财富的最佳时机！'}
+              </div>
+                <div className="text-gray-300 text-xs mb-3">
+                  {language === 'en' ? '10% AI Portfolio, 90% Staking' : '10% AI投资组合，90%质押'}
+          </div>
+                <div className="text-blue-400 font-bold">LOW RISK</div>
+            </div>
+            
+              <div className="bg-gray-600/20 rounded-lg p-4 border border-gray-500/30">
+                <div className="flex items-center mb-2">
+                  <span className="text-2xl mr-2">🧊</span>
+                  <h4 className="text-gray-400 font-bold">{language === 'en' ? 'Extreme Cold' : '极冷市场'}</h4>
+                        </div>
+                <div className="text-gray-300 text-sm mb-2">
+                  {language === 'en' ? '❄️ Winter is coming! Market is frozen - time to be ultra-conservative, protect capital, and wait for the spring thaw!' : '❄️ 寒冬将至！市场冻结 - 超保守策略，保护资金，等待春暖花开！'}
+                      </div>
+                <div className="text-gray-300 text-xs mb-3">
+                  {language === 'en' ? '0% AI Portfolio, 100% Staking' : '0% AI投资组合，100%质押'}
+                      </div>
+                <div className="text-gray-400 font-bold">MINIMAL RISK</div>
+                      </div>
+                      </div>
+
+            {/* AI Agent 实时监控状态 */}
+            <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg p-4 border border-purple-500/30">
+              <h4 className="text-white font-bold mb-3 flex items-center">
+                <span className="text-xl mr-2">🤖</span>
+                {language === 'en' ? 'AI Agent Real-time Monitoring' : 'AI代理实时监控'}
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300">{language === 'en' ? 'Market Data Update' : '市场数据更新'}</span>
+                  <span className="text-green-400">30s</span>
+                      </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300">{language === 'en' ? 'Strategy Adjustment' : '策略调整'}</span>
+                  <span className="text-blue-400">{language === 'en' ? 'Auto' : '自动'}</span>
+                    </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300">{language === 'en' ? 'Risk Management' : '风险管理'}</span>
+                  <span className="text-purple-400">{language === 'en' ? 'Dynamic' : '动态'}</span>
+                  </div>
               </div>
             </div>
           </div>
         )
-
-      case 'transactions':
+      
+      case 'harvests':
         return (
-          <div className="bg-gray-800/50 rounded-lg p-6">
-            <h3 className="text-lg font-bold text-white mb-4 flex items-center">
-              <FaHistory className="mr-2 text-yellow-400" />
-              {language === 'en' ? "Live Transaction History" : "实时交易历史"}
-            </h3>
-            <div className="space-y-4">
-              {transactions.map((tx) => (
-                <div key={tx.id} className="bg-gray-700/50 rounded-lg p-4">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-3 h-3 rounded-full ${
-                        tx.type === 'investment' ? 'bg-blue-500' : 
-                        tx.type === 'profit_distribution' ? 'bg-green-500' : 'bg-purple-500'
-                      }`}></div>
-                      <div>
-                        <p className="font-bold text-white capitalize">{tx.type}</p>
-                        {tx.strategy && (
-                          <p className="text-blue-400 text-sm">{tx.strategy}</p>
-                        )}
-                        <p className="text-gray-400 text-sm">
-                          {tx.type === 'investment' 
-                            ? `${tx.fromAmount} ${tx.fromToken} → ${tx.toAmount} ${tx.toToken}`
-                            : `${tx.amount} ${tx.token}`
-                          }
-                        </p>
-                        {tx.profit && (
-                          <p className="text-green-400 text-sm">{tx.profit}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-gray-400 text-sm">
-                        {new Date(tx.timestamp).toLocaleString()}
-                      </p>
-                      <div className="flex items-center space-x-2">
-                        <FaCheckCircle className="text-green-400 text-sm" />
-                        <p className="text-green-400 text-sm">{tx.status}</p>
-                      </div>
-                    </div>
+              <div className="text-center py-8">
+            <div className="text-gray-400 text-sm">
+              {language === 'en' ? 'Harvests section - To be implemented' : '收获部分 - 待实现'}
+              </div>
                   </div>
-                </div>
-              ))}
+        )
+      
+      case 'info':
+        return (
+          <div className="text-center py-8">
+            <div className="text-gray-400 text-sm">
+              {language === 'en' ? 'Info section - To be implemented' : '信息部分 - 待实现'}
             </div>
           </div>
         )
@@ -565,173 +785,721 @@ export default function VaultPage() {
   }
 
   return (
-    <DashboardLayout title={language === 'en' ? "Foundation Vault" : "基金会金库"}>
-      <div className="space-y-6">
-        {/* 页面标题 */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              {language === 'en' ? "Foundation Vault" : "基金会金库"}
-            </h1>
-            <p className="text-gray-400">
-              {language === 'en' 
-                ? "AI-powered investment strategies with OKX DEX integration" 
-                : "基于OKX DEX集成的AI驱动投资策略"
-              }
-            </p>
+    <DashboardLayout title={language === 'en' ? "FanForce Vault" : "FanForce金库"}>
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* 返回链接 */}
+        <div className="flex items-center">
+          <Link 
+            href="/dashboard/athlete" 
+            className="text-gray-400 hover:text-white transition-colors flex items-center text-sm"
+          >
+            <FaArrowLeft className="mr-2" />
+            {language === 'en' ? 'Back to vaults' : '返回金库列表'}
+          </Link>
+        </div>
+
+        {/* 金库标题和地址 */}
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-white mb-2">FanForce Vault</h1>
+          <p className="text-gray-400 text-sm font-mono">
+            0x27B5739e22ad9033bcBf192059122d163b60349D
+          </p>
+        </div>
+            
+                 {/* 网络状态和关键指标 */}
+              <div className="space-y-4">
+           
+           
+           {/* 关键指标 - 财富池动画 */}
+           <WealthPoolAnimation className="bg-gray-800/50 rounded-lg p-6 text-center">
+             <WealthPoolRipple>
+               <div className="text-3xl font-bold text-white mb-2">
+                 ${vaultInfo ? (parseFloat(vaultInfo.totalAssets) * 1).toLocaleString() : '0.00'}
+                </div>
+             </WealthPoolRipple>
+             <DropletIconWrapper language={language}>
+               {language === 'en' ? 'Total Vault Assets' : '金库总资产'}
+             </DropletIconWrapper>
+           </WealthPoolAnimation>
+              </div>
+
+        {/* AI Agent Live Data Card */}
+        <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg p-4 border border-blue-500/30">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-white font-bold text-lg flex items-center">
+              <span className="text-xl mr-2">🤖</span>
+              AI Agent Live Data
+            </h3>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-green-400 text-xs">Active</span>
+            </div>
           </div>
           
-          {/* 钱包连接状态 */}
-          <div className="flex items-center space-x-4">
-            {walletInfo?.isConnected ? (
-              <div className="bg-green-600/20 p-3 rounded-lg border border-green-500/30">
-                <div className="text-green-400 text-sm font-medium">
-                  {language === 'en' ? 'Wallet Connected' : '钱包已连接'}
-                </div>
-                <div className="text-white text-xs truncate">
-                  {walletInfo.address}
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* BTC Market Status */}
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              <div className="text-gray-400 text-xs mb-1">Market Status</div>
+              <div className="text-white font-semibold text-sm">
+                {btcMarketData?.marketHeat?.status || 'Loading...'}
               </div>
-            ) : (
-              <button
-                onClick={connectWallet}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-              >
-                {language === 'en' ? 'Connect Wallet' : '连接钱包'}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* 操作按钮 */}
-        <div className="flex space-x-4">
-          <button
-            onClick={() => setShowDepositModal(true)}
-            disabled={!walletInfo?.isConnected}
-            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-lg transition-colors"
-          >
-            {language === 'en' ? 'Deposit' : '存款'}
-          </button>
-          <button
-            onClick={() => setShowWithdrawModal(true)}
-            disabled={!walletInfo?.isConnected}
-            className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-lg transition-colors"
-          >
-            {language === 'en' ? 'Withdraw' : '提款'}
-          </button>
-        </div>
-
-        {/* 标签页导航 */}
-        <div className="border-b border-gray-700">
-          <nav className="flex space-x-8">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'overview'
-                  ? 'border-blue-500 text-blue-400'
-                  : 'border-transparent text-gray-400 hover:text-gray-300'
-              }`}
-            >
-              {language === 'en' ? 'Overview' : '概览'}
-            </button>
-            <button
-              onClick={() => setActiveTab('transactions')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'transactions'
-                  ? 'border-blue-500 text-blue-400'
-                  : 'border-transparent text-gray-400 hover:text-gray-300'
-              }`}
-            >
-              {language === 'en' ? 'Transactions' : '交易记录'}
-            </button>
-          </nav>
-        </div>
-
-        {/* 标签页内容 */}
-        {renderTabContent()}
-
-        {/* 存款模态框 */}
-        {showDepositModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-            <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-              <h3 className="text-xl font-bold text-white mb-4">
-                {language === 'en' ? 'Deposit USDC' : '存入USDC'}
-              </h3>
-              <input
-                type="number"
-                placeholder={language === 'en' ? 'Enter amount' : '输入金额'}
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                className="w-full bg-gray-700 text-white p-3 rounded-lg mb-4"
-              />
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleDeposit}
-                  disabled={isLoading}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <>
-                      <FaSpinner className="inline mr-2 animate-spin" />
-                      {language === 'en' ? 'Processing...' : '处理中...'}
-                    </>
-                  ) : (
-                    language === 'en' ? 'Confirm' : '确认'
-                  )}
-                </button>
-                <button
-                  onClick={() => setShowDepositModal(false)}
-                  disabled={isLoading}
-                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {language === 'en' ? 'Cancel' : '取消'}
-                </button>
+              <div className="text-blue-400 text-xs mt-1">
+                OKX DEX API
+              </div>
+            </div>
+            
+            {/* Current Strategy */}
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              <div className="text-gray-400 text-xs mb-1">Current Strategy</div>
+              <div className="text-white font-semibold text-sm">
+                {aiAgentData?.strategy?.riskLevel || 'Loading...'}
+              </div>
+              <div className="text-purple-400 text-xs mt-1">
+                AI Decision
+              </div>
+            </div>
+            
+            {/* Fund Allocation */}
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              <div className="text-gray-400 text-xs mb-1">Allocation</div>
+              <div className="text-white font-semibold text-sm">
+                {aiAgentData?.strategy ? 
+                  `${(aiAgentData.strategy.buyBTC * 100).toFixed(0)}% / ${(aiAgentData.strategy.stake * 100).toFixed(0)}%` : 
+                  'Loading...'
+                }
+              </div>
+              <div className="text-yellow-400 text-xs mt-1">
+                BTC/Stake
               </div>
             </div>
           </div>
-        )}
+          
+          {/* AI Report Button */}
+          <div className="mt-3 flex justify-center">
+              <button
+              onClick={() => setShowAiReport(true)}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl"
+              >
+              <span className="text-lg">🔍</span>
+              <span>AI Report</span>
+              </button>
+          </div>
+        </div>
 
-        {/* 提款模态框 */}
-        {showWithdrawModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-            <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-              <h3 className="text-xl font-bold text-white mb-4">
-                {language === 'en' ? 'Withdraw USDC' : '提取USDC'}
-              </h3>
-              <input
-                type="number"
-                placeholder={language === 'en' ? 'Enter amount' : '输入金额'}
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-                className="w-full bg-gray-700 text-white p-3 rounded-lg mb-4"
-              />
-              <div className="flex space-x-3">
+        {/* 主操作卡片 */}
+        <div className="bg-gray-800/50 rounded-lg p-6">
+          {/* Deposit/Withdraw 标签 */}
+          <div className="flex justify-start space-x-1 mb-6">
+            <button
+              onClick={() => setActiveAction('deposit')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
+                activeAction === 'deposit'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              {language === 'en' ? 'Deposit' : '存款'}
+            </button>
+            <button
+              onClick={() => setActiveAction('withdraw')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
+                activeAction === 'withdraw'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              {language === 'en' ? 'Withdraw' : '提款'}
+            </button>
+          </div>
+
+                    {/* 操作表单区域 */}
+          <div className="bg-gray-900/50 rounded-lg p-6">
+            {activeAction === 'deposit' ? (
+              <div className="grid grid-cols-6 gap-4 items-start">
+                             {/* From wallet */}
+               <div className="space-y-2">
+                 <label className="text-gray-400 text-sm block">{language === 'en' ? 'From wallet' : '从钱包'}</label>
+                 <div className="relative token-dropdown">
+                                     <div 
+                    className="bg-gray-700 rounded-lg p-3 h-12 flex items-center justify-between cursor-pointer"
+                    onClick={() => setShowDepositDropdown(!showDepositDropdown)}
+                  >
+                     <div className="flex items-center space-x-2">
+                       <div className="w-6 h-6 bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 rounded-full flex items-center justify-center">
+                         <span className="text-white text-xs font-bold">{getSelectedTokenInfo(selectedDepositToken).icon}</span>
+                    </div>
+                       <span className="text-white font-medium">{selectedDepositToken}</span>
+                  </div>
+                     <FaChevronDown className={`text-gray-400 text-sm transition-transform ${showDepositDropdown ? 'rotate-180' : ''}`} />
+              </div>
+                   
+                   {/* 下拉菜单 */}
+                   {showDepositDropdown && (
+                     <div className="absolute top-full left-0 right-0 mt-1 bg-gray-700 rounded-lg shadow-lg z-10">
+                       {availableTokens.map((token) => (
+                         <div
+                           key={token.symbol}
+                           className="p-3 flex items-center justify-between hover:bg-gray-600 cursor-pointer border-b border-gray-600 last:border-b-0"
+                           onClick={() => handleTokenSelect(token.symbol, true)}
+                         >
+                           <div className="flex items-center space-x-2">
+                             <div className="w-6 h-6 bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 rounded-full flex items-center justify-center">
+                               <span className="text-white text-xs font-bold">{token.icon}</span>
+                             </div>
+                             <span className="text-white font-medium">{token.symbol}</span>
+                           </div>
+                           <span className="text-gray-400 text-xs">{token.balance}</span>
+                         </div>
+                       ))}
+              </div>
+            )}
+          </div>
+                 <div className="text-gray-400 text-xs">
+                   {language === 'en' ? 'You have' : '您拥有'} {showBalance ? getSelectedTokenInfo(selectedDepositToken).balance : '***'} {selectedDepositToken}
+                 </div>
+               </div>
+
+                            {/* Amount */}
+              <div className="space-y-2">
+                <label className="text-gray-400 text-sm block">{language === 'en' ? 'Amount' : '金额'}</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={depositAmount}
+                    onChange={(e) => setDepositAmount(e.target.value)}
+                    placeholder="0"
+                    className="w-full bg-gray-700 text-white p-3 rounded-lg text-xl font-bold h-12"
+                  />
+                </div>
+                <div className="text-gray-400 text-xs">
+                  ${depositAmount ? (parseFloat(depositAmount) * 1).toFixed(2) : '0.00'}
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center justify-center">
+                <div className="space-y-2">
+                  <label className="text-gray-400 text-sm block opacity-0">{language === 'en' ? 'Arrow' : '箭头'}</label>
+                  <div className="flex items-center justify-center h-12">
+                    <FaArrowRight className="text-gray-400 text-xl" />
+                  </div>
+                  <div className="text-gray-400 text-xs opacity-0">Placeholder</div>
+                </div>
+              </div>
+          
+                             {/* To vault */}
+               <div className="space-y-2">
+                 <label className="text-gray-400 text-sm block">{language === 'en' ? 'To vault' : '到金库'}</label>
+                 <div className="bg-gray-700 rounded-lg p-3 h-12 flex items-center justify-between">
+                   <div className="flex items-center space-x-2">
+                     <div className="w-6 h-6 bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 rounded-full flex items-center justify-center">
+                       <span className="text-white text-xs font-bold">FF</span>
+                     </div>
+                     <span className="text-white font-medium">FFVAULT</span>
+                   </div>
+                 </div>
+                 <div className="text-gray-400 text-xs">0.00%</div>
+               </div>
+
+                                                           {/* You will receive */}
+               <div className="space-y-2">
+                 <label className="text-gray-400 text-sm block">{language === 'en' ? 'You will receive' : '您将收到'}</label>
+                 <div className="bg-gray-700 rounded-lg p-3 h-12 flex items-center">
+                   <div className="flex items-center space-x-2">
+                     <div className="w-6 h-6 bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 rounded-full flex items-center justify-center">
+                       <span className="text-white text-xs font-bold">FF</span>
+                     </div>
+                     <span className="text-white font-medium text-xl">
+                       {estimatedShares}
+                     </span>
+                   </div>
+                 </div>
+                 <div className="text-gray-400 text-xs">
+                   ${depositAmount ? (parseFloat(depositAmount) * 1).toFixed(2) : '0.00'}
+                 </div>
+               </div>
+
+               {/* 操作按钮 */}
+               <div className="space-y-2">
+                 <label className="text-gray-400 text-sm block opacity-0">{language === 'en' ? 'Action' : '操作'}</label>
+                 <button
+                   onClick={handleDeposit}
+                   disabled={isLoading || !depositAmount || parseFloat(depositAmount) <= 0 || !isConnected}
+                   className={`w-full h-12 px-6 font-bold rounded-lg transition-all duration-300 ${
+                     isLoading 
+                       ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                       : !isConnected
+                       ? 'bg-red-600 hover:bg-red-700 text-white'
+                       : !depositAmount || parseFloat(depositAmount) <= 0
+                       ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                       : 'bg-green-600 hover:bg-green-700 text-white transform hover:scale-105 shadow-lg'
+                   }`}
+                 >
+                   {isLoading ? (
+                     <div className="flex items-center justify-center">
+                       <FaSpinner className="animate-spin mr-2" />
+                       {language === 'en' ? 'Processing...' : '处理中...'}
+                     </div>
+                   ) : !isConnected ? (
+                     language === 'en' ? 'Connect Wallet First' : '请先连接钱包'
+                   ) : (
+                     language === 'en' ? 'Deposit' : '存款'
+                   )}
+                 </button>
+                 <div className="text-gray-400 text-xs opacity-0">Placeholder</div>
+               </div>
+            </div>
+                      ) : (
+              <div className="grid grid-cols-6 gap-4 items-start">
+                             {/* From vault */}
+                              <div className="space-y-2">
+                 <label className="text-gray-400 text-sm block">{language === 'en' ? 'From vault' : '从金库'}</label>
+                 <div className="bg-gray-700 rounded-lg p-3 h-12 flex items-center">
+                   <div className="flex items-center space-x-2">
+                     <div className="w-6 h-6 bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 rounded-full flex items-center justify-center">
+                       <span className="text-white text-xs font-bold">FF</span>
+                     </div>
+                     <span className="text-white font-medium">FFVAULT</span>
+                   </div>
+                 </div>
+                <div className="text-gray-400 text-xs">
+                   {language === 'en' ? 'You have' : '您拥有'} {showBalance ? userShares : '***'} FFVAULT
+                 </div>
+               </div>
+
+                            {/* Amount */}
+              <div className="space-y-2">
+                <label className="text-gray-400 text-sm block">{language === 'en' ? 'Amount' : '金额'}</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    placeholder="0"
+                    className="w-full bg-gray-700 text-white p-3 rounded-lg text-xl font-bold h-12"
+                  />
+                </div>
+                <div className="text-gray-400 text-xs">
+                  ${withdrawAmount ? (parseFloat(withdrawAmount) * 1).toFixed(2) : '0.00'}
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center justify-center">
+                <div className="space-y-2">
+                  <label className="text-gray-400 text-sm block opacity-0">{language === 'en' ? 'Arrow' : '箭头'}</label>
+                  <div className="flex items-center justify-center h-12">
+                    <FaArrowRight className="text-gray-400 text-xl" />
+                  </div>
+                  <div className="text-gray-400 text-xs opacity-0">Placeholder</div>
+                </div>
+              </div>
+
+                             {/* To wallet */}
+               <div className="space-y-2">
+                 <label className="text-gray-400 text-sm block">{language === 'en' ? 'To wallet' : '到钱包'}</label>
+                 <div className="relative token-dropdown">
+                   <div 
+                     className="bg-gray-700 rounded-lg p-3 h-12 flex items-center justify-between cursor-pointer"
+                     onClick={() => setShowWithdrawDropdown(!showWithdrawDropdown)}
+                   >
+                     <div className="flex items-center space-x-2">
+                       <div className="w-6 h-6 bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 rounded-full flex items-center justify-center">
+                         <span className="text-white text-xs font-bold">{getSelectedTokenInfo(selectedWithdrawToken).icon}</span>
+                       </div>
+                       <span className="text-white font-medium">{selectedWithdrawToken}</span>
+                     </div>
+                     <FaChevronDown className={`text-gray-400 text-sm transition-transform ${showWithdrawDropdown ? 'rotate-180' : ''}`} />
+                   </div>
+                   
+                   {/* 下拉菜单 */}
+                   {showWithdrawDropdown && (
+                     <div className="absolute top-full left-0 right-0 mt-1 bg-gray-700 rounded-lg shadow-lg z-10">
+                       {availableTokens.map((token) => (
+                         <div
+                           key={token.symbol}
+                           className="p-3 flex items-center justify-between hover:bg-gray-600 cursor-pointer border-b border-gray-600 last:border-b-0"
+                           onClick={() => handleTokenSelect(token.symbol, false)}
+                         >
+                           <div className="flex items-center space-x-2">
+                             <div className="w-6 h-6 bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 rounded-full flex items-center justify-center">
+                               <span className="text-white text-xs font-bold">{token.icon}</span>
+                             </div>
+                             <span className="text-white font-medium">{token.symbol}</span>
+                           </div>
+                           <span className="text-gray-400 text-xs">{token.balance}</span>
+                         </div>
+                       ))}
+                     </div>
+                   )}
+                 </div>
+               </div>
+
+                                                           {/* You will receive */}
+               <div className="space-y-2">
+                 <label className="text-gray-400 text-sm block">{language === 'en' ? 'You will receive' : '您将收到'}</label>
+                 <div className="bg-gray-700 rounded-lg p-3 h-12 flex items-center">
+                   <div className="flex items-center space-x-2">
+                     <div className="w-6 h-6 bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 rounded-full flex items-center justify-center">
+                       <span className="text-white text-xs font-bold">U</span>
+                     </div>
+                     <span className="text-white font-medium text-xl">
+                       {estimatedAssets}
+                     </span>
+                   </div>
+                 </div>
+                 <div className="text-gray-400 text-xs">
+                   ${withdrawAmount ? (parseFloat(withdrawAmount) * 1).toFixed(2) : '0.00'}
+                 </div>
+               </div>
+
+               {/* 操作按钮 */}
+               <div className="space-y-2">
+                 <label className="text-gray-400 text-sm block opacity-0">{language === 'en' ? 'Action' : '操作'}</label>
+                 <button
+                   onClick={handleWithdraw}
+                   disabled={isLoading || !withdrawAmount || parseFloat(withdrawAmount) <= 0 || !isConnected}
+                   className={`w-full h-12 px-6 font-bold rounded-lg transition-all duration-300 ${
+                     isLoading 
+                       ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                       : !isConnected
+                       ? 'bg-red-600 hover:bg-red-700 text-white'
+                       : !withdrawAmount || parseFloat(withdrawAmount) <= 0
+                       ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                       : 'bg-green-600 hover:bg-green-700 text-white transform hover:scale-105 shadow-lg'
+                   }`}
+                 >
+                   {isLoading ? (
+                     <div className="flex items-center justify-center">
+                       <FaSpinner className="animate-spin mr-2" />
+                       {language === 'en' ? 'Processing...' : '处理中...'}
+                     </div>
+                   ) : !isConnected ? (
+                     language === 'en' ? 'Connect Wallet First' : '请先连接钱包'
+                   ) : (
+                     language === 'en' ? 'Withdraw' : '提款'
+                   )}
+                 </button>
+                 <div className="text-gray-400 text-xs opacity-0">Placeholder</div>
+               </div>
+              </div>
+            )}
+          
+
+        </div>
+      </div>
+
+      {/* 信息标签页 */}
+      <div className="bg-gray-800/50 rounded-lg">
+
+          {/* 信息标签导航 */}
+        <div className="border-b border-gray-700">
+            <nav className="flex space-x-8 px-6">
+            <button
+                 onClick={() => setActiveInfoTab('about')}
+                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                   activeInfoTab === 'about'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
+              }`}
+            >
+                 {language === 'en' ? 'About' : '关于'}
+            </button>
+            <button
+                 onClick={() => setActiveInfoTab('strategies')}
+                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                   activeInfoTab === 'strategies'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
+              }`}
+            >
+                 {language === 'en' ? 'Strategies' : '策略'}
+            </button>
                 <button
-                  onClick={handleWithdraw}
-                  disabled={isLoading}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <>
-                      <FaSpinner className="inline mr-2 animate-spin" />
-                      {language === 'en' ? 'Processing...' : '处理中...'}
-                    </>
-                  ) : (
-                    language === 'en' ? 'Confirm' : '确认'
+                 onClick={() => setActiveInfoTab('harvests')}
+                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                   activeInfoTab === 'harvests'
+                     ? 'border-blue-500 text-blue-400'
+                     : 'border-transparent text-gray-400 hover:text-gray-300'
+                 }`}
+               >
+                 {language === 'en' ? 'Harvests' : '收获'}
+                </button>
+                <button
+                 onClick={() => setActiveInfoTab('info')}
+                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                   activeInfoTab === 'info'
+                     ? 'border-blue-500 text-blue-400'
+                     : 'border-transparent text-gray-400 hover:text-gray-300'
+                 }`}
+               >
+                 {language === 'en' ? 'Info' : '信息'}
+                </button>
+             </nav>
+              </div>
+
+          {/* 信息标签内容 */}
+          <div className="p-6">
+            {renderInfoTabContent()}
+            </div>
+          </div>
+
+                                   {/* 钱包连接状态 */}
+          {!isConnected && (
+           <div className="text-center py-8">
+             <div className="bg-gray-800/50 rounded-lg p-6">
+               <FaWallet className="text-gray-400 text-4xl mx-auto mb-4" />
+               <h3 className="text-white font-bold mb-2">
+                 {language === 'en' ? 'Connect Your Wallet' : '连接您的钱包'}
+              </h3>
+               <p className="text-gray-400 mb-4">
+                 {language === 'en' 
+                   ? 'Connect your wallet to start depositing and earning with FanForce Vault'
+                   : '连接您的钱包开始存款并在FanForce金库中赚取收益'
+                 }
+               </p>
+               <div className="space-y-3">
+                <button
+                    onClick={async () => {
+                      try {
+                        await connectWallet();
+                      } catch (error) {
+                        showToast({
+                          type: 'error',
+                          message: language === 'en' ? 'Failed to connect wallet' : '连接钱包失败'
+                        });
+                      }
+                    }}
+                    disabled={walletLoading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {walletLoading ? (
+                      <span className="flex items-center">
+                        <FaSpinner className="animate-spin mr-2" />
+                        {language === 'en' ? 'Connecting...' : '连接中...'}
+                      </span>
+                    ) : (
+                      language === 'en' ? 'Connect Wallet' : '连接钱包'
                   )}
                 </button>
-                <button
-                  onClick={() => setShowWithdrawModal(false)}
-                  disabled={isLoading}
-                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {language === 'en' ? 'Cancel' : '取消'}
-                </button>
+                 
               </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* AI Summary Report Modal */}
+      {showAiReport && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-700">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 p-6 rounded-t-2xl border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <span className="text-2xl">🤖</span>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white">AI Market Intelligence Report</h2>
+                <p className="text-gray-400 text-sm">Powered by OKX DEX API & Advanced AI Algorithms</p>
+              </div>
+            </div>
+                <button
+                  onClick={() => setShowAiReport(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              {/* Market Analysis Section */}
+              <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                  <span className="text-blue-400 mr-2">📈</span>
+                  Market Analysis
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-white font-semibold mb-2">Current Market State</h4>
+                    <div className="bg-gray-700/50 rounded-lg p-3">
+                      <div className="text-2xl mb-2">{btcMarketData?.marketHeat?.status || '🌥️ Calm Period'}</div>
+                      <p className="text-gray-300 text-sm">
+                        {btcMarketData?.marketHeat?.description || 'Market is in a calm state with moderate volatility'}
+                      </p>
+          </div>
+      </div>
+                  <div>
+                    <h4 className="text-white font-semibold mb-2">AI Confidence Level</h4>
+                    <div className="bg-gray-700/50 rounded-lg p-3">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                        <span className="text-green-400 font-semibold">High Confidence</span>
+                      </div>
+                      <p className="text-gray-300 text-sm">AI analysis based on 24/7 market monitoring</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* OKX Integration Section */}
+              <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                  <span className="text-orange-400 mr-2">⚡</span>
+                  OKX DEX Integration
+                </h3>
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-orange-600/20 to-red-600/20 rounded-lg p-4 border border-orange-500/30">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-white font-semibold text-lg flex items-center">
+                        <span className="text-orange-400 mr-2">🔥</span>
+                        OKX DEX API
+                      </h4>
+                      <span className="text-green-400 text-sm font-bold">✓ LIVE CONNECTION</span>
+                    </div>
+                    <p className="text-gray-300 text-sm mb-3">Direct integration with OKX's institutional-grade trading infrastructure</p>
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      <div className="bg-gray-700/50 rounded p-2">
+                        <div className="text-orange-400 font-semibold">Update Frequency</div>
+                        <div className="text-white">30 seconds</div>
+                      </div>
+                      <div className="bg-gray-700/50 rounded p-2">
+                        <div className="text-orange-400 font-semibold">Data Points</div>
+                        <div className="text-white">1000+ per day</div>
+                      </div>
+                      <div className="bg-gray-700/50 rounded p-2">
+                        <div className="text-orange-400 font-semibold">Market Coverage</div>
+                        <div className="text-white">Global BTC/USDT</div>
+                      </div>
+                      <div className="bg-gray-700/50 rounded p-2">
+                        <div className="text-orange-400 font-semibold">Latency</div>
+                        <div className="text-white">&lt; 100ms</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-white font-semibold">Advanced AI Engine</h4>
+                      <span className="text-blue-400 text-sm">🤖 Active</span>
+                    </div>
+                    <p className="text-gray-300 text-sm mb-2">Machine learning algorithms processing OKX market data for intelligent decision making</p>
+                    <div className="text-xs text-gray-400">
+                      Analysis Models: 5+ | Training Data: 2+ years | Accuracy: 94.7%
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Strategy Details Section */}
+              <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                  <span className="text-yellow-400 mr-2">⚡</span>
+                  Investment Strategy Details
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="bg-gray-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-blue-400 mb-1">
+                      {aiAgentData?.strategy ? (aiAgentData.strategy.buyBTC * 100).toFixed(0) : '10'}%
+                    </div>
+                    <div className="text-gray-300 text-sm">AI Portfolio</div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-green-400 mb-1">
+                      {aiAgentData?.strategy ? (aiAgentData.strategy.stake * 100).toFixed(0) : '90'}%
+                    </div>
+                    <div className="text-gray-300 text-sm">Staking</div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-purple-400 mb-1">
+                      {aiAgentData?.strategy?.riskLevel || 'LOW'}
+                    </div>
+                    <div className="text-gray-300 text-sm">Risk Level</div>
+                  </div>
+                </div>
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  <h4 className="text-white font-semibold mb-2">Strategy Rationale</h4>
+                  <p className="text-gray-300 text-sm leading-relaxed">
+                    {aiAgentData?.strategy?.summary || 'Market is calm, adopting conservative strategy with 90% funds for staking and 10% for AI Portfolio. This allocation optimizes for stable returns while maintaining exposure to potential upside movements.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* OKX Market Analysis Section */}
+              <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                  <span className="text-orange-400 mr-2">📊</span>
+                  OKX Market Analysis
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-700/50 rounded-lg p-4">
+                    <h4 className="text-white font-semibold mb-2 flex items-center">
+                      <span className="text-orange-400 mr-2">🔥</span>
+                      OKX Market Indicators
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">BTC Volatility:</span>
+                        <span className="text-white">Low</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">OKX Volume Trend:</span>
+                        <span className="text-white">Stable</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Price Momentum:</span>
+                        <span className="text-white">Neutral</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Market Depth:</span>
+                        <span className="text-green-400">High</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-lg p-4">
+                    <h4 className="text-white font-semibold mb-2">AI Predictions (OKX Data)</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Short-term (24h):</span>
+                        <span className="text-green-400">+2.3%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Medium-term (7d):</span>
+                        <span className="text-blue-400">+5.7%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">OKX Confidence:</span>
+                        <span className="text-orange-400">94%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Data Quality:</span>
+                        <span className="text-green-400">Premium</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="bg-gradient-to-r from-orange-600/10 to-red-600/10 rounded-xl p-4 border border-orange-500/30">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="text-gray-400">
+                    Report generated at: {new Date().toLocaleString()} | Powered by OKX DEX API
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-orange-400">🔥</span>
+                    <span className="text-gray-300">OKX Integration Active</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   )
 } 

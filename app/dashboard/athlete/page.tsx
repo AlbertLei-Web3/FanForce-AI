@@ -31,9 +31,10 @@ import { useRouter } from 'next/navigation'
 import { icpService, type AthleteProfile, type SeasonBonus } from '@/app/utils/icpService'
 import ICPIntegration from '@/app/components/ICPIntegration'
 import ICPBonusWidget from '@/app/components/ICPBonusWidget'
-import { walletService } from '@/app/services/walletService'
+import { useWallet } from '@/app/context/WalletContext'
 import { vaultService } from '@/app/services/vaultService'
 import { okxDexService } from '@/app/services/okxDexService'
+import { useToast } from '@/app/components/shared/Toast'
 import { 
   FaTrophy, 
   FaFistRaised, 
@@ -223,6 +224,7 @@ const mockMatchHistory = {
 export default function AthleteDashboard() {
   const { language } = useLanguage()
   const router = useRouter()
+  const { showToast, ToastContainer } = useToast()
   const [activeTab, setActiveTab] = useState('overview')
   const [currentStatus, setCurrentStatus] = useState(mockAthleteProfile.status)
   const [showEntryFeeModal, setShowEntryFeeModal] = useState(false)
@@ -231,10 +233,18 @@ export default function AthleteDashboard() {
   // 新增：托管到基金会的状态管理
   const [vaultTransferLoading, setVaultTransferLoading] = useState(false)
   const [showVaultModal, setShowVaultModal] = useState(false)
+  const [transferAmount, setTransferAmount] = useState('') // 新增：转账金额输入
   
-  // 新增：钱包连接状态
-  const [walletInfo, setWalletInfo] = useState<any>(null)
+  // 新增：钱包连接状态 - 使用全局钱包上下文
+  const { walletInfo, isConnected, connectWallet: globalConnectWallet, isLoading: walletLoading } = useWallet()
+  // 新增：查看托管信息的状态
   const [vaultInfo, setVaultInfo] = useState<any>(null)
+  const [userVaultInfo, setUserVaultInfo] = useState<any>(null)
+  const [isLoadingVaultInfo, setIsLoadingVaultInfo] = useState(false)
+
+  // 新增：真实USDC余额状态
+  const [realUSDCBalance, setRealUSDCBalance] = useState<string>('0')
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false)
 
   // Check if season requirements are met / 检查赛季要求是否满足
   const seasonRequirementsMet = mockSeasonProgress.matchesCompleted >= mockSeasonProgress.matchesRequired && 
@@ -251,126 +261,291 @@ export default function AthleteDashboard() {
     }
   }
 
-  // Handle entry fee payment / 处理入赛手续费支付
   const handlePayEntryFee = () => {
-    if (mockAthleteProfile.icpSeasonBonusBalance >= mockAthleteProfile.entryFeeAmount) {
-      setCurrentStatus('active')
-      setShowEntryFeeModal(false)
-      // In real app, deduct from virtual balance / 在真实应用中，从虚拟余额扣除
-      console.log(`Entry fee of ${mockAthleteProfile.entryFeeAmount} CHZ deducted from virtual balance`)
-    } else {
-      alert(language === 'en' ? 'Insufficient virtual CHZ balance!' : '虚拟CHZ余额不足！')
+    if (mockAthleteProfile.icpSeasonBonusBalance < mockAthleteProfile.entryFeeAmount) {
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Insufficient virtual CHZ balance!' : '虚拟CHZ余额不足！'
+      })
+      return
     }
+    
+    // 入赛费用支付成功后显示Toast
+    showToast({
+      type: 'success',
+      message: language === 'en' 
+        ? `Entry fee paid: ${mockAthleteProfile.entryFeeAmount} Virtual CHZ` 
+        : `已支付入赛费用：${mockAthleteProfile.entryFeeAmount} 虚拟CHZ`
+    })
+    setCurrentStatus('active')
+    setShowEntryFeeModal(false)
+    // In real app, deduct from virtual balance / 在真实应用中，从虚拟余额扣除
   }
 
-  // Request mainnet CHZ payout / 请求主网CHZ支付
   const handleRequestPayout = () => {
     if (seasonRequirementsMet) {
       setShowPayoutModal(true)
     } else {
-      alert(language === 'en' 
-        ? 'Complete season requirements first: 10+ matches and 5+ verified social posts' 
-        : '请先完成赛季要求：10场比赛和5条已验证的社交帖子')
+      showToast({
+        type: 'error',
+        message: language === 'en' 
+          ? 'Complete season requirements first: 10+ matches and 5+ verified social posts' 
+          : '请先完成赛季要求：10场比赛和5条已验证的社交帖子'
+      })
     }
   }
 
-  // 新增：连接钱包函数（使用服务层）
-  const connectWallet = async () => {
+;
+
+  // 新增：切换到X Layer Testnet
+  const switchToXLayerTestnet = async () => {
+    const { ethereum } = window as any;
+    
+    if (!ethereum) {
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'MetaMask not found' : '未找到MetaMask'
+      })
+      return;
+    }
+
+    // X Layer Testnet配置
+    const xLayerTestnet = {
+      chainId: '0xC3', // 195
+      chainName: 'X Layer Testnet',
+      nativeCurrency: {
+        name: 'ETH',
+        symbol: 'ETH',
+        decimals: 18
+      },
+      rpcUrls: ['https://testrpc.xlayer.tech'],
+      blockExplorerUrls: ['https://testnet.xlayer.tech']
+    };
+
     try {
-      const result = await walletService.autoConnect();
-      if (result.success && result.walletInfo) {
-        setWalletInfo(result.walletInfo);
-        console.log('Wallet connected:', result.walletInfo);
+      // 尝试切换到X Layer Testnet
+      await ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0xC3' }]
+      });
+      
+      // 网络切换成功后显示Toast
+      showToast({
+        type: 'success',
+        message: language === 'en' ? 'Switched to X Layer Testnet' : '已切换到X Layer测试网'
+      })
+    } catch (switchError: any) {
+      // 如果网络不存在，尝试添加它
+      if (switchError.code === 4902) {
+        try {
+          await ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [xLayerTestnet]
+          });
+          // 网络添加成功后显示Toast
+          showToast({
+            type: 'success',
+            message: language === 'en' ? 'X Layer Testnet added and switched' : '已添加并切换到X Layer测试网'
+          })
+        } catch (addError) {
+          showToast({
+            type: 'error',
+            message: language === 'en' ? 'Failed to add X Layer Testnet' : '添加X Layer测试网失败'
+          })
+        }
       } else {
-        alert(language === 'en' ? result.error || 'Failed to connect wallet' : result.error || '连接钱包失败');
+        showToast({
+          type: 'error',
+          message: language === 'en' ? 'Failed to switch network' : '切换网络失败'
+        })
       }
-    } catch (error) {
-      console.error('Failed to connect wallet:', error);
-      alert(language === 'en' ? 'Failed to connect wallet' : '连接钱包失败');
     }
   };
 
-  // 初始化钱包和金库服务
+  // 获取真实USDC余额
+  const fetchRealUSDCBalance = async () => {
+    // 只在钱包已连接时才获取余额
+    if (!isConnected) {
+      setRealUSDCBalance('0');
+      return;
+    }
+
+    setIsLoadingBalance(true);
+    try {
+      const initialized = await vaultService.initialize();
+      if (initialized) {
+        const balance = await vaultService.getUSDCBalance();
+        setRealUSDCBalance(balance);
+      } else {
+        // 静默处理初始化失败，不显示Toast
+        setRealUSDCBalance('0');
+      }
+    } catch (error) {
+      // 静默处理错误，不显示Toast
+      setRealUSDCBalance('0');
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  }
+
+  // 获取托管信息
+  const fetchVaultInfo = async () => {
+    setIsLoadingVaultInfo(true);
+    try {
+      const initialized = await vaultService.initialize();
+      if (initialized) {
+        // 获取合约总资产信息
+        const contractInfo = await vaultService.getContractTotalAssets();
+        setVaultInfo(contractInfo);
+        
+        // 获取用户托管信息
+        if (isConnected && walletInfo) {
+          const userInfo = await vaultService.getUserVaultInfo(walletInfo.address);
+          setUserVaultInfo(userInfo);
+        }
+        
+        showToast({
+          type: 'success',
+          message: language === 'en' ? 'Vault info updated!' : '金库信息已更新！'
+        })
+      }
+    } catch (error) {
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Failed to fetch vault info' : '获取金库信息失败'
+      })
+    } finally {
+      setIsLoadingVaultInfo(false);
+    }
+  }
+
+  // 初始化OKX DEX服务
   useEffect(() => {
     const initializeServices = async () => {
       // 初始化OKX DEX服务
       await okxDexService.initialize();
-      
-      // 设置钱包事件监听
-      walletService.setupEventListeners(
-        (address) => {
-          setWalletInfo(prev => prev ? { ...prev, address } : null);
-        },
-        (chainId) => {
-          setWalletInfo(prev => prev ? { ...prev, chainId } : null);
-        }
-      );
     };
 
     initializeServices();
   }, []);
 
+  // 当钱包连接状态改变时，获取USDC余额
+  useEffect(() => {
+    // 只在钱包已连接时才获取余额
+    if (isConnected && walletInfo) {
+      fetchRealUSDCBalance()
+    }
+  }, [isConnected, walletInfo?.address])
+
+  // 定期刷新余额（每30秒）
+  useEffect(() => {
+    if (!isConnected) return
+
+    const interval = setInterval(() => {
+      fetchRealUSDCBalance()
+    }, 30000) // 30秒
+
+    return () => clearInterval(interval)
+  }, [isConnected])
+
   // 修改：处理托管到基金会的函数（使用服务层）
   const handleVaultTransfer = async () => {
     if (!seasonRequirementsMet) {
-      alert(language === 'en' 
-        ? 'Complete season requirements first: 10+ matches and 5+ verified social posts' 
-        : '请先完成赛季要求：10场比赛和5条已验证的社交帖子')
+      showToast({
+        type: 'error',
+        message: language === 'en' 
+          ? 'Complete season requirements first: 10+ matches and 5+ verified social posts' 
+          : '请先完成赛季要求：10场比赛和5条已验证的社交帖子'
+      })
       return
     }
     
-    if (!walletInfo?.isConnected) {
-      alert(language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包')
+    if (!isConnected) {
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包'
+      })
       return
     }
     
+    // 设置默认转账金额为真实USDC余额
+    setTransferAmount(realUSDCBalance)
     setShowVaultModal(true)
   }
 
   // 修改：确认托管到基金会（使用钱包地址和USDC）
   const handleConfirmVaultTransfer = async () => {
+    console.log('🚀 Starting vault transfer process...');
+    console.log('Transfer amount:', transferAmount);
+    
+    // 验证输入金额
+    const amount = parseFloat(transferAmount)
+    if (isNaN(amount) || amount <= 0) {
+      showToast({
+        type: 'error',
+        message: language === 'en' ? 'Please enter a valid amount' : '请输入有效金额'
+      })
+      return
+    }
+
     setVaultTransferLoading(true)
     try {
+      console.log('📡 Initializing vault service...');
       // 初始化金库服务
       const initialized = await vaultService.initialize();
       if (!initialized) {
         throw new Error('Failed to initialize vault service');
       }
+      console.log('✅ Vault service initialized');
 
+      console.log('🔍 Checking vault health...');
       // 检查金库健康状态
       const isHealthy = await vaultService.isHealthy();
       if (!isHealthy) {
         throw new Error('Vault is not in healthy state');
       }
+      console.log('✅ Vault is healthy');
 
+      console.log('💰 Getting USDC balance...');
       // 获取用户USDC余额
       const usdcBalance = await vaultService.getUSDCBalance();
-      const transferAmount = mockAthleteProfile.icpSeasonBonusBalance;
+      console.log('USDC balance:', usdcBalance);
       
-      if (parseFloat(usdcBalance) < transferAmount) {
-        throw new Error('Insufficient USDC balance');
+      if (parseFloat(usdcBalance) < amount) {
+        throw new Error(`Insufficient USDC balance. Available: ${usdcBalance}, Required: ${amount}`);
       }
 
+      console.log('💸 Executing deposit...');
       // 执行存款到金库
-      const result = await vaultService.deposit(transferAmount);
+      const result = await vaultService.deposit(amount);
+      console.log('Deposit result:', result);
       
       if (result.success) {
         setShowVaultModal(false)
-        alert(language === 'en' 
-          ? `Successfully transferred ${transferAmount} USDC to Foundation Vault! Transaction: ${result.transactionHash}` 
-          : `成功托管 ${transferAmount} USDC到基金会！交易哈希: ${result.transactionHash}`)
+        setTransferAmount('') // 清空输入
         
-        // 跳转到金库页面
-        router.push('/dashboard/vault')
+        // 只在这里显示成功Toast通知
+        showToast({
+          type: 'success',
+          message: language === 'en' 
+            ? `Successfully transferred ${amount} USDC to Foundation Vault! Transaction: ${result.transactionHash}` 
+            : `成功托管 ${amount} USDC到基金会！交易哈希: ${result.transactionHash}`
+        })
+        
+        // 删除自动跳转到金库页面的代码
+        // router.push('/dashboard/vault')
       } else {
         throw new Error(result.error || 'Deposit failed');
       }
       
     } catch (error) {
-      console.error('Vault transfer failed:', error)
-      alert(language === 'en' 
-        ? `Failed to transfer to Foundation Vault: ${error instanceof Error ? error.message : 'Unknown error'}` 
-        : `托管到基金会失败: ${error instanceof Error ? error.message : '未知错误'}`)
+      console.error('❌ Vault transfer failed:', error)
+      showToast({
+        type: 'error',
+        message: language === 'en' 
+          ? `Failed to transfer to Foundation Vault: ${error instanceof Error ? error.message : 'Unknown error'}` 
+          : `托管到基金会失败: ${error instanceof Error ? error.message : '未知错误'}`
+      })
     } finally {
       setVaultTransferLoading(false)
     }
@@ -496,8 +671,29 @@ export default function AthleteDashboard() {
                   <FaCoins className="mr-2 text-yellow-400" />
                   {language === 'en' ? "ICP Season Bonus Pool" : "ICP赛季奖金池"}
                 </h3>
-                <div className="text-3xl font-bold text-green-400 mb-2">
-                  {mockAthleteProfile.icpSeasonBonusBalance.toFixed(2)} USDC
+                <div className="text-3xl font-bold text-green-400 mb-2 flex items-center justify-between">
+                  <div className="flex items-center">
+                    {isLoadingBalance ? (
+                      <>
+                        <FaSpinner className="animate-spin mr-2" />
+                        Loading...
+                      </>
+                    ) : isConnected ? (
+                      `${realUSDCBalance} USDC`
+                    ) : (
+                      `${mockAthleteProfile.icpSeasonBonusBalance.toFixed(2)} USDC`
+                    )}
+                  </div>
+                  {isConnected && (
+                    <button
+                      onClick={fetchRealUSDCBalance}
+                      disabled={isLoadingBalance}
+                      className="ml-2 p-1 text-gray-400 hover:text-white transition-colors"
+                      title={language === 'en' ? 'Refresh Balance' : '刷新余额'}
+                    >
+                      <FaSpinner className={`w-4 h-4 ${isLoadingBalance ? 'animate-spin' : ''}`} />
+                    </button>
+                  )}
                 </div>
                 <div className="text-sm text-gray-400 space-y-1">
                   <div>{language === 'en' ? 'Monthly Base Salary:' : '月基础薪资：'} {mockAthleteProfile.icpBaseSalary} USDC</div>
@@ -509,18 +705,42 @@ export default function AthleteDashboard() {
                 
                 {/* 新增：钱包连接状态显示 */}
                 <div className="mt-4 mb-4">
-                                  {walletInfo?.isConnected ? (
-                  <div className="bg-green-600/20 p-3 rounded-lg border border-green-500/30">
-                    <div className="text-green-400 text-sm font-medium">
-                      {language === 'en' ? 'Wallet Connected' : '钱包已连接'}
+                  {isConnected ? (
+                    <div className="bg-green-600/20 p-3 rounded-lg border border-green-500/30">
+                      <div className="text-green-400 text-sm font-medium">
+                        {language === 'en' ? 'Wallet Connected' : '钱包已连接'}
+                      </div>
+                      <div className="text-white text-xs truncate">
+                        {walletInfo.address}
+                      </div>
+                      <div className="text-gray-400 text-xs mt-1">
+                        {language === 'en' ? 'Network:' : '网络：'} {walletInfo.chainId === '0xc3' ? 'X Layer Testnet' : walletInfo.chainId === '0x1' ? 'Ethereum Mainnet' : `Chain ID: ${walletInfo.chainId}`}
+                      </div>
+                      {walletInfo.chainId !== '0xc3' && (
+                        <button 
+                          onClick={switchToXLayerTestnet}
+                          className="w-full mt-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold py-1 px-2 rounded transition-colors"
+                        >
+                          {language === 'en' ? 'Switch to X Layer Testnet' : '切换到X Layer测试网'}
+                        </button>
+                      )}
                     </div>
-                    <div className="text-white text-xs truncate">
-                      {walletInfo.address}
-                    </div>
-                  </div>
-                ) : (
+                  ) : (
                     <button 
-                      onClick={connectWallet}
+                      onClick={async () => {
+                      try {
+                        await globalConnectWallet();
+                        showToast({
+                          type: 'success',
+                          message: language === 'en' ? 'Wallet connected successfully!' : '钱包连接成功！'
+                        });
+                      } catch (error) {
+                        showToast({
+                          type: 'error',
+                          message: language === 'en' ? 'Failed to connect wallet' : '连接钱包失败'
+                        });
+                      }
+                    }}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
                     >
                       {language === 'en' ? 'Connect Wallet' : '连接钱包'}
@@ -554,9 +774,9 @@ export default function AthleteDashboard() {
                   {/* 修改：托管到基金会按钮（需要钱包连接） */}
                   <button 
                     onClick={handleVaultTransfer}
-                    disabled={!seasonRequirementsMet || !walletInfo?.isConnected}
+                    disabled={!seasonRequirementsMet || !isConnected}
                     className={`w-full mt-2 px-4 py-2 rounded-lg font-bold transition-all duration-300 flex items-center justify-center space-x-2 ${
-                      seasonRequirementsMet && walletInfo?.isConnected
+                      seasonRequirementsMet && isConnected
                       ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transform hover:scale-105 shadow-lg' 
                         : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                     }`}
@@ -573,6 +793,77 @@ export default function AthleteDashboard() {
                     <span className="text-lg">📊</span>
                     <span>{language === 'en' ? 'View Foundation Vault' : '查看基金会金库'}</span>
                   </button>
+                  
+                  {/* 新增：查看托管信息按钮 */}
+                  <button 
+                    onClick={fetchVaultInfo}
+                    disabled={isLoadingVaultInfo}
+                    className="w-full mt-2 px-4 py-2 rounded-lg font-bold transition-all duration-300 flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white transform hover:scale-105 shadow-lg disabled:opacity-50"
+                  >
+                    <span className="text-lg">🔍</span>
+                    <span>
+                      {isLoadingVaultInfo ? (
+                        <span className="flex items-center">
+                          <FaSpinner className="animate-spin mr-2" />
+                          {language === 'en' ? 'Loading...' : '加载中...'}
+                        </span>
+                      ) : (
+                        language === 'en' ? 'Check Vault Status' : '查看托管状态'
+                      )}
+                    </span>
+                  </button>
+                  
+                  {/* 新增：托管信息显示 */}
+                  {vaultInfo && (
+                    <div className="mt-4 p-4 bg-blue-600/20 rounded-lg border border-blue-500/30">
+                      <h4 className="text-blue-400 font-bold mb-2">
+                        {language === 'en' ? 'Contract Status' : '合约状态'}
+                      </h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">{language === 'en' ? 'Total Assets:' : '总资产：'}</span>
+                          <span className="text-white font-bold">{vaultInfo.totalAssets} USDC</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">{language === 'en' ? 'Total Shares:' : '总份额：'}</span>
+                          <span className="text-white font-bold">{vaultInfo.totalShares} FFVAULT</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">{language === 'en' ? 'Contract:' : '合约地址：'}</span>
+                          <span className="text-blue-400 text-xs truncate">
+                            {vaultInfo.contractAddress.slice(0, 6)}...{vaultInfo.contractAddress.slice(-4)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 新增：用户托管信息显示 */}
+                  {userVaultInfo && (
+                    <div className="mt-4 p-4 bg-green-600/20 rounded-lg border border-green-500/30">
+                      <h4 className="text-green-400 font-bold mb-2">
+                        {language === 'en' ? 'Your Vault Status' : '您的托管状态'}
+                      </h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">{language === 'en' ? 'Your Deposits:' : '您的托管：'}</span>
+                          <span className="text-white font-bold">{userVaultInfo.userDeposits} USDC</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">{language === 'en' ? 'Your Shares:' : '您的份额：'}</span>
+                          <span className="text-white font-bold">{userVaultInfo.userShares} FFVAULT</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">{language === 'en' ? 'Your Profits:' : '您的收益：'}</span>
+                          <span className="text-green-400 font-bold">{userVaultInfo.userProfits} USDC</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">{language === 'en' ? 'Share %:' : '份额占比：'}</span>
+                          <span className="text-yellow-400 font-bold">{userVaultInfo.sharePercentage}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -842,11 +1133,14 @@ export default function AthleteDashboard() {
                 onClick={() => {
                   setShowPayoutModal(false)
                   // In real app, trigger mainnet payout process
-                  alert(language === 'en' ? 'Mainnet payout requested!' : '主网支付请求已提交！')
+                  showToast({
+                    type: 'success',
+                    message: language === 'en' ? 'Mainnet payout requested!' : '主网支付请求已提交！'
+                  })
                 }}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
               >
-                {language === 'en' ? 'Request Payout' : '请求支付'}
+                {language === 'en' ? 'Confirm Payout' : '确认支付'}
               </button>
               <button 
                 onClick={() => setShowPayoutModal(false)}
@@ -882,12 +1176,64 @@ export default function AthleteDashboard() {
                 <p className="text-green-400 mb-2">
                   {language === 'en' ? "Transfer Amount:" : "托管金额："}
                 </p>
-                <p className="text-white text-2xl font-bold">
-                  {mockAthleteProfile.icpSeasonBonusBalance} USDC
-                </p>
-                <p className="text-gray-400 text-sm mt-1">
-                  {language === 'en' ? "Wallet Address:" : "钱包地址："} {walletInfo?.address || 'Not connected'}
-                </p>
+                <div className="mb-3">
+                  <input
+                    type="number"
+                    value={transferAmount}
+                    onChange={(e) => setTransferAmount(e.target.value)}
+                    placeholder={language === 'en' ? "Enter USDC amount" : "输入USDC金额"}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-lg font-bold focus:outline-none focus:border-blue-500"
+                    disabled={vaultTransferLoading}
+                  />
+                  <div className="flex space-x-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setTransferAmount((parseFloat(realUSDCBalance) * 0.25).toFixed(2))}
+                      className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                      disabled={vaultTransferLoading || isLoadingBalance}
+                    >
+                      {language === 'en' ? '25%' : '25%'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTransferAmount((parseFloat(realUSDCBalance) * 0.5).toFixed(2))}
+                      className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                      disabled={vaultTransferLoading || isLoadingBalance}
+                    >
+                      {language === 'en' ? '50%' : '50%'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTransferAmount((parseFloat(realUSDCBalance) * 0.75).toFixed(2))}
+                      className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                      disabled={vaultTransferLoading || isLoadingBalance}
+                    >
+                      {language === 'en' ? '75%' : '75%'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTransferAmount(realUSDCBalance)}
+                      className="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                      disabled={vaultTransferLoading || isLoadingBalance}
+                    >
+                      {language === 'en' ? '100%' : '100%'}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex justify-between text-sm text-gray-400">
+                  <span>
+                    {language === 'en' ? "Available:" : "可用余额："} 
+                    {isLoadingBalance ? (
+                      <span className="inline-flex items-center">
+                        <FaSpinner className="animate-spin mr-1" />
+                        Loading...
+                      </span>
+                    ) : (
+                      `${realUSDCBalance} USDC`
+                    )}
+                  </span>
+                  <span>{language === 'en' ? "Wallet:" : "钱包："} {walletInfo?.address ? `${walletInfo.address.slice(0, 6)}...${walletInfo.address.slice(-4)}` : 'Not connected'}</span>
+                </div>
               </div>
               <p className="text-gray-400 text-sm">
                 {language === 'en' 
@@ -898,7 +1244,7 @@ export default function AthleteDashboard() {
             <div className="flex space-x-3 mt-6">
               <button 
                 onClick={handleConfirmVaultTransfer}
-                disabled={vaultTransferLoading}
+                disabled={vaultTransferLoading || !transferAmount || parseFloat(transferAmount) <= 0}
                 className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
               >
                 {vaultTransferLoading ? (
@@ -937,8 +1283,19 @@ export default function AthleteDashboard() {
         </div>
         <StatCard 
           icon={<FaCoins />} 
-                      title={language === 'en' ? "ICP Season Bonus" : "ICP赛季奖金"} 
-                          value={`${mockAthleteStats.icpSeasonBonusBalance} ICP`} 
+          title={language === 'en' ? "USDC Balance" : "USDC余额"} 
+          value={
+            isLoadingBalance ? (
+              <span className="flex items-center">
+                <FaSpinner className="animate-spin mr-1" />
+                Loading...
+              </span>
+            ) : isConnected ? (
+              `${realUSDCBalance} USDC`
+            ) : (
+              `${mockAthleteStats.icpSeasonBonusBalance} ICP`
+            )
+          } 
         />
         <StatCard 
           icon={<FaTrophy />} 
@@ -1040,6 +1397,7 @@ export default function AthleteDashboard() {
 
       {/* Tab Content / 标签页内容 */}
       {renderTabContent()}
+      <ToastContainer />
     </DashboardLayout>
   )
 } 

@@ -6,7 +6,7 @@ import { ReactNode, FC } from 'react';
 interface StatCardProps {
   icon: ReactNode; // The icon to display. 要显示的图标。
   title: string; // The title of the statistic. 统计数据的标题。
-  value: string | number; // The value of the statistic. 统计数据的值。
+  value: string | number | ReactNode; // The value of the statistic. 统计数据的值。
 }
 
 const StatCard: FC<StatCardProps> = ({ icon, title, value }) => {
