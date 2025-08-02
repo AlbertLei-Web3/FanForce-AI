@@ -63,12 +63,12 @@ export default function VaultPage() {
   const [showWithdrawDropdown, setShowWithdrawDropdown] = useState(false)
   
   // 可用代币列表
-  const availableTokens = [
+  const [availableTokens, setAvailableTokens] = useState([
     { symbol: 'USDC', name: 'USD Coin', icon: 'F', balance: '0.00' },
     { symbol: 'OKB', name: 'OKB Token', icon: 'O', balance: '0.00' },
     { symbol: 'ICP', name: 'Internet Computer', icon: 'I', balance: '0.00' },
     { symbol: 'CHZ', name: 'Chiliz', icon: 'C', balance: '0.00' }
-  ]
+  ])
 
   // 获取金库信息
   const fetchVaultInfo = async () => {
@@ -88,24 +88,42 @@ export default function VaultPage() {
           setUserShares(userInfo?.userShares || '0.00');
         }
         
-        showToast({
-          type: 'success',
-          message: language === 'en' ? 'Vault info updated!' : '金库信息已更新！'
-        })
+        // 静默更新，不显示Toast
+        console.log('✅ Vault info updated successfully');
       }
     } catch (error) {
-      showToast({
-        type: 'error',
-        message: language === 'en' ? 'Failed to fetch vault info' : '获取金库信息失败'
-      })
+      console.error('Failed to fetch vault info:', error);
+      // 静默处理错误，不显示Toast
     } finally {
       setIsLoadingVaultInfo(false);
+    }
+  }
+
+  // 获取用户USDC余额
+  const fetchUserUSDCBalance = async () => {
+    try {
+      const initialized = await vaultService.initialize();
+      if (initialized) {
+        const balance = await vaultService.getUSDCBalance();
+        // 更新USDC余额
+        setAvailableTokens(prevTokens => 
+          prevTokens.map(token => 
+            token.symbol === 'USDC' 
+              ? { ...token, balance } 
+              : token
+          )
+        );
+        console.log('✅ USDC balance updated:', balance);
+      }
+    } catch (error) {
+      console.error('Failed to fetch USDC balance:', error);
     }
   }
 
   // 初始化服务
   useEffect(() => {
     const initializeServices = async () => {
+      // 设置钱包事件监听
       walletService.setupEventListeners(
         (address) => {
           setWalletInfo(prev => prev ? { ...prev, address } : null)
@@ -126,17 +144,21 @@ export default function VaultPage() {
   useEffect(() => {
     if (walletInfo?.isConnected) {
       fetchVaultInfo();
+      fetchUserUSDCBalance();
     }
   }, [walletInfo?.isConnected, walletInfo?.address])
 
   // 定期刷新金库信息（每30秒）
   useEffect(() => {
+    if (!walletInfo?.isConnected) return
+
     const interval = setInterval(() => {
       fetchVaultInfo();
+      fetchUserUSDCBalance();
     }, 30000) // 30秒
 
     return () => clearInterval(interval)
-  }, [])
+  }, [walletInfo?.isConnected])
   
   // 点击外部区域关闭下拉框
   useEffect(() => {
@@ -175,8 +197,89 @@ export default function VaultPage() {
     }
   }
 
+  // 切换到XLayer测试网
+  const switchToXLayerTestnet = async () => {
+    try {
+      const { ethereum } = window as any;
+      if (!ethereum) {
+        throw new Error('MetaMask not installed');
+      }
+
+      // XLayer测试网配置
+      const xlayerTestnet = {
+        chainId: '0x1b58', // 十进制: 7000
+        chainName: 'XLayer Testnet',
+        nativeCurrency: {
+          name: 'OKB',
+          symbol: 'OKB',
+          decimals: 18
+        },
+        rpcUrls: ['https://testrpc.xlayer.tech'],
+        blockExplorerUrls: ['https://www.oklink.com/xlayer-test']
+      };
+
+      // 尝试切换到XLayer测试网
+      await ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: xlayerTestnet.chainId }]
+      });
+
+      showToast({
+        type: 'success',
+        message: language === 'en' ? 'Switched to XLayer Testnet' : '已切换到XLayer测试网'
+      });
+
+      // 刷新钱包信息
+      const result = await walletService.autoConnect();
+      if (result.success && result.walletInfo) {
+        setWalletInfo(result.walletInfo);
+      }
+    } catch (error: any) {
+      console.error('Failed to switch network:', error);
+      
+      if (error.code === 4902) {
+        // 网络不存在，尝试添加网络
+        try {
+          const { ethereum } = window as any;
+          await ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0x1b58',
+              chainName: 'XLayer Testnet',
+              nativeCurrency: {
+                name: 'OKB',
+                symbol: 'OKB',
+                decimals: 18
+              },
+              rpcUrls: ['https://testrpc.xlayer.tech'],
+              blockExplorerUrls: ['https://www.oklink.com/xlayer-test']
+            }]
+          });
+          
+          showToast({
+            type: 'success',
+            message: language === 'en' ? 'XLayer Testnet added and switched' : '已添加并切换到XLayer测试网'
+          });
+        } catch (addError) {
+          showToast({
+            type: 'error',
+            message: language === 'en' ? 'Failed to add XLayer Testnet' : '添加XLayer测试网失败'
+          });
+        }
+      } else {
+        showToast({
+          type: 'error',
+          message: language === 'en' ? 'Failed to switch network' : '切换网络失败'
+        });
+      }
+    }
+  }
+
   // 处理存款
   const handleDeposit = async () => {
+    console.log('🚀 Starting deposit process...');
+    console.log('Deposit amount:', depositAmount);
+    
     if (!walletInfo?.isConnected) {
       showToast({
         type: 'error',
@@ -195,44 +298,56 @@ export default function VaultPage() {
 
     setIsLoading(true)
     try {
+      console.log('📡 Initializing vault service...');
       // 初始化金库服务
       const initialized = await vaultService.initialize();
       if (!initialized) {
         throw new Error('Failed to initialize vault service');
       }
+      console.log('✅ Vault service initialized');
 
+      console.log('🔍 Checking vault health...');
       // 检查金库健康状态
       const isHealthy = await vaultService.isHealthy();
       if (!isHealthy) {
         throw new Error('Vault is not in healthy state');
       }
+      console.log('✅ Vault is healthy');
 
+      console.log('💰 Getting USDC balance...');
       // 获取用户USDC余额
       const usdcBalance = await vaultService.getUSDCBalance();
       const amount = parseFloat(depositAmount);
+      console.log('USDC balance:', usdcBalance);
+      console.log('Amount to deposit:', amount);
       
       if (parseFloat(usdcBalance) < amount) {
-        throw new Error('Insufficient USDC balance');
+        throw new Error(`Insufficient USDC balance. Available: ${usdcBalance}, Required: ${amount}`);
       }
 
+      console.log('💸 Executing deposit...');
       // 执行存款
       const result = await vaultService.deposit(amount);
+      console.log('Deposit result:', result);
       
       if (result.success) {
+        setDepositAmount('') // 清空输入
+        
         showToast({
           type: 'success',
           message: language === 'en' 
-            ? `Deposit successful! You received ${result.shares} shares.` 
-            : `存款成功！您获得了 ${result.shares} 份额。`
+            ? `Deposit successful! You received ${result.shares} shares. Transaction: ${result.transactionHash}` 
+            : `存款成功！您获得了 ${result.shares} 份额。交易哈希: ${result.transactionHash}`
         })
-        setDepositAmount('')
         
         // 刷新金库信息
         await fetchVaultInfo();
+        await fetchUserUSDCBalance();
       } else {
         throw new Error(result.error || 'Deposit failed');
       }
     } catch (error) {
+      console.error('❌ Deposit failed:', error);
       showToast({
         type: 'error',
         message: language === 'en' 
@@ -246,6 +361,9 @@ export default function VaultPage() {
 
   // 处理提款
   const handleWithdraw = async () => {
+    console.log('🚀 Starting withdraw process...');
+    console.log('Withdraw amount:', withdrawAmount);
+    
     if (!walletInfo?.isConnected) {
       showToast({
         type: 'error',
@@ -264,51 +382,65 @@ export default function VaultPage() {
 
     setIsLoading(true)
     try {
+      console.log('📡 Initializing vault service...');
       // 初始化金库服务
       const initialized = await vaultService.initialize();
       if (!initialized) {
         throw new Error('Failed to initialize vault service');
       }
+      console.log('✅ Vault service initialized');
 
+      console.log('🔍 Checking vault health...');
       // 检查金库健康状态
       const isHealthy = await vaultService.isHealthy();
       if (!isHealthy) {
         throw new Error('Vault is not in healthy state');
       }
+      console.log('✅ Vault is healthy');
 
+      console.log('💰 Getting user vault info...');
       // 获取用户份额
-      const vaultInfo = await vaultService.getVaultInfo();
-      if (!vaultInfo) {
-        throw new Error('Failed to get vault info');
+      const userInfo = await vaultService.getUserVaultInfo(walletInfo.address);
+      if (!userInfo) {
+        throw new Error('Failed to get user vault info');
       }
 
       const amount = parseFloat(withdrawAmount);
-      const userShares = parseFloat(vaultInfo.userShares);
+      const userShares = parseFloat(userInfo.userShares);
+      console.log('User shares:', userShares);
+      console.log('Amount to withdraw:', amount);
       
       // 计算需要的份额
       const requiredShares = await vaultService.previewWithdraw(amount);
+      console.log('Required shares:', requiredShares);
+      
       if (userShares < parseFloat(requiredShares)) {
-        throw new Error('Insufficient shares');
+        throw new Error(`Insufficient shares. Available: ${userShares}, Required: ${requiredShares}`);
       }
 
+      console.log('💸 Executing withdraw...');
       // 执行提款
       const result = await vaultService.withdraw(amount);
+      console.log('Withdraw result:', result);
       
       if (result.success) {
+        setWithdrawAmount('') // 清空输入
+        
         showToast({
           type: 'success',
           message: language === 'en' 
-            ? `Withdraw successful! You received ${result.assets} USDC.` 
-            : `提款成功！您获得了 ${result.assets} USDC。`
+            ? `Withdraw successful! You received ${result.assets} USDC. Transaction: ${result.transactionHash}` 
+            : `提款成功！您获得了 ${result.assets} USDC。交易哈希: ${result.transactionHash}`
         })
-        setWithdrawAmount('')
         
         // 刷新金库信息
         await fetchVaultInfo();
+        await fetchUserUSDCBalance();
       } else {
         throw new Error(result.error || 'Withdraw failed');
       }
     } catch (error) {
+      console.error('❌ Withdraw failed:', error);
       showToast({
         type: 'error',
         message: language === 'en' 
@@ -321,13 +453,22 @@ export default function VaultPage() {
   }
 
   // 设置最大存款金额
-  const setMaxDeposit = () => {
-    setDepositAmount(userBalance);
+  const setMaxDeposit = async () => {
+    try {
+      const initialized = await vaultService.initialize();
+      if (initialized) {
+        const balance = await vaultService.getUSDCBalance();
+        setDepositAmount(balance);
+      }
+    } catch (error) {
+      console.error('Failed to get max deposit amount:', error);
+      setDepositAmount('0');
+    }
   }
 
   // 设置最大提款金额
   const setMaxWithdraw = () => {
-    setWithdrawAmount(userBalance);
+    setWithdrawAmount(userShares);
   }
   
   // 获取选中代币的信息
@@ -345,6 +486,58 @@ export default function VaultPage() {
       setShowWithdrawDropdown(false);
     }
   }
+
+  // 计算预估份额（存款时）
+  const calculateEstimatedShares = async (amount: string) => {
+    if (!amount || parseFloat(amount) <= 0) {
+      setEstimatedShares('0.00');
+      return;
+    }
+
+    try {
+      const initialized = await vaultService.initialize();
+      if (initialized) {
+        const shares = await vaultService.previewDeposit(parseFloat(amount));
+        setEstimatedShares(shares);
+      }
+    } catch (error) {
+      console.error('Failed to calculate estimated shares:', error);
+      setEstimatedShares('0.00');
+    }
+  }
+
+  // 计算预估资产（提款时）
+  const calculateEstimatedAssets = async (amount: string) => {
+    if (!amount || parseFloat(amount) <= 0) {
+      setEstimatedAssets('0.00');
+      return;
+    }
+
+    try {
+      const initialized = await vaultService.initialize();
+      if (initialized) {
+        const assets = await vaultService.previewWithdraw(parseFloat(amount));
+        setEstimatedAssets(assets);
+      }
+    } catch (error) {
+      console.error('Failed to calculate estimated assets:', error);
+      setEstimatedAssets('0.00');
+    }
+  }
+
+  // 监听存款金额变化，实时计算预估份额
+  useEffect(() => {
+    if (activeAction === 'deposit') {
+      calculateEstimatedShares(depositAmount);
+    }
+  }, [depositAmount, activeAction]);
+
+  // 监听提款金额变化，实时计算预估资产
+  useEffect(() => {
+    if (activeAction === 'withdraw') {
+      calculateEstimatedAssets(withdrawAmount);
+    }
+  }, [withdrawAmount, activeAction]);
 
   // 渲染信息标签页内容
   const renderInfoTabContent = () => {
@@ -479,18 +672,46 @@ export default function VaultPage() {
           </button>
         </div>
 
-        {/* 关键指标 */}
-        <div className="bg-gray-800/50 rounded-lg p-6 text-center">
-          <div className="text-2xl font-bold text-white mb-1">
-            {vaultInfo ? `${parseFloat(vaultInfo.totalAssets).toLocaleString()}` : '0.00'}
-          </div>
-          <div className="text-gray-400 text-sm mb-2">
-            {language === 'en' ? 'Total deposited, st-USDC' : '总托管，st-USDC'}
-          </div>
-          <div className="text-lg text-white">
-            ${vaultInfo ? (parseFloat(vaultInfo.totalAssets) * 1).toLocaleString() : '0.00'}
-          </div>
-        </div>
+                 {/* 网络状态和关键指标 */}
+         <div className="space-y-4">
+           {/* 网络状态 */}
+           {walletInfo?.isConnected && (
+             <div className="bg-gray-800/50 rounded-lg p-4">
+               <div className="flex items-center justify-between">
+                 <div className="flex items-center space-x-2">
+                   <div className={`w-3 h-3 rounded-full ${walletInfo.chainId === '0x1b58' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                   <span className="text-gray-400 text-sm">
+                     {walletInfo.chainId === '0x1b58' 
+                       ? (language === 'en' ? 'XLayer Testnet' : 'XLayer测试网')
+                       : (language === 'en' ? 'Wrong Network' : '错误网络')
+                     }
+                   </span>
+                 </div>
+                 {walletInfo.chainId !== '0x1b58' && (
+                   <button
+                     onClick={switchToXLayerTestnet}
+                     className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded transition-colors"
+                   >
+                     {language === 'en' ? 'Switch Network' : '切换网络'}
+                   </button>
+                 )}
+               </div>
+             </div>
+           )}
+           
+           {/* 关键指标 */}
+           <div className="bg-gray-800/50 rounded-lg p-6 text-center">
+             <div className="text-2xl font-bold text-white mb-1">
+               {vaultInfo ? `${parseFloat(vaultInfo.totalAssets).toLocaleString()}` : '0.00'}
+             </div>
+             <div className="text-gray-400 text-sm mb-2">
+               {language === 'en' ? 'Total deposited, st-USDC' : '总托管，st-USDC'}
+             </div>
+             <div className="text-lg text-white">
+               ${vaultInfo ? (parseFloat(vaultInfo.totalAssets) * 1).toLocaleString() : '0.00'}
+             </div>
+           </div>
+         </div>
 
         {/* 存款/提款标签 */}
         <div className="flex justify-center space-x-1 bg-gray-800/50 rounded-lg p-1">
@@ -614,7 +835,7 @@ export default function VaultPage() {
                        <span className="text-white text-xs font-bold">ST</span>
                      </div>
                      <span className="text-white font-medium text-xl">
-                       {depositAmount ? estimatedShares : '0'}
+                       {estimatedShares}
                      </span>
                    </div>
                  </div>
@@ -736,7 +957,7 @@ export default function VaultPage() {
                        <span className="text-white text-xs font-bold">F</span>
                      </div>
                      <span className="text-white font-medium text-xl">
-                       {withdrawAmount ? estimatedAssets : '0'}
+                       {estimatedAssets}
                      </span>
                    </div>
                  </div>
@@ -820,29 +1041,40 @@ export default function VaultPage() {
           </div>
         </div>
 
-        {/* 钱包连接状态 */}
-        {!walletInfo?.isConnected && (
-          <div className="text-center py-8">
-            <div className="bg-gray-800/50 rounded-lg p-6">
-              <FaWallet className="text-gray-400 text-4xl mx-auto mb-4" />
-              <h3 className="text-white font-bold mb-2">
-                {language === 'en' ? 'Connect Your Wallet' : '连接您的钱包'}
-              </h3>
-              <p className="text-gray-400 mb-4">
-                {language === 'en' 
-                  ? 'Connect your wallet to start depositing and earning with FanForce Vault'
-                  : '连接您的钱包开始存款并在FanForce金库中赚取收益'
-                }
-              </p>
-              <button
-                onClick={connectWallet}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
-              >
-                {language === 'en' ? 'Connect Wallet' : '连接钱包'}
-              </button>
-            </div>
-          </div>
-        )}
+                 {/* 钱包连接状态 */}
+         {!walletInfo?.isConnected && (
+           <div className="text-center py-8">
+             <div className="bg-gray-800/50 rounded-lg p-6">
+               <FaWallet className="text-gray-400 text-4xl mx-auto mb-4" />
+               <h3 className="text-white font-bold mb-2">
+                 {language === 'en' ? 'Connect Your Wallet' : '连接您的钱包'}
+               </h3>
+               <p className="text-gray-400 mb-4">
+                 {language === 'en' 
+                   ? 'Connect your wallet to start depositing and earning with FanForce Vault'
+                   : '连接您的钱包开始存款并在FanForce金库中赚取收益'
+                 }
+               </p>
+               <div className="space-y-3">
+                 <button
+                   onClick={connectWallet}
+                   className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+                 >
+                   {language === 'en' ? 'Connect Wallet' : '连接钱包'}
+                 </button>
+                 <div className="text-xs text-gray-500">
+                   {language === 'en' ? 'Make sure you are on XLayer Testnet' : '请确保您在XLayer测试网上'}
+                 </div>
+                 <button
+                   onClick={switchToXLayerTestnet}
+                   className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-colors text-sm"
+                 >
+                   {language === 'en' ? 'Switch to XLayer Testnet' : '切换到XLayer测试网'}
+                 </button>
+               </div>
+             </div>
+           </div>
+         )}
       </div>
     </DashboardLayout>
   )
