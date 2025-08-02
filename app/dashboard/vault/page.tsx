@@ -23,7 +23,7 @@ import {
   FaEyeSlash,
   FaChevronDown
 } from 'react-icons/fa'
-import { walletService } from '@/app/services/walletService'
+import { useWallet } from '@/app/context/WalletContext'
 import { vaultService } from '@/app/services/vaultService'
 import Link from 'next/link'
 
@@ -39,9 +39,9 @@ interface UserDepositInfo {
 export default function VaultPage() {
   const { language } = useLanguage()
   const { showToast } = useToast()
+  const { walletInfo, isConnected, connectWallet, isLoading: walletLoading } = useWallet()
   const [activeAction, setActiveAction] = useState('deposit') // 'deposit' | 'withdraw'
   const [activeInfoTab, setActiveInfoTab] = useState('about') // 'about' | 'strategies' | 'harvests' | 'info'
-  const [walletInfo, setWalletInfo] = useState<any>(null)
   const [vaultInfo, setVaultInfo] = useState<any>(null)
   const [userVaultInfo, setUserVaultInfo] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -81,7 +81,7 @@ export default function VaultPage() {
         setVaultInfo(contractInfo);
         
         // 获取用户托管信息
-        if (walletInfo?.isConnected) {
+        if (isConnected && walletInfo) {
           const userInfo = await vaultService.getUserVaultInfo(walletInfo.address);
           setUserVaultInfo(userInfo);
           setUserBalance(userInfo?.userDeposits || '0.00');
@@ -123,16 +123,6 @@ export default function VaultPage() {
   // 初始化服务
   useEffect(() => {
     const initializeServices = async () => {
-      // 设置钱包事件监听
-      walletService.setupEventListeners(
-        (address) => {
-          setWalletInfo(prev => prev ? { ...prev, address } : null)
-        },
-        (chainId) => {
-          setWalletInfo(prev => prev ? { ...prev, chainId } : null)
-        }
-      )
-
       // 加载金库信息
       await fetchVaultInfo();
     }
@@ -142,15 +132,15 @@ export default function VaultPage() {
 
   // 当钱包连接状态改变时，获取用户信息
   useEffect(() => {
-    if (walletInfo?.isConnected) {
+    if (isConnected && walletInfo) {
       fetchVaultInfo();
       fetchUserUSDCBalance();
     }
-  }, [walletInfo?.isConnected, walletInfo?.address])
+  }, [isConnected, walletInfo?.address])
 
   // 定期刷新金库信息（每30秒）
   useEffect(() => {
-    if (!walletInfo?.isConnected) return
+    if (!isConnected) return
 
     const interval = setInterval(() => {
       fetchVaultInfo();
@@ -158,7 +148,7 @@ export default function VaultPage() {
     }, 30000) // 30秒
 
     return () => clearInterval(interval)
-  }, [walletInfo?.isConnected])
+  }, [isConnected])
   
   // 点击外部区域关闭下拉框
   useEffect(() => {
@@ -176,26 +166,7 @@ export default function VaultPage() {
     };
   }, []);
 
-  // 连接钱包
-  const connectWallet = async () => {
-    try {
-      const result = await walletService.autoConnect()
-      if (result.success && result.walletInfo) {
-        setWalletInfo(result.walletInfo)
-      } else {
-        showToast({
-          type: 'error',
-          message: language === 'en' ? result.error || 'Failed to connect wallet' : result.error || '连接钱包失败'
-        })
-      }
-    } catch (error) {
-      console.error('Failed to connect wallet:', error)
-      showToast({
-        type: 'error',
-        message: language === 'en' ? 'Failed to connect wallet' : '连接钱包失败'
-      })
-    }
-  }
+
 
   // 切换到XLayer测试网
   const switchToXLayerTestnet = async () => {
@@ -205,17 +176,17 @@ export default function VaultPage() {
         throw new Error('MetaMask not installed');
       }
 
-      // XLayer测试网配置
+      // XLayer测试网配置 - 使用与运动员页面相同的配置
       const xlayerTestnet = {
-        chainId: '0x1b58', // 十进制: 7000
-        chainName: 'XLayer Testnet',
+        chainId: '0xC3', // 195 - 与运动员页面保持一致
+        chainName: 'X Layer Testnet',
         nativeCurrency: {
-          name: 'OKB',
-          symbol: 'OKB',
+          name: 'ETH',
+          symbol: 'ETH',
           decimals: 18
         },
         rpcUrls: ['https://testrpc.xlayer.tech'],
-        blockExplorerUrls: ['https://www.oklink.com/xlayer-test']
+        blockExplorerUrls: ['https://testnet.xlayer.tech']
       };
 
       // 尝试切换到XLayer测试网
@@ -229,11 +200,8 @@ export default function VaultPage() {
         message: language === 'en' ? 'Switched to XLayer Testnet' : '已切换到XLayer测试网'
       });
 
-      // 刷新钱包信息
-      const result = await walletService.autoConnect();
-      if (result.success && result.walletInfo) {
-        setWalletInfo(result.walletInfo);
-      }
+      // 刷新钱包信息 - 钱包状态会通过全局上下文自动更新
+      await connectWallet();
     } catch (error: any) {
       console.error('Failed to switch network:', error);
       
@@ -244,15 +212,15 @@ export default function VaultPage() {
           await ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
-              chainId: '0x1b58',
-              chainName: 'XLayer Testnet',
+              chainId: '0xC3',
+              chainName: 'X Layer Testnet',
               nativeCurrency: {
-                name: 'OKB',
-                symbol: 'OKB',
+                name: 'ETH',
+                symbol: 'ETH',
                 decimals: 18
               },
               rpcUrls: ['https://testrpc.xlayer.tech'],
-              blockExplorerUrls: ['https://www.oklink.com/xlayer-test']
+              blockExplorerUrls: ['https://testnet.xlayer.tech']
             }]
           });
           
@@ -280,7 +248,7 @@ export default function VaultPage() {
     console.log('🚀 Starting deposit process...');
     console.log('Deposit amount:', depositAmount);
     
-    if (!walletInfo?.isConnected) {
+    if (!isConnected) {
       showToast({
         type: 'error',
         message: language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包'
@@ -364,7 +332,7 @@ export default function VaultPage() {
     console.log('🚀 Starting withdraw process...');
     console.log('Withdraw amount:', withdrawAmount);
     
-    if (!walletInfo?.isConnected) {
+    if (!isConnected) {
       showToast({
         type: 'error',
         message: language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包'
@@ -400,7 +368,7 @@ export default function VaultPage() {
 
       console.log('💰 Getting user vault info...');
       // 获取用户份额
-      const userInfo = await vaultService.getUserVaultInfo(walletInfo.address);
+      const userInfo = await vaultService.getUserVaultInfo(walletInfo!.address);
       if (!userInfo) {
         throw new Error('Failed to get user vault info');
       }
@@ -674,30 +642,7 @@ export default function VaultPage() {
 
                  {/* 网络状态和关键指标 */}
          <div className="space-y-4">
-           {/* 网络状态 */}
-           {walletInfo?.isConnected && (
-             <div className="bg-gray-800/50 rounded-lg p-4">
-               <div className="flex items-center justify-between">
-                 <div className="flex items-center space-x-2">
-                   <div className={`w-3 h-3 rounded-full ${walletInfo.chainId === '0x1b58' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                   <span className="text-gray-400 text-sm">
-                     {walletInfo.chainId === '0x1b58' 
-                       ? (language === 'en' ? 'XLayer Testnet' : 'XLayer测试网')
-                       : (language === 'en' ? 'Wrong Network' : '错误网络')
-                     }
-                   </span>
-                 </div>
-                 {walletInfo.chainId !== '0x1b58' && (
-                   <button
-                     onClick={switchToXLayerTestnet}
-                     className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded transition-colors"
-                   >
-                     {language === 'en' ? 'Switch Network' : '切换网络'}
-                   </button>
-                 )}
-               </div>
-             </div>
-           )}
+           
            
            {/* 关键指标 */}
            <div className="bg-gray-800/50 rounded-lg p-6 text-center">
@@ -1041,8 +986,8 @@ export default function VaultPage() {
           </div>
         </div>
 
-                 {/* 钱包连接状态 */}
-         {!walletInfo?.isConnected && (
+                                   {/* 钱包连接状态 */}
+          {!isConnected && (
            <div className="text-center py-8">
              <div className="bg-gray-800/50 rounded-lg p-6">
                <FaWallet className="text-gray-400 text-4xl mx-auto mb-4" />
@@ -1056,21 +1001,30 @@ export default function VaultPage() {
                  }
                </p>
                <div className="space-y-3">
-                 <button
-                   onClick={connectWallet}
-                   className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
-                 >
-                   {language === 'en' ? 'Connect Wallet' : '连接钱包'}
-                 </button>
-                 <div className="text-xs text-gray-500">
-                   {language === 'en' ? 'Make sure you are on XLayer Testnet' : '请确保您在XLayer测试网上'}
-                 </div>
-                 <button
-                   onClick={switchToXLayerTestnet}
-                   className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-colors text-sm"
-                 >
-                   {language === 'en' ? 'Switch to XLayer Testnet' : '切换到XLayer测试网'}
-                 </button>
+                                   <button
+                    onClick={async () => {
+                      try {
+                        await connectWallet();
+                      } catch (error) {
+                        showToast({
+                          type: 'error',
+                          message: language === 'en' ? 'Failed to connect wallet' : '连接钱包失败'
+                        });
+                      }
+                    }}
+                    disabled={walletLoading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {walletLoading ? (
+                      <span className="flex items-center">
+                        <FaSpinner className="animate-spin mr-2" />
+                        {language === 'en' ? 'Connecting...' : '连接中...'}
+                      </span>
+                    ) : (
+                      language === 'en' ? 'Connect Wallet' : '连接钱包'
+                    )}
+                  </button>
+                 
                </div>
              </div>
            </div>

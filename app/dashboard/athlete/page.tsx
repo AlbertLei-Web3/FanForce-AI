@@ -31,7 +31,7 @@ import { useRouter } from 'next/navigation'
 import { icpService, type AthleteProfile, type SeasonBonus } from '@/app/utils/icpService'
 import ICPIntegration from '@/app/components/ICPIntegration'
 import ICPBonusWidget from '@/app/components/ICPBonusWidget'
-import { walletService } from '@/app/services/walletService'
+import { useWallet } from '@/app/context/WalletContext'
 import { vaultService } from '@/app/services/vaultService'
 import { okxDexService } from '@/app/services/okxDexService'
 import { useToast } from '@/app/components/shared/Toast'
@@ -235,8 +235,8 @@ export default function AthleteDashboard() {
   const [showVaultModal, setShowVaultModal] = useState(false)
   const [transferAmount, setTransferAmount] = useState('') // 新增：转账金额输入
   
-  // 新增：钱包连接状态
-  const [walletInfo, setWalletInfo] = useState<any>(null)
+  // 新增：钱包连接状态 - 使用全局钱包上下文
+  const { walletInfo, isConnected, connectWallet: globalConnectWallet, isLoading: walletLoading } = useWallet()
   // 新增：查看托管信息的状态
   const [vaultInfo, setVaultInfo] = useState<any>(null)
   const [userVaultInfo, setUserVaultInfo] = useState<any>(null)
@@ -295,30 +295,7 @@ export default function AthleteDashboard() {
     }
   }
 
-  // 新增：连接钱包函数（使用服务层）
-  const connectWallet = async () => {
-    try {
-      const result = await walletService.autoConnect();
-      if (result.success && result.walletInfo) {
-        setWalletInfo(result.walletInfo);
-        // 钱包连接成功后显示Toast
-        showToast({
-          type: 'success',
-          message: language === 'en' ? 'Wallet connected successfully!' : '钱包连接成功！'
-        })
-      } else {
-        showToast({
-          type: 'error',
-          message: language === 'en' ? result.error || 'Failed to connect wallet' : result.error || '连接钱包失败'
-        })
-      }
-    } catch (error) {
-      showToast({
-        type: 'error',
-        message: language === 'en' ? 'Failed to connect wallet' : '连接钱包失败'
-      })
-    }
-  };
+;
 
   // 新增：切换到X Layer Testnet
   const switchToXLayerTestnet = async () => {
@@ -388,7 +365,7 @@ export default function AthleteDashboard() {
   // 获取真实USDC余额
   const fetchRealUSDCBalance = async () => {
     // 只在钱包已连接时才获取余额
-    if (!walletInfo?.isConnected) {
+    if (!isConnected) {
       setRealUSDCBalance('0');
       return;
     }
@@ -422,7 +399,7 @@ export default function AthleteDashboard() {
         setVaultInfo(contractInfo);
         
         // 获取用户托管信息
-        if (walletInfo?.isConnected) {
+        if (isConnected && walletInfo) {
           const userInfo = await vaultService.getUserVaultInfo(walletInfo.address);
           setUserVaultInfo(userInfo);
         }
@@ -442,21 +419,11 @@ export default function AthleteDashboard() {
     }
   }
 
-  // 初始化钱包和金库服务
+  // 初始化OKX DEX服务
   useEffect(() => {
     const initializeServices = async () => {
       // 初始化OKX DEX服务
       await okxDexService.initialize();
-      
-      // 设置钱包事件监听
-      walletService.setupEventListeners(
-        (address) => {
-          setWalletInfo(prev => prev ? { ...prev, address } : null);
-        },
-        (chainId) => {
-          setWalletInfo(prev => prev ? { ...prev, chainId } : null);
-        }
-      );
     };
 
     initializeServices();
@@ -465,21 +432,21 @@ export default function AthleteDashboard() {
   // 当钱包连接状态改变时，获取USDC余额
   useEffect(() => {
     // 只在钱包已连接时才获取余额
-    if (walletInfo?.isConnected) {
+    if (isConnected && walletInfo) {
       fetchRealUSDCBalance()
     }
-  }, [walletInfo?.isConnected, walletInfo?.address])
+  }, [isConnected, walletInfo?.address])
 
   // 定期刷新余额（每30秒）
   useEffect(() => {
-    if (!walletInfo?.isConnected) return
+    if (!isConnected) return
 
     const interval = setInterval(() => {
       fetchRealUSDCBalance()
     }, 30000) // 30秒
 
     return () => clearInterval(interval)
-  }, [walletInfo?.isConnected])
+  }, [isConnected])
 
   // 修改：处理托管到基金会的函数（使用服务层）
   const handleVaultTransfer = async () => {
@@ -493,7 +460,7 @@ export default function AthleteDashboard() {
       return
     }
     
-    if (!walletInfo?.isConnected) {
+    if (!isConnected) {
       showToast({
         type: 'error',
         message: language === 'en' ? 'Please connect your wallet first' : '请先连接您的钱包'
@@ -711,13 +678,13 @@ export default function AthleteDashboard() {
                         <FaSpinner className="animate-spin mr-2" />
                         Loading...
                       </>
-                    ) : walletInfo?.isConnected ? (
+                    ) : isConnected ? (
                       `${realUSDCBalance} USDC`
                     ) : (
                       `${mockAthleteProfile.icpSeasonBonusBalance.toFixed(2)} USDC`
                     )}
                   </div>
-                  {walletInfo?.isConnected && (
+                  {isConnected && (
                     <button
                       onClick={fetchRealUSDCBalance}
                       disabled={isLoadingBalance}
@@ -738,7 +705,7 @@ export default function AthleteDashboard() {
                 
                 {/* 新增：钱包连接状态显示 */}
                 <div className="mt-4 mb-4">
-                  {walletInfo?.isConnected ? (
+                  {isConnected ? (
                     <div className="bg-green-600/20 p-3 rounded-lg border border-green-500/30">
                       <div className="text-green-400 text-sm font-medium">
                         {language === 'en' ? 'Wallet Connected' : '钱包已连接'}
@@ -760,7 +727,20 @@ export default function AthleteDashboard() {
                     </div>
                   ) : (
                     <button 
-                      onClick={connectWallet}
+                      onClick={async () => {
+                      try {
+                        await globalConnectWallet();
+                        showToast({
+                          type: 'success',
+                          message: language === 'en' ? 'Wallet connected successfully!' : '钱包连接成功！'
+                        });
+                      } catch (error) {
+                        showToast({
+                          type: 'error',
+                          message: language === 'en' ? 'Failed to connect wallet' : '连接钱包失败'
+                        });
+                      }
+                    }}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
                     >
                       {language === 'en' ? 'Connect Wallet' : '连接钱包'}
@@ -794,9 +774,9 @@ export default function AthleteDashboard() {
                   {/* 修改：托管到基金会按钮（需要钱包连接） */}
                   <button 
                     onClick={handleVaultTransfer}
-                    disabled={!seasonRequirementsMet || !walletInfo?.isConnected}
+                    disabled={!seasonRequirementsMet || !isConnected}
                     className={`w-full mt-2 px-4 py-2 rounded-lg font-bold transition-all duration-300 flex items-center justify-center space-x-2 ${
-                      seasonRequirementsMet && walletInfo?.isConnected
+                      seasonRequirementsMet && isConnected
                       ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transform hover:scale-105 shadow-lg' 
                         : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                     }`}
@@ -1310,7 +1290,7 @@ export default function AthleteDashboard() {
                 <FaSpinner className="animate-spin mr-1" />
                 Loading...
               </span>
-            ) : walletInfo?.isConnected ? (
+            ) : isConnected ? (
               `${realUSDCBalance} USDC`
             ) : (
               `${mockAthleteStats.icpSeasonBonusBalance} ICP`
