@@ -15,8 +15,8 @@ import {
   FaExternalLinkAlt,
   FaSpinner,
   FaWallet,
-  FaCoins,
-  FaChartLine,
+  FaCoins, 
+  FaChartLine, 
   FaPercentage,
   FaQuestionCircle,
   FaEye,
@@ -194,7 +194,7 @@ export default function VaultPage() {
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: xlayerTestnet.chainId }]
       });
-
+      
       showToast({
         type: 'success',
         message: language === 'en' ? 'Switched to XLayer Testnet' : '已切换到XLayer测试网'
@@ -229,8 +229,8 @@ export default function VaultPage() {
             message: language === 'en' ? 'XLayer Testnet added and switched' : '已添加并切换到XLayer测试网'
           });
         } catch (addError) {
-          showToast({
-            type: 'error',
+      showToast({
+        type: 'error',
             message: language === 'en' ? 'Failed to add XLayer Testnet' : '添加XLayer测试网失败'
           });
         }
@@ -521,7 +521,7 @@ export default function VaultPage() {
                 }
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h4 className="text-white font-bold mb-3">{language === 'en' ? 'APY Breakdown' : '年化收益率明细'}</h4>
                   <div className="space-y-2">
@@ -540,7 +540,7 @@ export default function VaultPage() {
                     <div className="flex justify-between border-t border-gray-600 pt-2">
                       <span className="text-gray-400 font-bold">{language === 'en' ? 'Net APY:' : '净收益率：'}</span>
                       <span className="text-white font-bold">20.36%</span>
-                    </div>
+                  </div>
                   </div>
                 </div>
                 
@@ -558,9 +558,9 @@ export default function VaultPage() {
                     <div className="flex justify-between">
                       <span className="text-gray-400">{language === 'en' ? 'Performance fee:' : '绩效费：'}</span>
                       <span className="text-white">10%</span>
-                    </div>
                   </div>
                 </div>
+              </div>
               </div>
               
               {/* 累积收益图表占位符 */}
@@ -569,11 +569,11 @@ export default function VaultPage() {
                 <div className="bg-gray-700/50 rounded-lg p-8 text-center">
                   <div className="text-gray-400 text-sm">
                     {language === 'en' ? 'Chart placeholder - To be implemented' : '图表占位符 - 待实现'}
-                  </div>
+                </div>
+                </div>
                 </div>
               </div>
             </div>
-          </div>
         )
       
       case 'strategies':
@@ -581,8 +581,8 @@ export default function VaultPage() {
           <div className="text-center py-8">
             <div className="text-gray-400 text-sm">
               {language === 'en' ? 'Strategies section - To be implemented' : '策略部分 - 待实现'}
-            </div>
-          </div>
+                  </div>
+                  </div>
         )
       
       case 'harvests':
@@ -590,8 +590,8 @@ export default function VaultPage() {
           <div className="text-center py-8">
             <div className="text-gray-400 text-sm">
               {language === 'en' ? 'Harvests section - To be implemented' : '收获部分 - 待实现'}
-            </div>
-          </div>
+                  </div>
+                  </div>
         )
       
       case 'info':
@@ -599,16 +599,16 @@ export default function VaultPage() {
           <div className="text-center py-8">
             <div className="text-gray-400 text-sm">
               {language === 'en' ? 'Info section - To be implemented' : '信息部分 - 待实现'}
-            </div>
+                </div>
           </div>
         )
-      
+
       default:
         return null
     }
   }
 
-  return (
+        return (
     <DashboardLayout title={language === 'en' ? "FanForce Vault" : "FanForce金库"}>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* 返回链接 */}
@@ -637,26 +637,26 @@ export default function VaultPage() {
           </button>
           <button className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg font-medium hover:bg-gray-600">
             Ethereum
-          </button>
-        </div>
-
+              </button>
+            </div>
+            
                  {/* 网络状态和关键指标 */}
-         <div className="space-y-4">
+              <div className="space-y-4">
            
            
            {/* 关键指标 */}
            <div className="bg-gray-800/50 rounded-lg p-6 text-center">
              <div className="text-2xl font-bold text-white mb-1">
                {vaultInfo ? `${parseFloat(vaultInfo.totalAssets).toLocaleString()}` : '0.00'}
-             </div>
+                        </div>
              <div className="text-gray-400 text-sm mb-2">
                {language === 'en' ? 'Total deposited, st-USDC' : '总托管，st-USDC'}
-             </div>
+                      </div>
              <div className="text-lg text-white">
                ${vaultInfo ? (parseFloat(vaultInfo.totalAssets) * 1).toLocaleString() : '0.00'}
-             </div>
-           </div>
-         </div>
+                      </div>
+                      </div>
+                      </div>
 
         {/* 存款/提款标签 */}
         <div className="flex justify-center space-x-1 bg-gray-800/50 rounded-lg p-1">
@@ -680,7 +680,7 @@ export default function VaultPage() {
           >
             {language === 'en' ? 'Withdraw' : '提款'}
           </button>
-        </div>
+                      </div>
 
         {/* 存款/提款界面 */}
         <div className="bg-gray-800/50 rounded-lg p-6">
@@ -697,11 +697,11 @@ export default function VaultPage() {
                      <div className="flex items-center space-x-2">
                        <div className="w-6 h-6 bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 rounded-full flex items-center justify-center">
                          <span className="text-white text-xs font-bold">{getSelectedTokenInfo(selectedDepositToken).icon}</span>
-                       </div>
+                    </div>
                        <span className="text-white font-medium">{selectedDepositToken}</span>
-                     </div>
+                  </div>
                      <FaChevronDown className={`text-gray-400 text-sm transition-transform ${showDepositDropdown ? 'rotate-180' : ''}`} />
-                   </div>
+              </div>
                    
                    {/* 下拉菜单 */}
                    {showDepositDropdown && (
@@ -721,9 +721,9 @@ export default function VaultPage() {
                            <span className="text-gray-400 text-xs">{token.balance}</span>
                          </div>
                        ))}
-                     </div>
-                   )}
-                 </div>
+              </div>
+            )}
+          </div>
                  <div className="text-gray-400 text-xs">
                    {language === 'en' ? 'You have' : '您拥有'} {showBalance ? getSelectedTokenInfo(selectedDepositToken).balance : '***'} {selectedDepositToken}
                  </div>
@@ -755,29 +755,29 @@ export default function VaultPage() {
               {/* Arrow */}
               <div className="flex items-center justify-center pt-8">
                 <FaArrowRight className="text-gray-400 text-xl" />
-              </div>
+          </div>
+          
+                             {/* To vault */}
+               <div className="space-y-2">
+                 <label className="text-gray-400 text-sm block">{language === 'en' ? 'To vault' : '到金库'}</label>
+                 <div className="bg-gray-700 rounded-lg p-3 flex items-center justify-between">
+                   <div className="flex items-center space-x-2">
+                     <div className="w-6 h-6 bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 rounded-full flex items-center justify-center">
+                       <span className="text-white text-xs font-bold">FF</span>
+                     </div>
+                     <span className="text-white font-medium">FFVAULT</span>
+                   </div>
+                 </div>
+                 <div className="text-gray-400 text-xs">0.00%</div>
+               </div>
 
-              {/* To vault */}
-              <div className="space-y-2">
-                <label className="text-gray-400 text-sm block">{language === 'en' ? 'To vault' : '到金库'}</label>
-                <div className="bg-gray-700 rounded-lg p-3 flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-6 h-6 bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">ST</span>
-                    </div>
-                    <span className="text-white font-medium">st-USDC</span>
-                  </div>
-                </div>
-                <div className="text-gray-400 text-xs">0.00%</div>
-              </div>
-
-                             {/* You will receive */}
+                                                           {/* You will receive */}
                <div className="space-y-2">
                  <label className="text-gray-400 text-sm block">{language === 'en' ? 'You will receive' : '您将收到'}</label>
                  <div className="bg-gray-700 rounded-lg p-3 flex items-center justify-between">
                    <div className="flex items-center space-x-2">
                      <div className="w-6 h-6 bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 rounded-full flex items-center justify-center">
-                       <span className="text-white text-xs font-bold">ST</span>
+                       <span className="text-white text-xs font-bold">FF</span>
                      </div>
                      <span className="text-white font-medium text-xl">
                        {estimatedShares}
@@ -791,7 +791,7 @@ export default function VaultPage() {
 
               {/* Deposit button */}
               <div className="col-span-5 mt-4">
-                <button
+              <button
                   onClick={handleDeposit}
                   disabled={isLoading || !depositAmount || parseFloat(depositAmount) <= 0}
                   className="w-full bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-colors"
@@ -809,21 +809,21 @@ export default function VaultPage() {
             </div>
           ) : (
             <div className="grid grid-cols-5 gap-4 items-start">
-              {/* From vault */}
-                             <div className="space-y-2">
+                             {/* From vault */}
+                              <div className="space-y-2">
                  <label className="text-gray-400 text-sm block">{language === 'en' ? 'From vault' : '从金库'}</label>
                  <div className="bg-gray-700 rounded-lg p-3 flex items-center">
                    <div className="flex items-center space-x-2">
                      <div className="w-6 h-6 bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 rounded-full flex items-center justify-center">
-                       <span className="text-white text-xs font-bold">ST</span>
+                       <span className="text-white text-xs font-bold">FF</span>
                      </div>
-                     <span className="text-white font-medium">st-USDC</span>
+                     <span className="text-white font-medium">FFVAULT</span>
                    </div>
                  </div>
                 <div className="text-gray-400 text-xs">
-                  {language === 'en' ? 'You have' : '您拥有'} {showBalance ? userShares : '***'} st-USDC
-                </div>
-              </div>
+                   {language === 'en' ? 'You have' : '您拥有'} {showBalance ? userShares : '***'} FFVAULT
+                 </div>
+               </div>
 
               {/* Amount */}
               <div className="space-y-2">
@@ -836,12 +836,12 @@ export default function VaultPage() {
                     placeholder="0"
                     className="w-full bg-gray-700 text-white p-3 rounded-lg text-xl font-bold pr-16"
                   />
-                  <button
+          <button
                     onClick={setMaxWithdraw}
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-600 text-white px-2 py-1 rounded text-xs"
-                  >
+          >
                     {language === 'en' ? 'Max' : '最大'}
-                  </button>
+          </button>
                 </div>
                 <div className="text-gray-400 text-xs">
                   ${withdrawAmount ? (parseFloat(withdrawAmount) * 1).toFixed(2) : '0.00'}
@@ -893,13 +893,13 @@ export default function VaultPage() {
                  </div>
                </div>
 
-                             {/* You will receive */}
+                                                           {/* You will receive */}
                <div className="space-y-2">
                  <label className="text-gray-400 text-sm block">{language === 'en' ? 'You will receive' : '您将收到'}</label>
                  <div className="bg-gray-700 rounded-lg p-3 flex items-center justify-between">
                    <div className="flex items-center space-x-2">
                      <div className="w-6 h-6 bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500 rounded-full flex items-center justify-center">
-                       <span className="text-white text-xs font-bold">F</span>
+                       <span className="text-white text-xs font-bold">U</span>
                      </div>
                      <span className="text-white font-medium text-xl">
                        {estimatedAssets}
@@ -913,7 +913,7 @@ export default function VaultPage() {
 
               {/* Withdraw button */}
               <div className="col-span-5 mt-4">
-                <button
+          <button
                   onClick={handleWithdraw}
                   disabled={isLoading || !withdrawAmount || parseFloat(withdrawAmount) <= 0}
                   className="w-full bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-colors"
@@ -925,8 +925,8 @@ export default function VaultPage() {
                     </div>
                   ) : (
                     language === 'en' ? 'Withdraw' : '提款'
-                  )}
-                </button>
+            )}
+          </button>
               </div>
             </div>
           )}
@@ -935,29 +935,29 @@ export default function VaultPage() {
         {/* 信息标签页 */}
         <div className="bg-gray-800/50 rounded-lg">
           {/* 信息标签导航 */}
-          <div className="border-b border-gray-700">
+        <div className="border-b border-gray-700">
             <nav className="flex space-x-8 px-6">
-              <button
+            <button
                 onClick={() => setActiveInfoTab('about')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeInfoTab === 'about'
-                    ? 'border-blue-500 text-blue-400'
-                    : 'border-transparent text-gray-400 hover:text-gray-300'
-                }`}
-              >
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
+              }`}
+            >
                 {language === 'en' ? 'About' : '关于'}
-              </button>
-              <button
+            </button>
+            <button
                 onClick={() => setActiveInfoTab('strategies')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeInfoTab === 'strategies'
-                    ? 'border-blue-500 text-blue-400'
-                    : 'border-transparent text-gray-400 hover:text-gray-300'
-                }`}
-              >
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
+              }`}
+            >
                 {language === 'en' ? 'Strategies' : '策略'}
-              </button>
-              <button
+            </button>
+                <button
                 onClick={() => setActiveInfoTab('harvests')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeInfoTab === 'harvests'
@@ -966,8 +966,8 @@ export default function VaultPage() {
                 }`}
               >
                 {language === 'en' ? 'Harvests' : '收获'}
-              </button>
-              <button
+                </button>
+                <button
                 onClick={() => setActiveInfoTab('info')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeInfoTab === 'info'
@@ -976,15 +976,15 @@ export default function VaultPage() {
                 }`}
               >
                 {language === 'en' ? 'Info' : '信息'}
-              </button>
+                </button>
             </nav>
-          </div>
+              </div>
 
           {/* 信息标签内容 */}
           <div className="p-6">
             {renderInfoTabContent()}
+            </div>
           </div>
-        </div>
 
                                    {/* 钱包连接状态 */}
           {!isConnected && (
@@ -993,7 +993,7 @@ export default function VaultPage() {
                <FaWallet className="text-gray-400 text-4xl mx-auto mb-4" />
                <h3 className="text-white font-bold mb-2">
                  {language === 'en' ? 'Connect Your Wallet' : '连接您的钱包'}
-               </h3>
+              </h3>
                <p className="text-gray-400 mb-4">
                  {language === 'en' 
                    ? 'Connect your wallet to start depositing and earning with FanForce Vault'
@@ -1001,7 +1001,7 @@ export default function VaultPage() {
                  }
                </p>
                <div className="space-y-3">
-                                   <button
+                <button
                     onClick={async () => {
                       try {
                         await connectWallet();
@@ -1022,13 +1022,13 @@ export default function VaultPage() {
                       </span>
                     ) : (
                       language === 'en' ? 'Connect Wallet' : '连接钱包'
-                    )}
-                  </button>
+                  )}
+                </button>
                  
-               </div>
-             </div>
-           </div>
-         )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   )
