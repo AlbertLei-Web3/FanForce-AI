@@ -1029,7 +1029,7 @@ export default function VaultPage() {
                      isLoading 
                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                        : !isConnected
-                       ? 'bg-red-600 hover:bg-red-700 text-white'
+                       ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                        : !depositAmount || parseFloat(depositAmount) <= 0
                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                        : 'bg-green-600 hover:bg-green-700 text-white transform hover:scale-105 shadow-lg'
@@ -1041,7 +1041,7 @@ export default function VaultPage() {
                        {language === 'en' ? 'Processing...' : '处理中...'}
                      </div>
                    ) : !isConnected ? (
-                     language === 'en' ? 'Connect Wallet First' : '请先连接钱包'
+                     language === 'en' ? 'Deposit' : '存款'
                    ) : (
                      language === 'en' ? 'Deposit' : '存款'
                    )}
@@ -1163,7 +1163,7 @@ export default function VaultPage() {
                      isLoading 
                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                        : !isConnected
-                       ? 'bg-red-600 hover:bg-red-700 text-white'
+                       ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                        : !withdrawAmount || parseFloat(withdrawAmount) <= 0
                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                        : 'bg-green-600 hover:bg-green-700 text-white transform hover:scale-105 shadow-lg'
@@ -1175,7 +1175,7 @@ export default function VaultPage() {
                        {language === 'en' ? 'Processing...' : '处理中...'}
                      </div>
                    ) : !isConnected ? (
-                     language === 'en' ? 'Connect Wallet First' : '请先连接钱包'
+                     language === 'en' ? 'Withdraw' : '提款'
                    ) : (
                      language === 'en' ? 'Withdraw' : '提款'
                    )}
