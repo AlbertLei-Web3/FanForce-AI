@@ -6,16 +6,37 @@ import { aiAgentService } from '@/app/services/aiAgentService'
 
 export async function GET(request: NextRequest) {
   try {
+    // 获取服务状态
+    const serviceStatus = aiAgentService.getStatus()
+    console.log('🔍 Strategy API Debug - Service Status:', serviceStatus)
+    
+    // 如果服务没有运行，尝试启动它
+    if (!serviceStatus.isRunning) {
+      console.log('🔄 Starting AI Agent Service from Strategy API...')
+      aiAgentService.start()
+      // 等待一下让服务启动
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+    
     // 获取当前策略信息
     // Get current strategy information
     const strategy = aiAgentService.getCurrentStrategy()
     const portfolio = aiAgentService.getCurrentPortfolio()
     
+    console.log('🔍 Strategy API Debug - Strategy Check:', {
+      hasStrategy: !!strategy,
+      hasPortfolio: !!portfolio,
+      serviceStatus: serviceStatus
+    })
+    
     if (!strategy) {
-      return NextResponse.json(
-        { error: 'No strategy available' },
-        { status: 404 }
-      )
+      // 返回服务状态而不是404错误
+      return NextResponse.json({
+        timestamp: new Date().toISOString(),
+        error: 'No strategy available yet',
+        serviceStatus: serviceStatus,
+        message: 'AI Agent Service is starting up, please try again in a few seconds'
+      }, { status: 200 })
     }
     
     const response = {
@@ -24,6 +45,7 @@ export async function GET(request: NextRequest) {
         ...strategy,
         portfolio: portfolio
       },
+      serviceStatus: serviceStatus,
       analysis: {
         marketState: strategy.marketState,
         riskLevel: strategy.riskLevel,
