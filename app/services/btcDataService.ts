@@ -179,10 +179,10 @@ export class BTCDataService {
   judgeMarketHeat(): MarketHeatResult {
     if (!this.currentData) {
       return {
-        status: "❓ 未知",
+        status: "❓ Unknown",
         changePercent: 0,
         volume24h: 0,
-        description: "No data available / 无数据"
+        description: "No data available"
       };
     }
 
@@ -197,45 +197,45 @@ export class BTCDataService {
     // Market heat judgment logic
     if (changePercent >= 2 && volume24h >= 5000) {
       return {
-        status: "🔥 火热",
+        status: "🔥 Hot Market",
         changePercent: changePercent,
         volume24h: volume24h,
-        description: "Strong bullish momentum with high volume / 强势上涨，交易量活跃"
+        description: "Strong bullish momentum with high volume"
       };
     }
     
     if (changePercent >= 0.5 && volume24h >= 3000) {
       return {
-        status: "🌤️ 正常偏热",
+        status: "🌤️ Moderately Hot",
         changePercent: changePercent,
         volume24h: volume24h,
-        description: "Moderate bullish with good volume / 温和上涨，交易量良好"
+        description: "Moderate bullish with good volume"
       };
     }
     
     if (changePercent <= -2 && volume24h >= 4000) {
       return {
-        status: "😱 恐慌下跌",
+        status: "😱 Panic Selling",
         changePercent: changePercent,
         volume24h: volume24h,
-        description: "Sharp decline with panic selling / 恐慌性下跌，抛售压力大"
+        description: "Sharp decline with panic selling"
       };
     }
     
     if (Math.abs(changePercent) < 0.3 && volume24h <= 2000) {
       return {
-        status: "🧊 极冷",
+        status: "🧊 Extreme Cold",
         changePercent: changePercent,
         volume24h: volume24h,
-        description: "Very low volatility and volume / 极低波动性和交易量"
+        description: "Very low volatility and volume"
       };
     }
     
     return {
-      status: "🌥️ 平静期",
+      status: "🌥️ Calm Period",
       changePercent: changePercent,
       volume24h: volume24h,
-      description: "Normal market conditions / 正常市场状况"
+      description: "Normal market conditions"
     };
   }
 
