@@ -20,11 +20,12 @@ export default function HomePage() {
   const router = useRouter()
 
   // 如果已登录，自动跳转到仪表板 / Auto redirect to dashboard if logged in
-  useEffect(() => {
-    if (authState.isAuthenticated) {
-      router.push('/dashboard')
-    }
-  }, [authState.isAuthenticated, router])
+  // 临时注释掉自动跳转，用于测试ICP登录功能
+  // useEffect(() => {
+  //   if (authState.isAuthenticated) {
+  //     router.push('/dashboard')
+  //   }
+  // }, [authState.isAuthenticated, router])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-fanforce-dark via-gray-900 to-fanforce-primary">
