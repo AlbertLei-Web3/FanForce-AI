@@ -13,6 +13,8 @@ import { useRouter } from 'next/navigation'
 import { useUser } from '../context/UserContext'
 import { useWeb3 } from '../context/Web3Context'
 import { useLanguage } from '../context/LanguageContext'
+import { useICP } from '../context/ICPContext'
+import ICPLoginButton from '../components/ICPLoginButton'
 import Link from 'next/link'
 
 // 认证步骤枚举 / Authentication Steps Enum
@@ -37,19 +39,21 @@ export default function LoginPage() {
   const [authMessage, setAuthMessage] = useState<string>('')
 
   // 检查用户是否已经登录 / Check if user is already logged in
-  useEffect(() => {
-    if (authState.isAuthenticated) {
-      router.push('/dashboard')
-    }
-  }, [authState.isAuthenticated, router])
+  // 临时注释掉自动跳转，用于测试ICP登录功能
+  // useEffect(() => {
+  //   if (authState.isAuthenticated) {
+  //     router.push('/dashboard')
+  //   }
+  // }, [authState.isAuthenticated, router])
 
   // 钱包连接后的处理 / Handle wallet connection
-  useEffect(() => {
-    if (isConnected && address && currentStep === AuthStep.CONNECT_WALLET) {
-      setCurrentStep(AuthStep.SIGN_MESSAGE)
-      generateAuthMessage()
-    }
-  }, [isConnected, address, currentStep])
+  // 注释掉自动跳转，让用户可以选择登录方式
+  // useEffect(() => {
+  //   if (isConnected && address && currentStep === AuthStep.CONNECT_WALLET) {
+  //     setCurrentStep(AuthStep.SIGN_MESSAGE)
+  //     generateAuthMessage()
+  //   }
+  // }, [isConnected, address, currentStep])
 
   // 生成认证消息 / Generate Authentication Message
   const generateAuthMessage = () => {
@@ -65,6 +69,8 @@ export default function LoginPage() {
       setError(null)
       
       await connectWallet()
+      // 连接成功后，让用户选择是否继续签名
+      generateAuthMessage()
       setCurrentStep(AuthStep.SIGN_MESSAGE)
     } catch (err: any) {
       setError(err.message || 'Failed to connect wallet')
@@ -206,6 +212,13 @@ export default function LoginPage() {
 
   // 重置认证流程 / Reset Authentication Flow
   const resetAuth = () => {
+    setCurrentStep(AuthStep.CONNECT_WALLET)
+    setError(null)
+    setAuthMessage('')
+  }
+
+  // 返回选择登录方式 / Back to Login Options
+  const backToLoginOptions = () => {
     setCurrentStep(AuthStep.CONNECT_WALLET)
     setError(null)
     setAuthMessage('')
@@ -371,33 +384,71 @@ export default function LoginPage() {
           {/* 操作按钮 / Action Buttons */}
           <div className="space-y-4">
             {currentStep === AuthStep.CONNECT_WALLET && (
-              <button
-                onClick={handleConnectWallet}
-                disabled={isLoading}
-                className="w-full bg-fanforce-primary hover:bg-fanforce-secondary disabled:bg-gray-600 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
-              >
-                {isLoading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                ) : (
-                  <span className="mr-2">🔗</span>
-                )}
-                {language === 'en' ? 'Connect Wallet' : '连接钱包'}
-              </button>
+              <>
+                <button
+                  onClick={handleConnectWallet}
+                  disabled={isLoading}
+                  className="w-full bg-fanforce-primary hover:bg-fanforce-secondary disabled:bg-gray-600 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
+                >
+                  {isLoading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  ) : (
+                    <span className="mr-2">🔗</span>
+                  )}
+                  {language === 'en' ? 'Connect Wallet' : '连接钱包'}
+                </button>
+                
+                {/* ICP登录选项 / ICP Login Option */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-600"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-gray-900 text-gray-400">
+                      {language === 'en' ? 'OR' : '或者'}
+                    </span>
+                  </div>
+                </div>
+                
+                <ICPLoginButton
+                  onSuccess={(principalId) => {
+                    console.log('✅ ICP登录成功，Principal ID:', principalId)
+                    // 这里可以处理ICP登录成功后的逻辑
+                    // 例如：创建用户档案、跳转到仪表板等
+                    router.push('/dashboard')
+                  }}
+                  onError={(error) => {
+                    console.error('❌ ICP登录失败:', error)
+                    setError(error)
+                  }}
+                  className="w-full"
+                />
+              </>
             )}
 
             {currentStep === AuthStep.SIGN_MESSAGE && (
-              <button
-                onClick={handleSignMessage}
-                disabled={isLoading}
-                className="w-full bg-fanforce-primary hover:bg-fanforce-secondary disabled:bg-gray-600 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
-              >
-                {isLoading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                ) : (
-                  <span className="mr-2">✍️</span>
-                )}
-                {language === 'en' ? 'Sign Message' : '签署消息'}
-              </button>
+              <>
+                <button
+                  onClick={handleSignMessage}
+                  disabled={isLoading}
+                  className="w-full bg-fanforce-primary hover:bg-fanforce-secondary disabled:bg-gray-600 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
+                >
+                  {isLoading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  ) : (
+                    <span className="mr-2">✍️</span>
+                  )}
+                  {language === 'en' ? 'Sign Message' : '签署消息'}
+                </button>
+                
+                <button
+                  onClick={backToLoginOptions}
+                  className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-6 rounded-lg transition-colors flex items-center justify-center text-sm"
+                >
+                  <span className="mr-2">←</span>
+                  {language === 'en' ? 'Back to Login Options' : '返回登录选项'}
+                </button>
+              </>
             )}
 
             {currentStep === AuthStep.AUTHENTICATING && (

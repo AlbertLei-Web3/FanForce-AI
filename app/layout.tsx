@@ -10,6 +10,7 @@ import { Web3Provider } from './context/Web3Context'
 import { ContractProvider } from './context/ContractContext'
 import { UserProvider } from './context/UserContext'
 import { WalletProvider } from './context/WalletContext'
+import { ICPProvider } from './context/ICPContext'
 import { ClientOnly } from './components/ClientLayout'
 import { Toaster } from 'react-hot-toast'
 
@@ -34,30 +35,32 @@ export default function RootLayout({
               <ContractProvider>
                 <UserProvider>
                   <WalletProvider>
-                    {children}
-                    <Toaster 
-                      position="top-right"
-                      toastOptions={{
-                        duration: 4000,
-                        style: {
-                          background: '#1f2937',
-                          color: '#fff',
-                          border: '1px solid #374151',
-                        },
-                        success: {
+                    <ICPProvider>
+                      {children}
+                      <Toaster 
+                        position="top-right"
+                        toastOptions={{
+                          duration: 4000,
                           style: {
-                            background: '#059669',
+                            background: '#1f2937',
                             color: '#fff',
+                            border: '1px solid #374151',
                           },
-                        },
-                        error: {
-                          style: {
-                            background: '#dc2626',
-                            color: '#fff',
+                          success: {
+                            style: {
+                              background: '#059669',
+                              color: '#fff',
+                            },
                           },
-                        },
-                      }}
-                    />
+                          error: {
+                            style: {
+                              background: '#dc2626',
+                              color: '#fff',
+                            },
+                          },
+                        }}
+                      />
+                    </ICPProvider>
                   </WalletProvider>
                 </UserProvider>
               </ContractProvider>
