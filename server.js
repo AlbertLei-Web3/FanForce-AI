@@ -428,8 +428,8 @@ app.post('/api/auth/icp-login', [
       // 创建新的ICP用户 / Create new ICP user
       console.log('👤 创建新的ICP用户 / Creating new ICP user:', principalId);
       const newUser = await pool.query(
-        'INSERT INTO users (icp_principal_id, role, wallet_address, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING *',
-        [principalId, 'audience', `icp-${principalId.slice(0, 8)}`]
+        'INSERT INTO users (icp_principal_id, role, auth_type, wallet_address, created_at, updated_at) VALUES ($1, $2, $3, $4, NOW(), NOW()) RETURNING *',
+        [principalId, 'audience', 'icp', null]
       );
       user = newUser;
     } else {
@@ -460,11 +460,13 @@ app.post('/api/auth/icp-login', [
         id: user.rows[0].id,
         principalId: user.rows[0].icp_principal_id,
         role: user.rows[0].role,
-        address: user.rows[0].wallet_address,
+        authType: user.rows[0].auth_type || 'icp',
+        walletAddress: user.rows[0].wallet_address,
+        ethereumAddress: user.rows[0].ethereum_address,
         studentId: user.rows[0].student_id,
-        authType: 'icp',
         createdAt: user.rows[0].created_at,
-        lastLogin: user.rows[0].updated_at
+        lastLogin: user.rows[0].updated_at,
+        canReceiveAirdrop: !!(user.rows[0].ethereum_address || (user.rows[0].wallet_address && user.rows[0].wallet_address.startsWith('0x')))
       }
     });
     
@@ -474,6 +476,78 @@ app.post('/api/auth/icp-login', [
       success: false,
       error: 'Internal server error / 服务器内部错误',
       message: 'ICP身份登录失败 / ICP Identity login failed'
+    });
+  }
+});
+
+// ICP用户绑定钱包地址路由 / ICP User Bind Wallet Address Route
+app.post('/api/auth/bind-wallet', authenticateToken, [
+  body('walletAddress').isEthereumAddress().withMessage('Invalid wallet address / 无效的钱包地址'),
+  body('signature').isLength({ min: 1 }).withMessage('Signature is required / 签名是必需的')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        success: false,
+        errors: errors.array(),
+        message: 'Validation failed / 验证失败'
+      });
+    }
+
+    const { walletAddress, signature } = req.body;
+    const userId = req.user.userId;
+
+    console.log('🔗 ICP用户绑定钱包请求 / ICP user bind wallet request:', userId, walletAddress);
+
+    // 检查用户是否存在且为ICP用户 / Check if user exists and is ICP user
+    const userCheck = await pool.query('SELECT * FROM users WHERE id = $1 AND auth_type = $2', [userId, 'icp']);
+    
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'ICP user not found / ICP用户未找到'
+      });
+    }
+
+    // 检查钱包地址是否已被其他用户使用 / Check if wallet address is already used by other users
+    const walletCheck = await pool.query('SELECT id FROM users WHERE (wallet_address = $1 OR ethereum_address = $1) AND id != $2', [walletAddress, userId]);
+    
+    if (walletCheck.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Wallet address already in use / 钱包地址已被使用'
+      });
+    }
+
+    // 更新用户的钱包地址 / Update user's wallet address
+    const updateResult = await pool.query(
+      'UPDATE users SET ethereum_address = $1, auth_type = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
+      [walletAddress, 'hybrid', userId]
+    );
+
+    console.log('✅ 钱包绑定成功 / Wallet binding successful:', walletAddress);
+
+    res.json({
+      success: true,
+      message: 'Wallet bound successfully / 钱包绑定成功',
+      user: {
+        id: updateResult.rows[0].id,
+        principalId: updateResult.rows[0].icp_principal_id,
+        role: updateResult.rows[0].role,
+        authType: updateResult.rows[0].auth_type,
+        walletAddress: updateResult.rows[0].wallet_address,
+        ethereumAddress: updateResult.rows[0].ethereum_address,
+        canReceiveAirdrop: true
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ 钱包绑定错误 / Wallet binding error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Internal server error / 服务器内部错误',
+      message: '钱包绑定失败 / Wallet binding failed'
     });
   }
 });
