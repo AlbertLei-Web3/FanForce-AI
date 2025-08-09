@@ -45,11 +45,11 @@ export default function ICPLoginButton({
       setIsLoggingIn(true)
       console.log('🔐 开始ICP身份登录 / Starting ICP Identity login...')
       
-      const success = await login()
+      const result = await login()
       
-      if (success && authState.principalId) {
-        console.log('✅ ICP身份登录成功 / ICP Identity login successful')
-        onSuccess?.(authState.principalId)
+      if (result) {
+        console.log('✅ ICP身份登录成功，Principal ID:', result)
+        onSuccess?.(result)
       } else {
         console.error('❌ ICP身份登录失败 / ICP Identity login failed')
         onError?.('Login failed')

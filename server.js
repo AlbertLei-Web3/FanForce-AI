@@ -415,19 +415,26 @@ app.post('/api/auth/icp-login', [
     console.log('🔐 ICP身份登录请求 / ICP Identity login request:', principalId);
     
     // 查找或创建基于Principal ID的用户 / Find or create user based on Principal ID
-    let user = await pool.query('SELECT * FROM users WHERE icp_principal_id = $1', [principalId]);
+    let user;
+    try {
+      user = await pool.query('SELECT * FROM users WHERE icp_principal_id = $1', [principalId]);
+      console.log('📊 数据库查询结果 / Database query result:', user.rows.length, 'rows found');
+    } catch (dbError) {
+      console.error('❌ 数据库查询错误 / Database query error:', dbError);
+      throw dbError;
+    }
     
     if (user.rows.length === 0) {
       // 创建新的ICP用户 / Create new ICP user
       console.log('👤 创建新的ICP用户 / Creating new ICP user:', principalId);
       const newUser = await pool.query(
-        'INSERT INTO users (icp_principal_id, role, username, created_at, last_login) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING *',
-        [principalId, 'audience', `ICP User ${principalId.slice(0, 8)}`]
+        'INSERT INTO users (icp_principal_id, role, wallet_address, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING *',
+        [principalId, 'audience', `icp-${principalId.slice(0, 8)}`]
       );
       user = newUser;
     } else {
       // 更新最后登录时间 / Update last login time
-      await pool.query('UPDATE users SET last_login = NOW() WHERE icp_principal_id = $1', [principalId]);
+      await pool.query('UPDATE users SET updated_at = NOW() WHERE icp_principal_id = $1', [principalId]);
       user = await pool.query('SELECT * FROM users WHERE icp_principal_id = $1', [principalId]);
     }
     
@@ -453,9 +460,11 @@ app.post('/api/auth/icp-login', [
         id: user.rows[0].id,
         principalId: user.rows[0].icp_principal_id,
         role: user.rows[0].role,
-        username: user.rows[0].username,
-        email: user.rows[0].email,
-        authType: 'icp'
+        address: user.rows[0].wallet_address,
+        studentId: user.rows[0].student_id,
+        authType: 'icp',
+        createdAt: user.rows[0].created_at,
+        lastLogin: user.rows[0].updated_at
       }
     });
     

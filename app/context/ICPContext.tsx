@@ -24,7 +24,7 @@ interface ICPContextType {
   authState: ICPAuthState
   
   // 认证方法 / Authentication Methods
-  login: () => Promise<boolean>
+  login: () => Promise<string | false>
   logout: () => Promise<void>
   
   // 用户信息方法 / User Information Methods
@@ -95,7 +95,7 @@ export function ICPProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // ICP登录方法 / ICP Login Method
-  const login = async (): Promise<boolean> => {
+  const login = async (): Promise<string | false> => {
     if (!authClient) {
       console.error('❌ ICP身份客户端未初始化 / ICP Identity client not initialized')
       return false
@@ -127,7 +127,9 @@ export function ICPProvider({ children }: { children: ReactNode }) {
             })
             
             console.log('🔐 ICP身份认证成功，Principal ID:', principalId)
-            resolve(true)
+            // 返回principalId而不是boolean，这样可以立即使用
+            // Return principalId instead of boolean so it can be used immediately
+            resolve(principalId)
           },
           onError: (error: string | Error) => {
             console.error('❌ ICP身份登录失败 / ICP Identity login failed:', error)
