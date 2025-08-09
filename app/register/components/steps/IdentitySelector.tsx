@@ -19,13 +19,13 @@ const roleOptions = [
   {
     role: UserRole.ATHLETE,
     icon: '🏃‍♂️',
-    title: { en: 'Student Athlete', cn: '学生运动员' },
+    title: { en: 'Community Athlete', cn: '社区运动员' },
     description: { 
       en: 'Compete in matches, earn rankings, and receive ICP season bonuses',
       cn: '参与比赛，获得排名，领取ICP赛季奖金'
     },
     features: [
-      { en: 'Participate in campus competitions', cn: '参与校园比赛' },
+      { en: 'Participate in community competitions', cn: '参与社区比赛' },
       { en: 'Build your athletic profile', cn: '建立运动员档案' },
       { en: 'Earn season bonuses', cn: '获得赛季奖金' },
       { en: 'Track performance stats', cn: '追踪表现统计' }
@@ -36,19 +36,20 @@ const roleOptions = [
   {
     role: UserRole.AMBASSADOR,
     icon: '🧑‍💼',
-    title: { en: 'Campus Ambassador', cn: '校园大使' },
+    title: { en: 'Community Ambassador', cn: '社区大使' },
     description: { 
       en: 'Organize events, recruit athletes, and earn commission fees',
       cn: '组织活动，招募运动员，获得佣金费用'
     },
     features: [
       { en: 'Create and manage events', cn: '创建和管理活动' },
-      { en: 'Recruit student athletes', cn: '招募学生运动员' },
+      { en: 'Recruit community athletes', cn: '招募社区运动员' },
       { en: 'Earn 1% fee commission', cn: '获得1%费用佣金' },
       { en: 'Partner with merchants', cn: '与商户合作' }
     ],
     gradient: 'from-yellow-500 to-orange-600',
-    popular: false
+    popular: false,
+    requiresInvite: true // 需要邀请码 / Requires invitation code
   },
   {
     role: UserRole.AUDIENCE,
@@ -66,24 +67,6 @@ const roleOptions = [
     ],
     gradient: 'from-blue-500 to-indigo-600',
     popular: true
-  },
-  {
-    role: UserRole.ADMIN,
-    icon: '⚙️',
-    title: { en: 'System Administrator', cn: '系统管理员' },
-    description: { 
-      en: 'Manage platform operations and oversee system functions',
-      cn: '管理平台运营和监督系统功能'
-    },
-    features: [
-      { en: 'Full system access', cn: '完整系统访问权限' },
-      { en: 'User management', cn: '用户管理' },
-      { en: 'Analytics dashboard', cn: '数据分析仪表板' },
-      { en: 'System configuration', cn: '系统配置' }
-    ],
-    gradient: 'from-red-500 to-pink-600',
-    popular: false,
-    restricted: true // 需要特殊权限 / Requires special permission
   }
 ]
 
@@ -118,8 +101,8 @@ export default function IdentitySelector({
         </h2>
         <p className="text-gray-300 text-lg">
           {language === 'en' 
-            ? 'Select your primary role in the FanForce AI ecosystem'
-            : '在FanForce AI生态系统中选择您的主要角色'
+            ? 'Select your primary role in the FanForce AI community ecosystem'
+            : '在FanForce AI社区生态系统中选择您的主要角色'
           }
         </p>
         {registrationState.errors.primaryRole && (
@@ -133,7 +116,6 @@ export default function IdentitySelector({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {roleOptions.map((option) => {
           const isSelected = registrationState.selectedPrimaryRole === option.role
-          const isRestricted = option.restricted && process.env.NODE_ENV !== 'development'
           
           return (
             <div
@@ -141,9 +123,8 @@ export default function IdentitySelector({
               className={`
                 relative group cursor-pointer transition-all duration-300
                 ${isSelected ? 'scale-105' : 'hover:scale-102'}
-                ${isRestricted ? 'opacity-60 cursor-not-allowed' : ''}
               `}
-              onClick={() => !isRestricted && handleRoleSelect(option.role)}
+              onClick={() => handleRoleSelect(option.role)}
             >
               {/* 热门标签 / Popular Badge */}
               {option.popular && (
@@ -154,11 +135,11 @@ export default function IdentitySelector({
                 </div>
               )}
 
-              {/* 受限标签 / Restricted Badge */}
-              {isRestricted && (
+              {/* 邀请码要求标签 / Invitation Required Badge */}
+              {option.requiresInvite && (
                 <div className="absolute -top-2 -right-2 z-10">
-                  <div className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                    {language === 'en' ? 'Restricted' : '受限'}
+                  <div className="bg-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                    {language === 'en' ? 'Invite Required' : '需要邀请码'}
                   </div>
                 </div>
               )}

@@ -61,7 +61,7 @@ const secondaryRoleOptions = [
   {
     role: UserRole.AMBASSADOR,
     icon: '🧑‍💼',
-    title: { en: 'Campus Ambassador', cn: '校园大使' },
+    title: { en: 'Community Ambassador', cn: '社区大使' },
     description: { 
       en: 'Organize events, recruit athletes, and earn commission from platform activities',
       cn: '组织活动，招募运动员，从平台活动中获得佣金'
@@ -155,8 +155,8 @@ export default function MultiRoleSelector({
   // 获取主角色信息 / Get primary role info
   const getPrimaryRoleInfo = () => {
     const roleNames = {
-      [UserRole.ATHLETE]: { en: 'Student Athlete', cn: '学生运动员', icon: '🏃‍♂️' },
-      [UserRole.AMBASSADOR]: { en: 'Campus Ambassador', cn: '校园大使', icon: '🧑‍💼' },
+      [UserRole.ATHLETE]: { en: 'Community Athlete', cn: '社区运动员', icon: '🏃‍♂️' },
+      [UserRole.AMBASSADOR]: { en: 'Community Ambassador', cn: '社区大使', icon: '🧑‍💼' },
       [UserRole.AUDIENCE]: { en: 'Audience Supporter', cn: '观众支持者', icon: '🙋‍♂️' },
       [UserRole.ADMIN]: { en: 'System Administrator', cn: '系统管理员', icon: '⚙️' }
     }

@@ -53,23 +53,18 @@ export default function WelcomeComplete({
     const roleData = {
       [UserRole.ATHLETE]: {
         icon: '🏃‍♂️',
-        name: { en: 'Student Athlete', cn: '学生运动员' },
+        name: { en: 'Community Athlete', cn: '社区运动员' },
         color: 'text-green-400'
       },
       [UserRole.AMBASSADOR]: {
         icon: '🧑‍💼',
-        name: { en: 'Campus Ambassador', cn: '校园大使' },
+        name: { en: 'Community Ambassador', cn: '社区大使' },
         color: 'text-yellow-400'
       },
       [UserRole.AUDIENCE]: {
         icon: '🙋‍♂️',
         name: { en: 'Audience Supporter', cn: '观众支持者' },
         color: 'text-blue-400'
-      },
-      [UserRole.ADMIN]: {
-        icon: '⚙️',
-        name: { en: 'System Administrator', cn: '系统管理员' },
-        color: 'text-red-400'
       }
     }
     
@@ -178,8 +173,8 @@ export default function WelcomeComplete({
           </p>
           <p className="text-gray-400">
             {language === 'en' 
-              ? 'You\'re now ready to explore the campus sports ecosystem'
-              : '您现在可以探索校园体育生态系统了'
+              ? 'You\'re now ready to explore the community sports ecosystem'
+              : '您现在可以探索社区体育生态系统了'
             }
           </p>
         </div>

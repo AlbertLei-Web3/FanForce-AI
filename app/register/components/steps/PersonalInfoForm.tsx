@@ -14,17 +14,17 @@ interface PersonalInfoFormProps {
   onNext: () => void
 }
 
-// 大学选项 / University Options
-const universityOptions = [
-  { value: 'beijing_university', label: 'Beijing University', labelCn: '北京大学' },
-  { value: 'tsinghua_university', label: 'Tsinghua University', labelCn: '清华大学' },
-  { value: 'fudan_university', label: 'Fudan University', labelCn: '复旦大学' },
-  { value: 'shanghai_jiaotong', label: 'Shanghai Jiao Tong University', labelCn: '上海交通大学' },
-  { value: 'zhejiang_university', label: 'Zhejiang University', labelCn: '浙江大学' },
-  { value: 'nanjing_university', label: 'Nanjing University', labelCn: '南京大学' },
-  { value: 'xian_jiaotong', label: 'Xi\'an Jiaotong University', labelCn: '西安交通大学' },
-  { value: 'huazhong_university', label: 'Huazhong University of Science and Technology', labelCn: '华中科技大学' },
-  { value: 'other', label: 'Other University', labelCn: '其他大学' }
+// 社区组织选项 / Community Organization Options
+const organizationOptions = [
+  { value: 'sports_club', label: 'Local Sports Club', labelCn: '本地体育俱乐部' },
+  { value: 'fitness_center', label: 'Fitness Center', labelCn: '健身中心' },
+  { value: 'community_center', label: 'Community Center', labelCn: '社区中心' },
+  { value: 'amateur_league', label: 'Amateur Sports League', labelCn: '业余体育联盟' },
+  { value: 'youth_organization', label: 'Youth Sports Organization', labelCn: '青年体育组织' },
+  { value: 'recreational_group', label: 'Recreational Sports Group', labelCn: '休闲体育团体' },
+  { value: 'professional_team', label: 'Professional Team', labelCn: '专业团队' },
+  { value: 'independent', label: 'Independent Athlete', labelCn: '独立运动员' },
+  { value: 'other', label: 'Other Organization', labelCn: '其他组织' }
 ]
 
 export default function PersonalInfoForm({ 
@@ -70,7 +70,7 @@ export default function PersonalInfoForm({
     }
 
     if (!personalInfo.university?.trim()) {
-      errors.university = language === 'en' ? 'University is required' : '大学为必填项'
+      errors.university = language === 'en' ? 'Organization is required' : '组织为必填项'
     }
 
     // 验证可选但有格式要求的字段 / Validate optional but format-constrained fields
@@ -152,48 +152,48 @@ export default function PersonalInfoForm({
             />
           </div>
 
-          {/* 大学 / University */}
+          {/* 组织 / Organization */}
           <div className="md:col-span-1">
             <FormField
-              label="University"
-              labelCn="大学"
+              label="Organization"
+              labelCn="组织"
               name="university"
               type="select"
               value={registrationState.personalInfo.university || ''}
               onChange={(value) => updatePersonalInfo('university', value)}
               error={registrationState.errors.university}
               required
-              options={universityOptions}
+              options={organizationOptions}
               icon={
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H7m2 0v-6a2 2 0 012-2h2a2 2 0 012 2v6m-6 0h4" />
                 </svg>
               }
-              helpText="Your current educational institution"
-              helpTextCn="您当前的教育机构"
+              helpText="Your affiliated sports organization or community"
+              helpTextCn="您所属的体育组织或社区"
             />
           </div>
 
-          {/* 学号 / Student ID */}
+          {/* 成员ID / Member ID */}
           <div className="md:col-span-1">
             <FormField
-              label="Student ID"
-              labelCn="学号"
+              label="Member ID"
+              labelCn="成员ID"
               name="studentId"
               type="text"
               value={registrationState.personalInfo.studentId || ''}
               onChange={(value) => updatePersonalInfo('studentId', value)}
               error={registrationState.errors.studentId}
-              placeholder="Enter your student ID"
-              placeholderCn="输入您的学号"
+              placeholder="Enter your member ID"
+              placeholderCn="输入您的成员ID"
               maxLength={20}
               icon={
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
                 </svg>
               }
-              helpText="Optional: For verification and university-specific features"
-              helpTextCn="可选：用于验证和大学特定功能"
+              helpText="Optional: Your membership ID in the organization"
+              helpTextCn="可选：您在组织中的成员ID"
             />
           </div>
 

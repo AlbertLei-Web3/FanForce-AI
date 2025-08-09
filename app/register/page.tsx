@@ -107,8 +107,8 @@ export default function RegisterPage() {
           </h1>
           <p className="text-xl text-gray-300 mb-2">
             {language === 'en' 
-              ? 'Create your multi-role campus sports account' 
-              : '创建您的多角色校园体育账户'
+              ? 'Create your multi-role community sports account' 
+              : '创建您的多角色社区体育账户'
             }
           </p>
           <p className="text-sm text-gray-400">

@@ -239,16 +239,16 @@ export default function RoleSpecificForms({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* 校园/地区 / Campus/Region */}
+          {/* 社区/地区 / Community/Region */}
           <FormField
-            label="Campus/Region"
-            labelCn="校园/地区"
+            label="Community/Region"
+            labelCn="社区/地区"
             name="campus"
             type="text"
             value={data.campus || ''}
             onChange={(value) => updateRoleData(UserRole.AMBASSADOR, 'campus', value)}
-            placeholder="e.g., Beijing University Main Campus"
-            placeholderCn="例如：北京大学主校区"
+            placeholder="e.g., Local Sports Community Center"
+            placeholderCn="例如：本地体育社区中心"
             required
             icon={
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
