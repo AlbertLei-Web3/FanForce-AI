@@ -27,7 +27,7 @@ enum AuthStep {
 }
 
 export default function LoginPage() {
-  const { authState, login } = useUser()
+  const { authState, login, loginWithICP } = useUser()
   const { address, connectWallet, isConnected } = useWeb3()
   const { language, t } = useLanguage()
   const router = useRouter()
@@ -411,15 +411,36 @@ export default function LoginPage() {
                 </div>
                 
                 <ICPLoginButton
-                  onSuccess={(principalId) => {
+                  onSuccess={async (principalId) => {
                     console.log('✅ ICP登录成功，Principal ID:', principalId)
-                    // 这里可以处理ICP登录成功后的逻辑
-                    // 例如：创建用户档案、跳转到仪表板等
-                    router.push('/dashboard')
+                    setIsLoading(true)
+                    setCurrentStep(AuthStep.AUTHENTICATING)
+                    
+                    try {
+                      // 使用新的ICP登录方法 / Use new ICP login method
+                      const success = await loginWithICP(principalId)
+                      
+                      if (success) {
+                        setCurrentStep(AuthStep.SUCCESS)
+                        // 延迟跳转到仪表板 / Delayed redirect to dashboard
+                        setTimeout(() => {
+                          router.push('/dashboard')
+                        }, 1500)
+                      } else {
+                        throw new Error('ICP authentication failed')
+                      }
+                    } catch (err: any) {
+                      console.error('❌ ICP登录处理失败:', err)
+                      setError(err.message || 'ICP authentication failed')
+                      setCurrentStep(AuthStep.ERROR)
+                    } finally {
+                      setIsLoading(false)
+                    }
                   }}
                   onError={(error) => {
                     console.error('❌ ICP登录失败:', error)
                     setError(error)
+                    setCurrentStep(AuthStep.ERROR)
                   }}
                   className="w-full"
                 />

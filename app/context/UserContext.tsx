@@ -67,6 +67,7 @@ interface UserContextType {
   
   // 认证方法 / Authentication Methods
   login: (signature: string, message: string) => Promise<boolean>
+  loginWithICP: (principalId: string) => Promise<boolean> // 新增ICP登录方法 / Add ICP login method
   logout: () => Promise<void>
   refreshSession: () => Promise<void>
   
@@ -274,6 +275,60 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // ICP身份登录方法 / ICP Identity Login Method
+  const loginWithICP = async (principalId: string): Promise<boolean> => {
+    setAuthState(prev => ({ ...prev, isLoading: true, error: null }))
+
+    try {
+      console.log('🔐 开始ICP身份登录 / Starting ICP Identity login with Principal ID:', principalId)
+      
+      // 发送Principal ID到后端进行ICP认证 / Send Principal ID to backend for ICP authentication
+      const response = await fetch('http://localhost:3001/api/auth/icp-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          principalId
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        const { user, token } = data
+        
+        console.log('✅ ICP身份登录成功 / ICP Identity login successful:', user)
+        
+        // 存储用户信息和token / Store user information and token
+        localStorage.setItem('fanforce_session_token', token)
+        localStorage.setItem('fanforce_user_info', JSON.stringify(user))
+        
+        setAuthState({
+          isAuthenticated: true,
+          isLoading: false,
+          user,
+          sessionToken: token,
+          error: null
+        })
+        
+        return true
+      } else {
+        console.error('❌ ICP身份登录失败 / ICP Identity login failed:', data.message)
+        setAuthState(prev => ({ ...prev, isLoading: false, error: data.message || 'ICP login failed' }))
+        return false
+      }
+    } catch (error) {
+      console.error('❌ ICP登录请求错误 / ICP login request error:', error)
+      setAuthState(prev => ({ 
+        ...prev, 
+        isLoading: false, 
+        error: 'ICP登录失败，请重试 / ICP login failed, please retry' 
+      }))
+      return false
+    }
+  }
+
   // 用户登出方法 / User Logout Method
   const logout = async (): Promise<void> => {
     try {
@@ -468,6 +523,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const contextValue: UserContextType = {
     authState,
     login,
+    loginWithICP, // 添加ICP登录方法 / Add ICP login method
     logout,
     refreshSession,
     updateUserInfo,

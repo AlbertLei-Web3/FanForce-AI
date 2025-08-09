@@ -108,9 +108,10 @@ export function ICPProvider({ children }: { children: ReactNode }) {
       
       return new Promise((resolve) => {
         authClient.login({
-          identityProvider: process.env.NODE_ENV === 'development' 
-            ? 'http://127.0.0.1:4943/?canisterId=rdmx6-jaaaa-aaaaa-aaadq-cai'
-            : 'https://identity.ic0.app',
+          // 暂时使用生产环境的Internet Identity，避免本地开发环境问题
+          // Temporarily use production Internet Identity to avoid local dev environment issues
+          identityProvider: 'https://identity.ic0.app',
+          maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000), // 7 days in nanoseconds / 7天（纳秒）
           onSuccess: () => {
             console.log('✅ ICP身份登录成功 / ICP Identity login successful')
             
@@ -125,20 +126,21 @@ export function ICPProvider({ children }: { children: ReactNode }) {
               error: null
             })
             
+            console.log('🔐 ICP身份认证成功，Principal ID:', principalId)
             resolve(true)
           },
-          onError: (error) => {
+          onError: (error: string | Error) => {
             console.error('❌ ICP身份登录失败 / ICP Identity login failed:', error)
             setAuthState(prev => ({
               ...prev,
               isLoading: false,
-              error: error instanceof Error ? error.message : 'Login failed'
+              error: typeof error === 'string' ? error : error.message || 'Login failed'
             }))
             resolve(false)
           }
         })
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ ICP登录过程中出错 / Error during ICP login:', error)
       setAuthState(prev => ({
         ...prev,

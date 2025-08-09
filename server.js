@@ -394,8 +394,82 @@ app.get('/health', async (req, res) => {
 // API Routes
 // API路由
 
-// Authentication routes
-// 认证路由
+// Authentication routes / 认证路由
+// ICP身份登录路由 / ICP Identity Login Route
+app.post('/api/auth/icp-login', [
+  body('principalId').isLength({ min: 1 }).withMessage('Principal ID is required / Principal ID是必需的'),
+  body('identity').optional()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        success: false,
+        errors: errors.array(),
+        message: 'Validation failed / 验证失败'
+      });
+    }
+
+    const { principalId, identity } = req.body;
+    
+    console.log('🔐 ICP身份登录请求 / ICP Identity login request:', principalId);
+    
+    // 查找或创建基于Principal ID的用户 / Find or create user based on Principal ID
+    let user = await pool.query('SELECT * FROM users WHERE icp_principal_id = $1', [principalId]);
+    
+    if (user.rows.length === 0) {
+      // 创建新的ICP用户 / Create new ICP user
+      console.log('👤 创建新的ICP用户 / Creating new ICP user:', principalId);
+      const newUser = await pool.query(
+        'INSERT INTO users (icp_principal_id, role, username, created_at, last_login) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING *',
+        [principalId, 'audience', `ICP User ${principalId.slice(0, 8)}`]
+      );
+      user = newUser;
+    } else {
+      // 更新最后登录时间 / Update last login time
+      await pool.query('UPDATE users SET last_login = NOW() WHERE icp_principal_id = $1', [principalId]);
+      user = await pool.query('SELECT * FROM users WHERE icp_principal_id = $1', [principalId]);
+    }
+    
+    // 生成JWT令牌 / Generate JWT token
+    const token = jwt.sign(
+      { 
+        userId: user.rows[0].id, 
+        principalId: user.rows[0].icp_principal_id,
+        role: user.rows[0].role,
+        authType: 'icp' // 标识这是ICP认证 / Mark this as ICP authentication
+      },
+      process.env.JWT_SECRET || 'fanforce-ai-super-secret-jwt-key-2024',
+      { expiresIn: '24h' }
+    );
+    
+    console.log('✅ ICP身份登录成功 / ICP Identity login successful:', user.rows[0].username);
+    
+    res.json({
+      success: true,
+      message: 'ICP Identity login successful / ICP身份登录成功',
+      token,
+      user: {
+        id: user.rows[0].id,
+        principalId: user.rows[0].icp_principal_id,
+        role: user.rows[0].role,
+        username: user.rows[0].username,
+        email: user.rows[0].email,
+        authType: 'icp'
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ ICP登录错误 / ICP login error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Internal server error / 服务器内部错误',
+      message: 'ICP身份登录失败 / ICP Identity login failed'
+    });
+  }
+});
+
+// 钱包地址登录路由 / Wallet Address Login Route
 app.post('/api/auth/login', [
   body('walletAddress').isEthereumAddress().withMessage('Invalid wallet address'),
   body('signature').isLength({ min: 1 }).withMessage('Signature is required')
