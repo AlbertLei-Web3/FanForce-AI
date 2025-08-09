@@ -40,7 +40,7 @@ const secondaryRoleOptions = [
   {
     role: UserRole.ATHLETE,
     icon: '🏃‍♂️',
-    title: { en: 'Student Athlete', cn: '学生运动员' },
+    title: { en: 'Community Athlete', cn: '社区运动员' },
     description: { 
       en: 'Compete in matches, build your athletic profile, and earn performance rewards',
       cn: '参与比赛，建立运动员档案，获得表现奖励'
@@ -61,14 +61,14 @@ const secondaryRoleOptions = [
   {
     role: UserRole.AMBASSADOR,
     icon: '🧑‍💼',
-    title: { en: 'Community Ambassador', cn: '社区大使' },
+    title: { en: 'Ambassador', cn: '大使' },
     description: { 
       en: 'Organize events, recruit athletes, and earn commission from platform activities',
       cn: '组织活动，招募运动员，从平台活动中获得佣金'
     },
     benefits: [
       { en: 'Create and manage events', cn: '创建和管理活动' },
-      { en: 'Recruit student athletes', cn: '招募学生运动员' },
+      { en: 'Recruit community athletes', cn: '招募社区运动员' },
       { en: 'Earn 1% commission fees', cn: '获得1%佣金费用' },
       { en: 'Access to merchant partnerships', cn: '获得商户合作机会' }
     ],
@@ -156,7 +156,7 @@ export default function MultiRoleSelector({
   const getPrimaryRoleInfo = () => {
     const roleNames = {
       [UserRole.ATHLETE]: { en: 'Community Athlete', cn: '社区运动员', icon: '🏃‍♂️' },
-      [UserRole.AMBASSADOR]: { en: 'Community Ambassador', cn: '社区大使', icon: '🧑‍💼' },
+      [UserRole.AMBASSADOR]: { en: 'Ambassador', cn: '大使', icon: '🧑‍💼' },
       [UserRole.AUDIENCE]: { en: 'Audience Supporter', cn: '观众支持者', icon: '🙋‍♂️' },
       [UserRole.ADMIN]: { en: 'System Administrator', cn: '系统管理员', icon: '⚙️' }
     }

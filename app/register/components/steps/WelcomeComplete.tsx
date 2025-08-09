@@ -58,7 +58,7 @@ export default function WelcomeComplete({
       },
       [UserRole.AMBASSADOR]: {
         icon: '🧑‍💼',
-        name: { en: 'Community Ambassador', cn: '社区大使' },
+        name: { en: 'Ambassador', cn: '大使' },
         color: 'text-yellow-400'
       },
       [UserRole.AUDIENCE]: {
