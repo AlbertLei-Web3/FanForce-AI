@@ -8,16 +8,18 @@
 
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useUser } from './context/UserContext'
 import { useLanguage } from './context/LanguageContext'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import SimplifiedRegistration from './register/components/SimplifiedRegistration'
 
 export default function HomePage() {
   const { authState } = useUser()
   const { language, toggleLanguage } = useLanguage()
   const router = useRouter()
+  const [showQuickRegistration, setShowQuickRegistration] = useState(false)
 
   // 如果已登录，自动跳转到仪表板 / Auto redirect to dashboard if logged in
   // 临时注释掉自动跳转，用于测试ICP登录功能
@@ -26,6 +28,11 @@ export default function HomePage() {
   //     router.push('/dashboard')
   //   }
   // }, [authState.isAuthenticated, router])
+
+  // 处理快速注册模态窗口的关闭 / Handle quick registration modal close
+  const handleCloseQuickRegistration = () => {
+    setShowQuickRegistration(false)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-fanforce-dark via-gray-900 to-fanforce-primary">
@@ -98,20 +105,20 @@ export default function HomePage() {
             </div>
 
             {/* 大使角色 / Ambassador Role */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 hover:border-yellow-500/50 transition-colors">
-              <div className="text-4xl mb-4">🧑‍💼</div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 hover:border-purple-500/50 transition-colors">
+              <div className="text-4xl mb-4">🎯</div>
               <h3 className="text-xl font-bold text-white mb-2">
-                {language === 'en' ? 'Campus Ambassador' : '校园大使'}
-                    </h3>
+                {language === 'en' ? 'Event Ambassador' : '活动大使'}
+              </h3>
               <p className="text-gray-300 text-sm">
                 {language === 'en'
-                  ? 'Event creation, athlete management, venue coordination'
-                  : '活动创建、运动员管理、场馆协调'}
+                  ? 'Event management, team coordination, result tracking'
+                  : '活动管理、队伍协调、结果跟踪'}
               </p>
             </div>
 
             {/* 运动员角色 / Athlete Role */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 hover:border-green-500/50 transition-colors">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 hover:border-orange-500/50 transition-colors">
               <div className="text-4xl mb-4">🏃‍♂️</div>
               <h3 className="text-xl font-bold text-white mb-2">
                 {language === 'en' ? 'Student Athlete' : '学生运动员'}
@@ -146,6 +153,13 @@ export default function HomePage() {
               <span className="mr-2">🚀</span>
               {language === 'en' ? 'Access Dashboard' : '访问仪表板'}
             </Link>
+            <button
+              onClick={() => setShowQuickRegistration(true)}
+              className="bg-fanforce-accent hover:bg-green-600 text-white px-8 py-4 rounded-lg text-lg font-medium transition-colors flex items-center"
+            >
+              <span className="mr-2">🔍</span>
+              {language === 'en' ? 'Explore Login' : '探索登录'}
+            </button>
             <Link
               href="/websocket-demo"
               className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-4 rounded-lg text-lg font-medium transition-colors flex items-center"
@@ -153,7 +167,7 @@ export default function HomePage() {
               <span className="mr-2">🔗</span>
               {language === 'en' ? 'WebSocket Demo' : 'WebSocket演示'}
             </Link>
-            </div>
+          </div>
 
           {/* 系统特性 / System Features */}
           <div className="bg-white/5 backdrop-blur-sm rounded-lg p-8 border border-white/10">
@@ -204,6 +218,68 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* 快速注册模态窗口 / Quick Registration Modal */}
+      {showQuickRegistration && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-fanforce-dark via-gray-900 to-fanforce-primary rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-white/20">
+            {/* 模态窗口头部 / Modal Header */}
+            <div className="bg-gradient-to-r from-fanforce-primary to-fanforce-secondary p-6 text-white">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <span className="text-xl">🚀</span>
+                  </div>
+                  <h2 className="text-2xl font-bold">
+                    {language === 'en' ? 'Quick Start Registration' : '快速开始注册'}
+                  </h2>
+                </div>
+                <button
+                  onClick={handleCloseQuickRegistration}
+                  className="text-white/80 hover:text-white text-3xl font-light w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20 transition-all duration-200 hover:scale-110"
+                >
+                  ×
+                </button>
+              </div>
+              <p className="text-white/80 mt-2 text-sm">
+                {language === 'en' 
+                  ? 'Choose your authentication method and select your role to get started' 
+                  : '选择您的身份验证方式并选择角色开始使用'}
+              </p>
+            </div>
+            
+            {/* 模态窗口内容 / Modal Content */}
+            <div className="p-6 overflow-y-auto custom-scrollbar" style={{
+              maxHeight: 'calc(90vh - 120px)'
+            }}>
+              <SimplifiedRegistration onBack={handleCloseQuickRegistration} isModal={true} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 自定义滚动条样式 / Custom Scrollbar Styles */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+          border-radius: 4px;
+          transition: all 0.2s ease;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(135deg, #2563eb, #1e40af);
+          transform: scaleX(1.1);
+        }
+        .custom-scrollbar::-webkit-scrollbar-corner {
+          background: transparent;
+        }
+      `}</style>
     </div>
   )
 } 
