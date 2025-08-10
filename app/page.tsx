@@ -223,30 +223,17 @@ export default function HomePage() {
       {showQuickRegistration && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-gradient-to-br from-fanforce-dark via-gray-900 to-fanforce-primary rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-white/20">
-            {/* 模态窗口头部 / Modal Header */}
-            <div className="bg-gradient-to-r from-fanforce-primary to-fanforce-secondary p-6 text-white">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                    <span className="text-xl">🚀</span>
-                  </div>
-                  <h2 className="text-2xl font-bold">
-                    {language === 'en' ? 'Quick Start Registration' : '快速开始注册'}
-                  </h2>
-                </div>
-                <button
-                  onClick={handleCloseQuickRegistration}
-                  className="text-white/80 hover:text-white text-3xl font-light w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20 transition-all duration-200 hover:scale-110"
-                >
-                  ×
-                </button>
-              </div>
-              <p className="text-white/80 mt-2 text-sm">
-                {language === 'en' 
-                  ? 'Choose your authentication method and select your role to get started' 
-                  : '选择您的身份验证方式并选择角色开始使用'}
-              </p>
-            </div>
+                         {/* 模态窗口头部 / Modal Header */}
+             <div className="bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800 p-4 text-white">
+               <div className="flex justify-end">
+                 <button
+                   onClick={handleCloseQuickRegistration}
+                   className="text-white/80 hover:text-white text-2xl font-light w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-all duration-200 hover:scale-110"
+                 >
+                   ×
+                 </button>
+               </div>
+             </div>
             
             {/* 模态窗口内容 / Modal Content */}
             <div className="p-6 overflow-y-auto custom-scrollbar" style={{

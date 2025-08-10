@@ -26,12 +26,12 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
       {/* Modal content container */}
       {/* 模态框内容容器 */}
       <div 
-        className="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md m-4 text-white transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale"
+        className="bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md m-4 text-white transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale"
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the modal content. 防止在模态框内容内部点击时关闭。
       >
         {/* Modal Header */}
         {/* 模态框头部 */}
-        <div className="flex justify-between items-center border-b border-gray-700 pb-3 mb-4">
+        <div className="flex justify-between items-center border-b border-gray-600 pb-3 mb-4">
           <h2 className="text-xl font-semibold">{title}</h2>
           <button 
             onClick={onClose}

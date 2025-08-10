@@ -91,14 +91,14 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
   }
 
   return (
-    <div className={isModal ? "w-full" : "min-h-screen bg-gradient-to-br from-fanforce-dark via-blue-900 to-fanforce-primary flex items-center justify-center p-4"}>
-      <div className="w-full max-w-md">
+    <div className={isModal ? "w-full flex justify-center" : "min-h-screen bg-gradient-to-br from-fanforce-dark via-blue-900 to-fanforce-primary flex items-center justify-center p-4"}>
+      <div className={`${isModal ? 'w-full max-w-sm mx-auto flex flex-col items-center' : 'w-full max-w-md'}`}>
         {/* 返回按钮 / Back Button */}
         <button
           onClick={onBack}
-          className={`mb-6 transition-colors duration-200 flex items-center space-x-2 ${
+          className={`${isModal ? 'mb-3' : 'mb-6'} transition-colors duration-200 flex items-center space-x-2 ${
             isModal 
-              ? 'text-white/80 hover:text-white' 
+              ? 'text-white/80 hover:text-white self-start' 
               : 'text-white/80 hover:text-white'
           }`}
         >
@@ -111,27 +111,34 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
         </button>
 
         {/* 标题 / Title */}
-        <div className="text-center mb-8">
-          <h2 className={`text-3xl font-bold mb-2 ${
+        <div className={`${isModal ? 'text-center' : 'text-center'} ${isModal ? 'mb-4' : 'mb-8'}`}>
+          <h2 className={`${isModal ? 'text-2xl' : 'text-3xl'} font-bold mb-2 ${
             isModal ? 'text-white' : 'text-white'
           }`}>
-            {language === 'en' ? 'Quick Authentication' : '快速身份验证'}
+            {isModal 
+              ? (language === 'en' ? 'Sign in' : '登录')
+              : (language === 'en' ? 'Quick Authentication' : '快速身份验证')
+            }
           </h2>
-          <p className={`text-sm ${
-            isModal ? 'text-white/80' : 'text-white/80'
-          }`}>
-            {language === 'en' 
-              ? 'Choose your preferred login method to continue' 
-              : '选择您偏好的登录方式继续'}
-          </p>
+          {/* 只在非模态窗口时显示描述文字 / Only show description when not in modal */}
+          {!isModal && (
+            <p className={`text-sm ${
+              isModal ? 'text-white/80' : 'text-white/80'
+            }`}>
+              {language === 'en' 
+                ? 'Choose your preferred login method to continue' 
+                : '选择您偏好的登录方式继续'
+              }
+            </p>
+          )}
         </div>
 
         {/* 社交媒体登录选项 / Social Media Login Options */}
-        <div className="space-y-3 mb-6">
+        <div className={`space-y-3 mb-6 ${isModal ? 'flex flex-col items-center' : ''}`}>
           <button
             onClick={() => handleSocialLogin('google')}
             disabled={isLoading === 'google'}
-            className={`w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+            className={`${isModal ? 'w-64' : 'w-full'} flex items-center justify-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
               isLoading === 'google'
                 ? 'bg-gray-300 cursor-not-allowed'
                 : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 hover:border-gray-300 hover:shadow-md'
@@ -155,7 +162,7 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
           <button
             onClick={() => handleSocialLogin('x')}
             disabled={isLoading === 'x'}
-            className={`w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+            className={`${isModal ? 'w-64' : 'w-full'} flex items-center justify-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
               isLoading === 'x'
                 ? 'bg-gray-300 cursor-not-allowed'
                 : 'bg-black hover:bg-gray-800 text-white hover:shadow-md'
@@ -173,7 +180,7 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
         </div>
 
         {/* 分隔线 / Divider */}
-        <div className="flex items-center mb-6">
+        <div className={`flex items-center mb-6 ${isModal ? 'justify-center' : ''}`}>
           <div className={`flex-1 h-px ${isModal ? 'bg-white/30' : 'bg-white/20'}`}></div>
           <span className={`px-4 text-sm ${isModal ? 'text-white/60' : 'text-white/60'}`}>
             {language === 'en' ? 'or' : '或者'}
@@ -182,11 +189,11 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
         </div>
 
         {/* Web3和ICP登录选项 / Web3 and ICP Login Options */}
-        <div className="space-y-3 mb-6">
+        <div className={`space-y-3 mb-6 ${isModal ? 'flex flex-col items-center' : ''}`}>
           <button
             onClick={handleWeb3Login}
             disabled={isLoading === 'web3'}
-            className={`w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+            className={`${isModal ? 'w-64' : 'w-full'} flex items-center justify-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
               isLoading === 'web3'
                 ? 'bg-gray-300 cursor-not-allowed'
                 : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white hover:shadow-md'
@@ -205,7 +212,7 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
           <button
             onClick={handleICPLogin}
             disabled={isLoading === 'icp'}
-            className={`w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+            className={`${isModal ? 'w-64' : 'w-full'} flex items-center justify-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
               isLoading === 'icp'
                 ? 'bg-gray-300 cursor-not-allowed'
                 : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white hover:shadow-md'

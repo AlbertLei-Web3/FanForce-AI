@@ -39,8 +39,8 @@ const roleOptions = [
     icon: '🏃‍♂️',
     title: { en: 'Community Athlete', cn: '社区运动员' },
     description: { 
-      en: 'Compete in matches and earn ICP season bonuses',
-      cn: '参与比赛，获得排名，领取ICP赛季奖金'
+      en: 'Compete in matches and earn season bonuses',
+      cn: '参与比赛，获得排名，领取赛季奖金'
     },
     features: [
       { en: 'Join competitions', cn: '参与比赛' },
@@ -113,6 +113,52 @@ export default function IdentitySelector({
         )}
       </div>
 
+      {/* 角色选择成功提示（显示在卡片上方）/ Role Selection Success Toast (shown above cards) */}
+      {registrationState.selectedPrimaryRole && (
+        <div className="text-center animate-fadeIn mb-6">
+          <div className="bg-gradient-to-r from-blue-500/20 to-indigo-600/20 rounded-2xl p-6 border border-blue-400/30 backdrop-blur-sm shadow-2xl shadow-blue-500/20">
+            <div className="flex items-center justify-center space-x-3 mb-4">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <p className="text-white font-bold text-lg">
+                {language === 'en' ? 'Role Selected!' : '角色已选择！'}
+              </p>
+            </div>
+            <p className="text-gray-300 text-sm mb-4">
+              {language === 'en' 
+                ? `You've selected ${roleOptions.find(opt => opt.role === registrationState.selectedPrimaryRole)?.title.en}. Ready to continue?`
+                : `您已选择${roleOptions.find(opt => opt.role === registrationState.selectedPrimaryRole)?.title.cn}。准备继续吗？`
+              }
+            </p>
+            <button
+              onClick={handleContinue}
+              className="
+                inline-flex items-center space-x-3 px-10 py-4
+                bg-gradient-to-r from-blue-500 to-indigo-600 
+                hover:from-blue-600 hover:to-indigo-700
+                text-white font-bold rounded-xl text-lg
+                shadow-2xl shadow-blue-500/40
+                transition-all duration-300 transform hover:scale-105 hover:-translate-y-1
+                border border-blue-400/30
+                animate-bounce-custom
+              "
+            >
+              <span>
+                {language === 'en' ? 'Continue to Next Step' : '继续下一步'}
+              </span>
+              <div className="bg-white/20 rounded-full p-1">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 角色选项网格 / Role Options Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
         {/* 移动端：单列布局，更好的触控体验 */}
@@ -127,7 +173,7 @@ export default function IdentitySelector({
               className={`
                 relative group cursor-pointer transition-all duration-300
                 ${isSelected ? 'scale-105' : 'hover:scale-102'}
-                min-h-[380px] sm:min-h-[360px] lg:min-h-[400px]
+                min-h-[320px] sm:min-h-[300px] lg:min-h-[340px]
               `}
               onClick={() => handleRoleSelect(option.role)}
             >
@@ -203,7 +249,7 @@ export default function IdentitySelector({
                           />
                         </svg>
                       </div>
-                      <span className="text-white/95 leading-relaxed font-medium drop-shadow">
+                      <span className="text-white/90 font-medium drop-shadow">
                         {language === 'en' ? feature.en : feature.cn}
                       </span>
                     </div>
@@ -251,49 +297,7 @@ export default function IdentitySelector({
       </div>
 
       {/* 快速继续按钮（选中角色后显示）/ Quick Continue Button (shown after role selection) */}
-      {registrationState.selectedPrimaryRole && (
-        <div className="text-center animate-fadeIn">
-          <div className="bg-gradient-to-r from-fanforce-primary/10 to-fanforce-accent/10 rounded-2xl p-6 border border-fanforce-primary/20 mb-6">
-            <div className="flex items-center justify-center space-x-3 mb-4">
-              <div className="w-8 h-8 bg-fanforce-gold rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5 text-fanforce-dark" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <p className="text-white font-medium">
-                {language === 'en' ? 'Great choice!' : '很好的选择！'}
-              </p>
-            </div>
-            <p className="text-gray-300 text-sm mb-4">
-              {language === 'en' 
-                ? `You've selected ${roleOptions.find(opt => opt.role === registrationState.selectedPrimaryRole)?.title.en}. Ready to continue?`
-                : `您已选择${roleOptions.find(opt => opt.role === registrationState.selectedPrimaryRole)?.title.cn}。准备继续吗？`
-              }
-            </p>
-            <button
-              onClick={handleContinue}
-              className="
-                inline-flex items-center space-x-3 px-10 py-4
-                bg-gradient-to-r from-fanforce-primary to-fanforce-accent 
-                hover:from-blue-700 hover:to-green-600
-                text-white font-bold rounded-xl text-lg
-                shadow-2xl shadow-fanforce-primary/40
-                transition-all duration-300 transform hover:scale-105 hover:-translate-y-1
-                border border-white/10
-              "
-            >
-              <span>
-                {language === 'en' ? 'Continue to Next Step' : '继续下一步'}
-              </span>
-              <div className="bg-white/20 rounded-full p-1">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </div>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* 已删除，替换为上方的新提示组件 / Removed, replaced with new toast component above */}
     </div>
   )
 }
