@@ -131,7 +131,8 @@ export default function SimplifiedRegistration({ onBack, isModal = false }: Simp
             </div>
 
             {/* 继续按钮 / Continue Button */}
-            {selectedRole && (
+            {/* 已删除重复的提示，IdentitySelector组件中已有相同功能 / Removed duplicate toast, IdentitySelector component already has the same functionality */}
+            {/* {selectedRole && (
               <div className="text-center animate-fadeIn">
                 <div className={`rounded-2xl p-6 border mb-6 ${
                   isModal 
@@ -150,7 +151,7 @@ export default function SimplifiedRegistration({ onBack, isModal = false }: Simp
                   </div>
                   <p className={`text-sm mb-4 ${isModal ? 'text-white/80' : 'text-gray-300'}`}>
                     {language === 'en' 
-                      ? `You've selected ${selectedRole}. Ready to enter the platform?`
+                      ? `You've selected ${selectedRole}. Ready to enter platform?`
                       : `您已选择${selectedRole}。准备进入平台吗？`
                     }
                   </p>
@@ -178,7 +179,7 @@ export default function SimplifiedRegistration({ onBack, isModal = false }: Simp
                   </div>
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         </div>
       )}
