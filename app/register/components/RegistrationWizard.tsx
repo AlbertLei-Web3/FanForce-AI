@@ -47,8 +47,8 @@ export enum AuthMethod {
 export interface PersonalInfo {
   username?: string
   email?: string
-  university?: string
-  studentId?: string
+  organization?: string
+  memberId?: string
   phone?: string
   emergencyContact?: string
 }

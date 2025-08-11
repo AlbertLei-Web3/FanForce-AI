@@ -69,8 +69,8 @@ export default function PersonalInfoForm({
       errors.email = language === 'en' ? 'Invalid email format' : '邮箱格式无效'
     }
 
-    if (!personalInfo.university?.trim()) {
-      errors.university = language === 'en' ? 'Organization is required' : '组织为必填项'
+    if (!personalInfo.organization?.trim()) {
+      errors.organization = language === 'en' ? 'Organization is required' : '组织为必填项'
     }
 
     // 验证可选但有格式要求的字段 / Validate optional but format-constrained fields
@@ -104,6 +104,96 @@ export default function PersonalInfoForm({
 
       {/* 个人信息表单 / Personal Information Form */}
       <div className="bg-white/5 rounded-2xl p-8 border border-white/10">
+        {/* 静态信息展示区域 / Static Information Display Area */}
+        <div className="mb-8 p-6 bg-gradient-to-r from-blue-900/20 to-indigo-900/20 rounded-xl border border-blue-500/30">
+          <div className="text-center mb-4">
+            <h3 className="text-xl font-bold text-blue-400 mb-2">
+              {language === 'en' ? 'Personal Information Overview' : '个人信息概览'}
+            </h3>
+            <p className="text-gray-300 text-sm">
+              {language === 'en' 
+                ? 'This information will be used across all your selected roles'
+                : '此信息将用于您选择的所有角色'
+              }
+            </p>
+          </div>
+          
+          {/* 信息字段网格 / Information Fields Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+            <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
+              <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-medium">Username</p>
+                <p className="text-gray-400 text-xs">用户名</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
+              <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-medium">Email</p>
+                <p className="text-gray-400 text-xs">邮箱地址</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
+              <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H7m2 0v-6a2 2 0 012-2h2a2 2 0 012 2v6m-6 0h4" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-medium">Organization</p>
+                <p className="text-gray-400 text-xs">组织</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
+              <div className="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-medium">Member ID</p>
+                <p className="text-gray-400 text-xs">成员ID</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
+              <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-medium">Phone</p>
+                <p className="text-gray-400 text-xs">手机号</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
+              <div className="w-8 h-8 bg-orange-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-medium">Emergency Contact</p>
+                <p className="text-gray-400 text-xs">紧急联系人</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* 用户名 / Username */}
           <div className="md:col-span-1">
@@ -157,11 +247,11 @@ export default function PersonalInfoForm({
             <FormField
               label="Organization"
               labelCn="组织"
-              name="university"
+              name="organization"
               type="select"
-              value={registrationState.personalInfo.university || ''}
-              onChange={(value) => updatePersonalInfo('university', value)}
-              error={registrationState.errors.university}
+              value={registrationState.personalInfo.organization || ''}
+              onChange={(value) => updatePersonalInfo('organization', value)}
+              error={registrationState.errors.organization}
               required
               options={organizationOptions}
               icon={
@@ -179,11 +269,11 @@ export default function PersonalInfoForm({
             <FormField
               label="Member ID"
               labelCn="成员ID"
-              name="studentId"
+              name="memberId"
               type="text"
-              value={registrationState.personalInfo.studentId || ''}
-              onChange={(value) => updatePersonalInfo('studentId', value)}
-              error={registrationState.errors.studentId}
+              value={registrationState.personalInfo.memberId || ''}
+              onChange={(value) => updatePersonalInfo('memberId', value)}
+              error={registrationState.errors.memberId}
               placeholder="Enter your member ID"
               placeholderCn="输入您的成员ID"
               maxLength={20}

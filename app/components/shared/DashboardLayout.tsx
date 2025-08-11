@@ -84,6 +84,7 @@ export default function DashboardLayout({
         { id: 'events', label: 'Event Management', labelCn: '活动管理', icon: '🎯', href: '/dashboard/admin/events' },
         { id: 'analytics', label: 'Analytics', labelCn: '数据分析', icon: '📈', href: '/dashboard/admin/analytics' },
         { id: 'settings', label: 'System Settings', labelCn: '系统设置', icon: '⚙️', href: '/dashboard/admin/settings' },
+        { id: 'profile', label: 'Personal Profile', labelCn: '个人信息', icon: '👤', href: '/dashboard/profile' },
       ]
       
       // 超级管理员额外的开发工具菜单 / Additional dev tools menu for super admin
@@ -107,6 +108,7 @@ export default function DashboardLayout({
         { id: 'athletes', label: 'Athlete Management', labelCn: '运动员管理', icon: '🏃‍♂️', href: '/dashboard/ambassador/athletes' },
         { id: 'venues', label: 'Venue Management', labelCn: '场馆管理', icon: '🏟️', href: '/dashboard/ambassador/venues' },
         { id: 'performance', label: 'Performance', labelCn: '业绩统计', icon: '📊', href: '/dashboard/ambassador/performance' },
+        { id: 'profile', label: 'Personal Profile', labelCn: '个人信息', icon: '👤', href: '/dashboard/profile' },
       ]
     }
 
@@ -116,7 +118,7 @@ export default function DashboardLayout({
         { id: 'competitions', label: 'Competitions', labelCn: '比赛状态', icon: '🏆', href: '/dashboard/athlete/competitions' },
         { id: 'rankings', label: 'Rankings', labelCn: '段位排名', icon: '🥇', href: '/dashboard/athlete/rankings' },
         { id: 'earnings', label: 'Earnings', labelCn: '收入统计', icon: '💰', href: '/dashboard/athlete/earnings' },
-        { id: 'profile', label: 'Profile Settings', labelCn: '档案设置', icon: '⚙️', href: '/dashboard/athlete/profile' },
+        { id: 'profile', label: 'Personal Profile', labelCn: '个人信息', icon: '👤', href: '/dashboard/profile' },
       ]
     }
 
@@ -127,6 +129,7 @@ export default function DashboardLayout({
         { id: 'staking', label: 'Staking', labelCn: '质押中心', icon: '💎', href: '/dashboard/audience/staking' },
         { id: 'rewards', label: 'Rewards', labelCn: '奖励记录', icon: '🏅', href: '/dashboard/audience/rewards' },
         { id: 'qr-scanner', label: 'QR Scanner', labelCn: '扫码签到', icon: '📱', href: '/dashboard/audience/scanner' },
+        { id: 'profile', label: 'Personal Profile', labelCn: '个人信息', icon: '👤', href: '/dashboard/profile' },
       ]
     }
 
