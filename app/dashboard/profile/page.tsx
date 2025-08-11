@@ -35,6 +35,7 @@ interface PersonalInfo {
   email: string
   phone: string
   emergencyContact: string
+  regionalLocation: string
 }
 
 // 角色特定信息接口 / Role-Specific Information Interface
@@ -48,14 +49,11 @@ interface RoleSpecificInfo {
   achievements?: string
   
   // 观众特有信息 / Audience-specific information
-  supportLevel?: string
   interestedSports?: string
   favoriteTeams?: string
   
   // 大使特有信息 / Ambassador-specific information
-  campus?: string
   department?: string
-  ambassadorLevel?: string
 }
 
 export default function ProfilePage() {
@@ -68,7 +66,8 @@ export default function ProfilePage() {
     username: '',
     email: '',
     phone: '',
-    emergencyContact: ''
+    emergencyContact: '',
+    regionalLocation: ''
   })
   
   const [roleSpecificInfo, setRoleSpecificInfo] = useState<RoleSpecificInfo>({})
@@ -96,6 +95,16 @@ export default function ProfilePage() {
     '其他': ['待定']
   }
 
+  // 运动项目院系映射 / Sport department mapping
+  const sportDepartments: { [key: string]: string[] } = {
+    '足球': ['体育学院', '足球学院', '运动训练学院'],
+    '篮球': ['体育学院', '篮球学院', '运动训练学院'],
+    '网球': ['体育学院', '网球学院', '运动训练学院'],
+    '羽毛球': ['体育学院', '羽毛球学院', '运动训练学院'],
+    '排球': ['体育学院', '排球学院', '运动训练学院'],
+    '其他': ['体育学院', '运动训练学院', '其他学院']
+  }
+
   // 经验水平选项 / Experience level options
   const experienceLevels = [
     '初学者 (0-1年)',
@@ -105,13 +114,6 @@ export default function ProfilePage() {
     '职业/半职业'
   ]
 
-  // 支持级别选项 / Support level options
-  const supportLevels = [
-    '休闲粉丝 (Casual Fan)',
-    '活跃支持者 (Active Supporter)',
-    '铁杆粉丝 (Hardcore Fan)'
-  ]
-
   // 初始化数据 / Initialize data
   useEffect(() => {
     if (authState.user) {
@@ -119,13 +121,59 @@ export default function ProfilePage() {
         username: authState.user.username || '',
         email: authState.user.email || '',
         phone: authState.user.phone || '',
-        emergencyContact: authState.user.emergencyContact || ''
+        emergencyContact: authState.user.emergencyContact || '',
+        regionalLocation: ''
       }
       
       setPersonalInfo(userData)
       setOriginalData(userData)
     }
   }, [authState.user])
+
+  // 分层级地理位置选项 / Hierarchical regional location options
+  const regionalLocationOptions = {
+    '欧洲': {
+      '法国': ['巴黎', '里昂', '马赛', '图卢兹', '尼斯'],
+      '马耳他': ['瓦莱塔', '斯利马', '圣朱利安', '布吉巴', '姆西达']
+    },
+    '东南亚': {
+      '印度尼西亚': {
+        '泗水': ['Airlangga University', 'Sepuluh Nopember Institute of Technology (ITS)']
+      }
+    }
+  }
+
+  // 处理地区选择 / Handle regional location selection
+  const [selectedRegion, setSelectedRegion] = useState<string>('')
+  const [selectedCountry, setSelectedCountry] = useState<string>('')
+  const [selectedCity, setSelectedCity] = useState<string>('')
+  const [selectedInstitution, setSelectedInstitution] = useState<string>('')
+
+  const handleRegionChange = (region: string) => {
+    setSelectedRegion(region)
+    setSelectedCountry('')
+    setSelectedCity('')
+    setSelectedInstitution('')
+    setPersonalInfo(prev => ({ ...prev, regionalLocation: region }))
+  }
+
+  const handleCountryChange = (country: string) => {
+    setSelectedCountry(country)
+    setSelectedCity('')
+    setSelectedInstitution('')
+    setPersonalInfo(prev => ({ ...prev, regionalLocation: `${prev.regionalLocation} > ${country}` }))
+  }
+
+  const handleCityChange = (city: string) => {
+    setSelectedCity(city)
+    setSelectedInstitution('')
+    setPersonalInfo(prev => ({ ...prev, regionalLocation: `${prev.regionalLocation} > ${city}` }))
+  }
+
+  const handleInstitutionChange = (institution: string) => {
+    setSelectedInstitution(institution)
+    setPersonalInfo(prev => ({ ...prev, regionalLocation: `${prev.regionalLocation} > ${institution}` }))
+  }
 
   // 处理个人信息变更 / Handle personal info changes
   const handlePersonalInfoChange = (field: keyof PersonalInfo, value: string) => {
@@ -165,16 +213,16 @@ export default function ProfilePage() {
       })
       
       setIsEditing(false)
-      showToast(
-        language === 'en' ? 'Profile updated successfully!' : '个人资料更新成功！',
-        'success'
-      )
+      showToast({
+        message: language === 'en' ? 'Profile updated successfully!' : '个人资料更新成功！',
+        type: 'success'
+      })
     } catch (error) {
       console.error('Save error:', error)
-      showToast(
-        language === 'en' ? 'Failed to update profile' : '更新个人资料失败',
-        'error'
-      )
+      showToast({
+        message: language === 'en' ? 'Failed to update profile' : '更新个人资料失败',
+        type: 'error'
+      })
     } finally {
       setIsLoading(false)
     }
@@ -182,9 +230,23 @@ export default function ProfilePage() {
 
   // 取消编辑 / Cancel editing
   const handleCancel = () => {
-    setPersonalInfo(originalData || {})
+    setPersonalInfo(originalData || {
+      username: '',
+      email: '',
+      phone: '',
+      emergencyContact: '',
+      regionalLocation: ''
+    })
     setRoleSpecificInfo({})
+    setSelectedRegion('')
+    setSelectedCountry('')
+    setSelectedCity('')
+    setSelectedInstitution('')
     setIsEditing(false)
+    showToast({
+      message: language === 'en' ? 'Changes cancelled' : '更改已取消',
+      type: 'info'
+    })
   }
 
   // 渲染个人信息表单 / Render personal info form
@@ -260,6 +322,114 @@ export default function ProfilePage() {
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
             placeholder={language === 'en' ? 'Enter emergency contact' : '输入紧急联系人'}
           />
+        </div>
+
+        {/* 地区 / Regional Location */}
+        <div>
+          <label className="block text-sm font-medium text-white mb-2 flex items-center">
+            <FaBuilding className="text-red-400 mr-2 text-xs" />
+            {language === 'en' ? 'Regional Location' : '区域地点'} *
+          </label>
+          
+          {/* 第一级：大洲/地区选择 */}
+          <div className="mb-3">
+            <select
+              value={selectedRegion}
+              onChange={(e) => handleRegionChange(e.target.value)}
+              disabled={!isEditing}
+              className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
+            >
+              <option value="">{language === 'en' ? 'Select region' : '选择地区'}</option>
+              <option value="欧洲">欧洲</option>
+              <option value="东南亚">东南亚</option>
+            </select>
+          </div>
+
+          {/* 第二级：国家选择 */}
+          {selectedRegion && (
+            <div className="mb-3">
+              <select
+                value={selectedCountry}
+                onChange={(e) => handleCountryChange(e.target.value)}
+                disabled={!isEditing}
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
+              >
+                <option value="">{language === 'en' ? 'Select country' : '选择国家'}</option>
+                {selectedRegion === '欧洲' && (
+                  <>
+                    <option value="法国">法国</option>
+                    <option value="马耳他">马耳他</option>
+                  </>
+                )}
+                {selectedRegion === '东南亚' && (
+                  <option value="印度尼西亚">印度尼西亚</option>
+                )}
+              </select>
+            </div>
+          )}
+
+          {/* 第三级：城市选择 */}
+          {selectedCountry && (
+            <div className="mb-3">
+              <select
+                value={selectedCity}
+                onChange={(e) => handleCityChange(e.target.value)}
+                disabled={!isEditing}
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
+              >
+                <option value="">{language === 'en' ? 'Select city' : '选择城市'}</option>
+                {selectedCountry === '法国' && (
+                  <>
+                    <option value="巴黎">巴黎</option>
+                    <option value="里昂">里昂</option>
+                    <option value="马赛">马赛</option>
+                    <option value="图卢兹">图卢兹</option>
+                    <option value="尼斯">尼斯</option>
+                  </>
+                )}
+                {selectedCountry === '马耳他' && (
+                  <>
+                    <option value="瓦莱塔">瓦莱塔</option>
+                    <option value="斯利马">斯利马</option>
+                    <option value="圣朱利安">圣朱利安</option>
+                    <option value="布吉巴">布吉巴</option>
+                    <option value="姆西达">姆西达</option>
+                  </>
+                )}
+                {selectedCountry === '印度尼西亚' && (
+                  <option value="泗水">泗水</option>
+                )}
+              </select>
+            </div>
+          )}
+
+          {/* 第四级：机构选择（仅对印尼泗水） */}
+          {selectedCity === '泗水' && (
+            <div className="mb-3">
+              <select
+                value={selectedInstitution}
+                onChange={(e) => handleInstitutionChange(e.target.value)}
+                disabled={!isEditing}
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
+              >
+                <option value="">{language === 'en' ? 'Select institution' : '选择机构'}</option>
+                <option value="Airlangga University">Airlangga University</option>
+                <option value="Sepuluh Nopember Institute of Technology (ITS)">Sepuluh Nopember Institute of Technology (ITS)</option>
+              </select>
+            </div>
+          )}
+
+          {/* 显示最终选择的地区 */}
+          {personalInfo.regionalLocation && (
+            <div className="mt-3 p-3 bg-fanforce-primary/20 border border-fanforce-primary/30 rounded-lg">
+              <p className="text-sm text-fanforce-primary font-medium">
+                {language === 'en' ? 'Selected Location' : '已选择地点'}:
+              </p>
+              <p className="text-white text-sm mt-1">
+                {personalInfo.regionalLocation}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -441,25 +611,6 @@ export default function ProfilePage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 支持级别 / Support Level */}
-            <div>
-              <label className="block text-sm font-medium text-white mb-2 flex items-center">
-                <FaExclamationTriangle className="text-red-400 mr-2 text-xs" />
-                {language === 'en' ? 'Support Level' : '支持级别'} *
-              </label>
-              <select
-                value={roleSpecificInfo.supportLevel || ''}
-                onChange={(e) => handleRoleSpecificInfoChange('supportLevel', e.target.value)}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-              >
-                <option value="">{language === 'en' ? 'Select level' : '选择级别'}</option>
-                {supportLevels.map((level) => (
-                  <option key={level} value={level}>{level}</option>
-                ))}
-              </select>
-            </div>
-
             {/* 感兴趣的运动 / Interested Sports */}
             <div>
               <label className="block text-sm font-medium text-white mb-2 flex items-center">
@@ -484,6 +635,10 @@ export default function ProfilePage() {
                   {sportsOptions.find(s => s.value === roleSpecificInfo.interestedSports)?.note}
                 </p>
               )}
+              {/* 添加描述 */}
+              <p className="text-xs text-fanforce-primary mt-1 italic">
+                {language === 'en' ? 'Affects event push notification priority' : '关系到赛事推送优先级'}
+              </p>
             </div>
 
             {/* 喜爱的队伍 / Favorite Teams */}
@@ -513,53 +668,28 @@ export default function ProfilePage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 校区 / Campus */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                {language === 'en' ? 'Campus' : '校区'}
-              </label>
-              <input
-                type="text"
-                value={roleSpecificInfo.campus || ''}
-                onChange={(e) => handleRoleSpecificInfoChange('campus', e.target.value)}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-                placeholder={language === 'en' ? 'Enter campus' : '输入校区'}
-              />
-            </div>
-
-            {/* 院系 / Department */}
+            {/* 院系 / Department - 与主要运动项目联动 */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 {language === 'en' ? 'Department' : '院系'}
               </label>
-              <input
-                type="text"
-                value={roleSpecificInfo.department || ''}
-                onChange={(e) => handleRoleSpecificInfoChange('department', e.target.value)}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-                placeholder={language === 'en' ? 'Enter department' : '输入院系'}
-              />
-            </div>
-
-            {/* 大使级别 / Ambassador Level */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                {language === 'en' ? 'Ambassador Level' : '大使级别'}
-              </label>
-              <select
-                value={roleSpecificInfo.ambassadorLevel || ''}
-                onChange={(e) => handleRoleSpecificInfoChange('ambassadorLevel', e.target.value)}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-              >
-                <option value="">{language === 'en' ? 'Select level' : '选择级别'}</option>
-                <option value="junior">初级大使</option>
-                <option value="intermediate">中级大使</option>
-                <option value="senior">高级大使</option>
-                <option value="expert">专家大使</option>
-              </select>
+              {roleSpecificInfo.primarySport && sportDepartments[roleSpecificInfo.primarySport] ? (
+                <select
+                  value={roleSpecificInfo.department || ''}
+                  onChange={(e) => handleRoleSpecificInfoChange('department', e.target.value)}
+                  disabled={!isEditing}
+                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
+                >
+                  <option value="">{language === 'en' ? 'Select department' : '选择院系'}</option>
+                  {sportDepartments[roleSpecificInfo.primarySport].map((dept) => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+              ) : (
+                <div className="text-gray-400 text-sm italic">
+                  {language === 'en' ? 'Please select a primary sport first' : '请先选择主要运动项目'}
+                </div>
+              )}
             </div>
           </div>
         </div>
