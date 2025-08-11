@@ -70,7 +70,7 @@ export default function AudienceCard({
         <div className="flex items-center">
           <FaUsers className="text-2xl text-fanforce-gold mr-3" />
           <h2 className="text-xl font-bold text-white">
-            {language === 'en' ? 'Audience Information' : '观众信息'}
+            Audience Information
           </h2>
         </div>
         
@@ -86,7 +86,7 @@ export default function AudienceCard({
             }`}
           >
             <FaEdit className="mr-2" />
-            {language === 'en' ? 'Edit' : '编辑'}
+            Edit
           </button>
         ) : (
           <div className="flex space-x-2">
@@ -95,7 +95,7 @@ export default function AudienceCard({
               className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors flex items-center"
             >
               <FaUndo className="mr-2" />
-              {language === 'en' ? 'Cancel' : '取消'}
+              Cancel
             </button>
             <button
               onClick={handleSave}
@@ -103,10 +103,7 @@ export default function AudienceCard({
               className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center disabled:opacity-50"
             >
               <FaSave className="mr-2" />
-              {isLoading 
-                ? (language === 'en' ? 'Saving...' : '保存中...') 
-                : (language === 'en' ? 'Save' : '保存')
-              }
+              {isLoading ? 'Saving...' : 'Save'}
             </button>
           </div>
         )}
@@ -116,8 +113,8 @@ export default function AudienceCard({
         {/* 感兴趣的运动 / Interested Sports */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
-            <span className="text-blue-400 text-xs font-normal mr-2">(必填)</span>
-            {language === 'en' ? 'Interested Sports' : '感兴趣的运动'}
+            <span className="text-blue-400 text-xs font-normal mr-2">(Required)</span>
+            Interested Sports
           </label>
           <select
             value={getFieldValue('interestedSports')}
@@ -125,7 +122,7 @@ export default function AudienceCard({
             disabled={!isEditing}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
           >
-            <option value="">{language === 'en' ? 'Select sport' : '选择运动项目'}</option>
+            <option value="">Select sport</option>
             {sportsOptions.map((sport) => (
               <option key={sport.value} value={sport.value}>
                 {sport.label}
@@ -141,16 +138,13 @@ export default function AudienceCard({
         {/* 喜爱的球队 / Favorite Teams */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            {language === 'en' ? 'Favorite Teams' : '喜爱的球队'}
+            Favorite Teams
           </label>
           <input
             type="text"
             value={getFieldValue('favoriteTeams')}
             onChange={(e) => onFieldChange('favoriteTeams', e.target.value)}
-            placeholder={language === 'en' 
-              ? 'e.g., Lakers, Warriors, Celtics...' 
-              : '例如：湖人队、勇士队、凯尔特人队...'
-            }
+            placeholder="e.g., Lakers, Warriors, Celtics..."
             disabled={!isEditing}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
           />

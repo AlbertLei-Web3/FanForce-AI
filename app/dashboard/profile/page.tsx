@@ -71,17 +71,13 @@ export default function ProfilePage() {
 
   // 保存成功处理 / Handle save success
   const handleSaveSuccess = (section: string) => {
-    const message = language === 'en' 
-      ? `${section} information updated successfully!` 
-      : `${section}信息更新成功！`
+    const message = `${section} information updated successfully!`
     showToast({ message, type: 'success' })
   }
 
   // 保存失败处理 / Handle save failure
   const handleSaveFailure = (section: string) => {
-    const message = language === 'en' 
-      ? `Failed to update ${section} information` 
-      : `更新${section}信息失败`
+    const message = `Failed to update ${section} information`
     showToast({ message, type: 'error' })
   }
 
@@ -128,7 +124,7 @@ export default function ProfilePage() {
   // 取消编辑处理 / Handle cancel editing
   const handleCancel = (section: string) => {
     cancelEditing(section as any)
-    const message = language === 'en' ? 'Changes cancelled' : '更改已取消'
+    const message = 'Changes cancelled'
     showToast({ message, type: 'info' })
   }
 
@@ -153,21 +149,18 @@ export default function ProfilePage() {
 
   return (
     <DashboardLayout 
-      title={language === 'en' ? 'Personal Profile' : '个人信息'} 
-      subtitle={language === 'en' ? 'Manage your personal information and preferences' : '管理您的个人信息和偏好设置'}
+      title="Personal Profile" 
+      subtitle="Manage your personal information and preferences"
     >
       <div className="space-y-6">
         {/* 页面头部 / Page Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">
-              {language === 'en' ? 'Personal Profile' : '个人信息'}
+              Personal Profile
             </h1>
             <p className="text-gray-300">
-              {language === 'en' 
-                ? 'Manage your account information and role-specific details' 
-                : '管理您的账户信息和角色特定详情'
-              }
+              Manage your account information and role-specific details
             </p>
           </div>
           
@@ -180,7 +173,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-3 mb-6">
             <FaUser className="text-2xl text-blue-400" />
             <h2 className="text-xl font-semibold text-white">
-              {language === 'en' ? 'Basic Information' : '基本信息'}
+              Basic Information
             </h2>
           </div>
           
@@ -203,7 +196,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3 mb-6">
               <FaRunning className="text-2xl text-green-400" />
               <h2 className="text-xl font-semibold text-white">
-                {language === 'en' ? 'Athlete Profile' : '运动员档案'}
+                Athlete Profile
               </h2>
             </div>
             
@@ -225,7 +218,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3 mb-6">
               <FaUsers className="text-2xl text-purple-400" />
               <h2 className="text-xl font-semibold text-white">
-                {language === 'en' ? 'Audience Profile' : '观众档案'}
+                Audience Profile
               </h2>
             </div>
             
@@ -247,7 +240,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3 mb-6">
               <FaHandshake className="text-2xl text-orange-400" />
               <h2 className="text-xl font-semibold text-white">
-                {language === 'en' ? 'Ambassador Profile' : '大使档案'}
+                Ambassador Profile
               </h2>
             </div>
             
@@ -271,13 +264,10 @@ export default function ProfilePage() {
             <FaShieldAlt className="text-2xl text-blue-400 mr-3 mt-1" />
             <div>
               <h3 className="text-lg font-semibold text-blue-400 mb-2">
-                {language === 'en' ? 'Security Notice' : '安全提示'}
+                Security Notice
               </h3>
               <p className="text-gray-300 text-sm leading-relaxed">
-                {language === 'en' 
-                  ? 'Your personal information is securely stored and only used for account management and event participation. We never share your data with third parties without your explicit consent.'
-                  : '您的个人信息安全存储，仅用于账户管理和活动参与。未经您的明确同意，我们绝不会与第三方共享您的数据。'
-                }
+                Your personal information is securely stored and only used for account management and event participation. We never share your data with third parties without your explicit consent.
               </p>
             </div>
           </div>

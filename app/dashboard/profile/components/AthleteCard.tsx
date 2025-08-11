@@ -81,7 +81,7 @@ export default function AthleteCard({
         <div className="flex items-center">
           <FaTrophy className="text-2xl text-fanforce-gold mr-3" />
           <h2 className="text-xl font-bold text-white">
-            {language === 'en' ? 'Athlete Information' : '运动员信息'}
+            Athlete Information
           </h2>
         </div>
         
@@ -97,7 +97,7 @@ export default function AthleteCard({
             }`}
           >
             <FaEdit className="mr-2" />
-            {language === 'en' ? 'Edit' : '编辑'}
+            Edit
           </button>
         ) : (
           <div className="flex space-x-2">
@@ -106,7 +106,7 @@ export default function AthleteCard({
               className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors flex items-center"
             >
               <FaUndo className="mr-2" />
-              {language === 'en' ? 'Cancel' : '取消'}
+              Cancel
             </button>
             <button
               onClick={handleSave}
@@ -114,10 +114,7 @@ export default function AthleteCard({
               className="px-4 py-2 bg-fanforce-gold hover:bg-fanforce-gold/80 text-black rounded-lg font-medium transition-colors flex items-center disabled:opacity-50"
             >
               <FaSave className="mr-2" />
-              {isLoading 
-                ? (language === 'en' ? 'Saving...' : '保存中...') 
-                : (language === 'en' ? 'Save' : '保存')
-              }
+              {isLoading ? 'Saving...' : 'Save'}
             </button>
           </div>
         )}
@@ -126,9 +123,8 @@ export default function AthleteCard({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* 主要运动项目 / Primary Sport */}
         <div>
-          <label className="block text-sm font-medium text-white mb-2 flex items-center">
-            <FaExclamationTriangle className="text-red-400 mr-2 text-xs" />
-            {language === 'en' ? 'Primary Sport' : '主要运动项目'} *
+          <label className="block text-sm font-medium text-white mb-2">
+            Primary Sport <span className="text-blue-400 text-xs font-normal">(Required)</span>
           </label>
           <select
             value={getFieldValue('primarySport')}
@@ -140,7 +136,7 @@ export default function AthleteCard({
             disabled={!isEditing}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
           >
-            <option value="">{language === 'en' ? 'Select sport' : '选择运动项目'}</option>
+            <option value="">Select sport</option>
             {sportsOptions.map((sport) => (
               <option key={sport.value} value={sport.value}>
                 {sport.label}
@@ -162,9 +158,8 @@ export default function AthleteCard({
 
         {/* 经验水平 / Experience Level */}
         <div>
-          <label className="block text-sm font-medium text-white mb-2 flex items-center">
-            <FaExclamationTriangle className="text-red-400 mr-2 text-xs" />
-            {language === 'en' ? 'Experience Level' : '经验水平'} *
+          <label className="block text-sm font-medium text-white mb-2">
+            Experience Level <span className="text-blue-400 text-xs font-normal">(Required)</span>
           </label>
           <select
             value={getFieldValue('experienceLevel')}
@@ -172,7 +167,7 @@ export default function AthleteCard({
             disabled={!isEditing}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
           >
-            <option value="">{language === 'en' ? 'Select level' : '选择水平'}</option>
+            <option value="">Select level</option>
             {experienceLevels.map((level) => (
               <option key={level} value={level}>{level}</option>
             ))}
@@ -186,7 +181,7 @@ export default function AthleteCard({
         {/* 位置/角色 / Position/Role */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            {language === 'en' ? 'Position/Role' : '位置/角色'}
+            Position/Role
           </label>
           {getFieldValue('primarySport') && sportPositions[getFieldValue('primarySport')] ? (
             <div className="space-y-3">
@@ -236,10 +231,7 @@ export default function AthleteCard({
             </div>
           ) : (
             <p className="text-gray-500 text-sm italic">
-              {language === 'en' 
-                ? 'Please select a primary sport first' 
-                : '请先选择主要运动项目'
-              }
+              Please select a primary sport first
             </p>
           )}
         </div>
@@ -247,13 +239,13 @@ export default function AthleteCard({
         {/* 身高 / Height */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            {language === 'en' ? 'Height' : '身高'}
+            Height
           </label>
           <input
             type="text"
             value={getFieldValue('height')}
             onChange={(e) => onFieldChange('height', e.target.value)}
-            placeholder={language === 'en' ? 'e.g., 180cm' : '例如：180cm'}
+            placeholder="e.g., 180cm"
             disabled={!isEditing}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
           />
@@ -262,13 +254,13 @@ export default function AthleteCard({
         {/* 体重 / Weight */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            {language === 'en' ? 'Weight' : '体重'}
+            Weight
           </label>
           <input
             type="text"
             value={getFieldValue('weight')}
             onChange={(e) => onFieldChange('weight', e.target.value)}
-            placeholder={language === 'en' ? 'e.g., 75kg' : '例如：75kg'}
+            placeholder="e.g., 75kg"
             disabled={!isEditing}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
           />
@@ -277,15 +269,12 @@ export default function AthleteCard({
         {/* 成就 / Achievements */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            {language === 'en' ? 'Achievements' : '成就'}
+            Achievements
           </label>
           <textarea
             value={getFieldValue('achievements')}
             onChange={(e) => onFieldChange('achievements', e.target.value)}
-            placeholder={language === 'en' 
-              ? 'Describe your sports achievements, awards, or notable performances...' 
-              : '描述您的运动成就、奖项或突出表现...'
-            }
+            placeholder="Describe your sports achievements, awards, or notable performances..."
             rows={3}
             disabled={!isEditing}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50 resize-none"

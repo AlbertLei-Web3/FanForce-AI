@@ -13,7 +13,7 @@ import {
   FaEdit
 } from 'react-icons/fa'
 import { FormState } from '../types'
-import { sportDepartments } from '../constants'
+import { sportsOptions } from '../constants'
 
 interface AmbassadorCardProps {
   formState: FormState
@@ -69,7 +69,7 @@ export default function AmbassadorCard({
         <div className="flex items-center">
           <FaStar className="text-2xl text-fanforce-gold mr-3" />
           <h2 className="text-xl font-bold text-white">
-            {language === 'en' ? 'Ambassador Information' : '大使信息'}
+            Ambassador Information
           </h2>
         </div>
         
@@ -85,7 +85,7 @@ export default function AmbassadorCard({
             }`}
           >
             <FaEdit className="mr-2" />
-            {language === 'en' ? 'Edit' : '编辑'}
+            Edit
           </button>
         ) : (
           <div className="flex space-x-2">
@@ -94,7 +94,7 @@ export default function AmbassadorCard({
               className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors flex items-center"
             >
               <FaUndo className="mr-2" />
-              {language === 'en' ? 'Cancel' : '取消'}
+              Cancel
             </button>
             <button
               onClick={handleSave}
@@ -102,67 +102,34 @@ export default function AmbassadorCard({
               className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center disabled:opacity-50"
             >
               <FaSave className="mr-2" />
-              {isLoading 
-                ? (language === 'en' ? 'Saving...' : '保存中...') 
-                : (language === 'en' ? 'Save' : '保存')
-              }
+              {isLoading ? 'Saving...' : 'Save'}
             </button>
           </div>
         )}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 主要运动项目 / Primary Sport */}
+      <div className="grid grid-cols-1 gap-6">
+        {/* 体育项目大使 / Sports Ambassador */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            {language === 'en' ? 'Primary Sport' : '主要运动项目'}
+            Sports Ambassador Type
           </label>
           <select
-            value={getFieldValue('primarySport')}
-            onChange={(e) => onFieldChange('primarySport', e.target.value)}
+            value={getFieldValue('sportsAmbassadorType')}
+            onChange={(e) => onFieldChange('sportsAmbassadorType', e.target.value)}
             disabled={!isEditing}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
           >
-            <option value="">{language === 'en' ? 'Select primary sport' : '选择主要运动项目'}</option>
-            {Object.keys(sportDepartments).map((sport) => (
-              <option key={sport} value={sport}>{sport}</option>
+            <option value="">Select your sports ambassador type</option>
+            {sportsOptions.map((sport) => (
+              <option key={sport.value} value={sport.value}>
+                {sport.label} Ambassador
+              </option>
             ))}
           </select>
           {/* 显示验证错误 */}
-          {getFieldError('primarySport') && (
-            <p className="text-red-400 text-xs mt-1">{getFieldError('primarySport')}</p>
-          )}
-        </div>
-
-        {/* 院系 / Department */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            {language === 'en' ? 'Department' : '院系'}
-          </label>
-          <select
-            value={getFieldValue('department')}
-            onChange={(e) => onFieldChange('department', e.target.value)}
-            disabled={!isEditing}
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-          >
-            <option value="">{language === 'en' ? 'Select department' : '选择院系'}</option>
-            {(() => {
-              const primarySport = getFieldValue('primarySport');
-              const availableDepartments = primarySport && sportDepartments[primarySport] ? sportDepartments[primarySport] : [];
-              
-              return availableDepartments.map((dept) => (
-                <option key={dept} value={dept}>{dept}</option>
-              ));
-            })()}
-          </select>
-          {!getFieldValue('primarySport') && (
-            <p className="text-gray-500 text-sm italic mt-1">
-              {language === 'en' ? 'Select a primary sport to see available departments' : '选择主要运动项目以查看可用院系'}
-            </p>
-          )}
-          {/* 显示验证错误 */}
-          {getFieldError('department') && (
-            <p className="text-red-400 text-xs mt-1">{getFieldError('department')}</p>
+          {getFieldError('sportsAmbassadorType') && (
+            <p className="text-red-400 text-xs mt-1">{getFieldError('sportsAmbassadorType')}</p>
           )}
         </div>
       </div>

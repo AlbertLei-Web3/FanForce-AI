@@ -99,7 +99,7 @@ const FormField: React.FC<FormFieldProps> = ({
         {label}
         {required && (
           <span className="text-blue-400 ml-1 text-xs font-normal">
-            (必填)
+            (Required)
           </span>
         )}
       </label>

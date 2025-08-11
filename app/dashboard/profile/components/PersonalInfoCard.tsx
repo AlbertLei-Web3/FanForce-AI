@@ -92,7 +92,7 @@ export default function PersonalInfoCard({
         <div className="flex items-center">
           <FaUser className="text-2xl text-fanforce-gold mr-3" />
           <h2 className="text-xl font-bold text-white">
-            {language === 'en' ? 'Basic Personal Information' : '基础个人信息'}
+            Basic Personal Information
           </h2>
         </div>
         
@@ -103,7 +103,7 @@ export default function PersonalInfoCard({
             className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center"
           >
             <FaEdit className="mr-2" />
-            {language === 'en' ? 'Edit' : '编辑'}
+            Edit
           </button>
         ) : (
           <div className="flex gap-2">
@@ -113,7 +113,7 @@ export default function PersonalInfoCard({
               className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 text-white rounded-lg font-medium transition-colors flex items-center"
             >
               <FaSave className="mr-2" />
-              {isLoading ? (language === 'en' ? 'Saving...' : '保存中...') : (language === 'en' ? 'Save' : '保存')}
+              {isLoading ? 'Saving...' : 'Save'}
             </button>
             <button
               onClick={handleCancel}
@@ -121,7 +121,7 @@ export default function PersonalInfoCard({
               className="px-4 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-600/50 text-white rounded-lg font-medium transition-colors flex items-center"
             >
               <FaUndo className="mr-2" />
-              {language === 'en' ? 'Cancel' : '取消'}
+              Cancel
             </button>
           </div>
         )}
@@ -131,10 +131,10 @@ export default function PersonalInfoCard({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* 用户名 / Username */}
         <FormField
-          label={language === 'en' ? 'Username' : '用户名'}
+          label="Username"
           field={formState.username || { value: '', touched: false }}
           type="text"
-          placeholder={language === 'en' ? 'Enter your username' : '请输入用户名'}
+          placeholder="Enter your username"
           required
           disabled={!isEditing}
           onChange={(value) => onFieldChange('username', value)}
@@ -142,10 +142,10 @@ export default function PersonalInfoCard({
 
         {/* 邮箱 / Email */}
         <FormField
-          label={language === 'en' ? 'Email' : '邮箱'}
+          label="Email"
           field={formState.email || { value: '', touched: false }}
           type="email"
-          placeholder={language === 'en' ? 'Enter your email' : '请输入邮箱'}
+          placeholder="Enter your email"
           required
           disabled={!isEditing}
           onChange={(value) => onFieldChange('email', value)}
@@ -153,10 +153,10 @@ export default function PersonalInfoCard({
 
         {/* 电话号码 / Phone */}
         <FormField
-          label={language === 'en' ? 'Phone Number' : '电话号码'}
+          label="Phone Number"
           field={formState.phone || { value: '', touched: false }}
           type="tel"
-          placeholder={language === 'en' ? 'Enter your phone number' : '请输入电话号码'}
+          placeholder="Enter your phone number"
           required
           disabled={!isEditing}
           onChange={(value) => onFieldChange('phone', value)}
@@ -164,10 +164,10 @@ export default function PersonalInfoCard({
 
         {/* 紧急联系人 / Emergency Contact */}
         <FormField
-          label={language === 'en' ? 'Emergency Contact' : '紧急联系人'}
+          label="Emergency Contact"
           field={formState.emergencyContact || { value: '', touched: false }}
           type="text"
-          placeholder={language === 'en' ? 'Enter emergency contact' : '请输入紧急联系人'}
+          placeholder="Enter emergency contact"
           required
           disabled={!isEditing}
           onChange={(value) => onFieldChange('emergencyContact', value)}
@@ -179,7 +179,7 @@ export default function PersonalInfoCard({
             {/* 区域 / Region */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">
-                {language === 'en' ? 'Region' : '区域'} <span className="text-blue-400 text-xs font-normal">(必填)</span>
+                Region <span className="text-blue-400 text-xs font-normal">(Required)</span>
               </label>
               <select
                 value={regionalSelection.region}
@@ -187,7 +187,7 @@ export default function PersonalInfoCard({
                 disabled={!isEditing}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
               >
-                <option value="">{language === 'en' ? 'Select Region' : '选择区域'}</option>
+                <option value="">Select Region</option>
                 {Object.keys(regionalLocationOptions).map((region) => (
                   <option key={region} value={region}>{region}</option>
                 ))}
@@ -197,7 +197,7 @@ export default function PersonalInfoCard({
             {/* 国家 / Country */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">
-                {language === 'en' ? 'Country' : '国家'}
+                Country
               </label>
               <select
                 value={regionalSelection.country}
@@ -205,7 +205,7 @@ export default function PersonalInfoCard({
                 disabled={!isEditing || !regionalSelection.region}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
               >
-                <option value="">{language === 'en' ? 'Select Country' : '选择国家'}</option>
+                <option value="">Select Country</option>
                 {regionalSelection.region && regionalLocationOptions[regionalSelection.region] && 
                   Object.keys(regionalLocationOptions[regionalSelection.region]).map((country) => (
                     <option key={country} value={country}>{country}</option>
@@ -217,7 +217,7 @@ export default function PersonalInfoCard({
             {/* 城市 / City */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">
-                {language === 'en' ? 'City' : '城市'}
+                City
               </label>
               <select
                 value={regionalSelection.city}
@@ -225,16 +225,24 @@ export default function PersonalInfoCard({
                 disabled={!isEditing || !regionalSelection.country}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
               >
-                <option value="">{language === 'en' ? 'Select City' : '选择城市'}</option>
+                <option value="">Select City</option>
                 {(() => {
                   const countryData = regionalSelection.country && 
                     regionalLocationOptions[regionalSelection.region] && 
                     regionalLocationOptions[regionalSelection.region][regionalSelection.country];
                   
-                  if (countryData && Array.isArray(countryData)) {
-                    return countryData.map((city: string) => (
-                      <option key={city} value={city}>{city}</option>
-                    ));
+                  if (countryData) {
+                    if (Array.isArray(countryData)) {
+                      // 欧洲数据结构：直接是城市数组
+                      return countryData.map((city: string) => (
+                        <option key={city} value={city}>{city}</option>
+                      ));
+                    } else {
+                      // 亚洲数据结构：城市是对象的键
+                      return Object.keys(countryData).map((city: string) => (
+                        <option key={city} value={city}>{city}</option>
+                      ));
+                    }
                   }
                   return null;
                 })()}
@@ -244,7 +252,7 @@ export default function PersonalInfoCard({
             {/* 机构 / Institution */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">
-                {language === 'en' ? 'Institution' : '机构'}
+                Institution
               </label>
               <select
                 value={regionalSelection.institution}
@@ -252,7 +260,7 @@ export default function PersonalInfoCard({
                 disabled={!isEditing || !regionalSelection.city}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
               >
-                <option value="">{language === 'en' ? 'Select Institution' : '选择机构'}</option>
+                <option value="">Select Institution</option>
                                  {(() => {
                    const countryData = regionalSelection.city && 
                      regionalLocationOptions[regionalSelection.region] && 
