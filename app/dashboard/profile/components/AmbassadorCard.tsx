@@ -65,8 +65,8 @@ export default function AmbassadorCard({
   }
 
   return (
-    <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white/5 rounded-2xl p-4 sm:p-6 border border-white/10">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <div className="flex items-center">
           <FaStar className="text-2xl text-fanforce-gold mr-3" />
           <h2 className="text-xl font-bold text-white">
@@ -89,10 +89,10 @@ export default function AmbassadorCard({
             Edit
           </button>
         ) : (
-          <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <button
               onClick={handleCancel}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors flex items-center"
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors flex items-center justify-center"
             >
               <FaUndo className="mr-2" />
               Cancel
@@ -100,7 +100,7 @@ export default function AmbassadorCard({
             <button
               onClick={handleSave}
               disabled={isLoading}
-              className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center disabled:opacity-50"
+              className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center justify-center disabled:opacity-50"
             >
               <FaSave className="mr-2" />
               {isLoading ? 'Saving...' : 'Save'}

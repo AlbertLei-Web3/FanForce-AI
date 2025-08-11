@@ -340,21 +340,21 @@ export default function FormField({
       
       {/* 字符计数 / Character count */}
       {showCharacterCount && maxLength && (
-        <div className="text-xs text-gray-400 text-right">
+        <div className="text-xs text-gray-400 text-center sm:text-right">
           {field.value.length} / {maxLength}
         </div>
       )}
       
       {/* 帮助文本 / Help text */}
       {type === 'tel' && (
-        <p className="text-xs text-gray-400">
-          请输入国际格式电话号码，包含国家代码（如：+86 138 0013 8000）
+        <p className="text-xs text-gray-400 mt-1 text-center">
+          Please enter a valid phone number in international format (e.g., +86 138 0013 8000)
         </p>
       )}
       
       {type === 'email' && (
-        <p className="text-xs text-gray-400">
-          请输入有效的邮箱地址，系统将自动验证格式
+        <p className="text-xs text-gray-400 mt-1 text-center">
+          Please enter a valid email address, the system will automatically validate the format
         </p>
       )}
     </div>

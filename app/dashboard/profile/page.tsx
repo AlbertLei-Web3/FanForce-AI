@@ -154,12 +154,12 @@ export default function ProfilePage() {
     >
       <div className="space-y-6">
         {/* 页面头部 / Page Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
               Personal Profile
             </h1>
-            <p className="text-gray-300">
+            <p className="text-gray-300 text-sm sm:text-base">
               Manage your account information and role-specific details
             </p>
           </div>
@@ -169,7 +169,7 @@ export default function ProfilePage() {
         </div>
 
         {/* 基础个人信息 / Basic Personal Information */}
-        <div className="bg-gray-900/50 rounded-2xl p-6 border border-gray-700">
+        <div className="bg-gray-900/50 rounded-2xl p-4 sm:p-6 border border-gray-700">
           <div className="flex items-center gap-3 mb-6">
             <FaUser className="text-2xl text-blue-400" />
             <h2 className="text-xl font-semibold text-white">
@@ -192,7 +192,7 @@ export default function ProfilePage() {
         {/* 角色特定信息 / Role-Specific Information */}
         <div className="space-y-6">
           {/* 运动员信息 / Athlete Information */}
-          <div className="bg-gray-900/50 rounded-2xl p-6 border border-gray-700">
+          <div className="bg-gray-900/50 rounded-2xl p-4 sm:p-6 border border-gray-700">
             <div className="flex items-center gap-3 mb-6">
               <FaRunning className="text-2xl text-green-400" />
               <h2 className="text-xl font-semibold text-white">
@@ -214,7 +214,7 @@ export default function ProfilePage() {
           </div>
 
           {/* 观众信息 / Audience Information */}
-          <div className="bg-gray-900/50 rounded-2xl p-6 border border-gray-700">
+          <div className="bg-gray-900/50 rounded-2xl p-4 sm:p-6 border border-gray-700">
             <div className="flex items-center gap-3 mb-6">
               <FaUsers className="text-2xl text-purple-400" />
               <h2 className="text-xl font-semibold text-white">
@@ -236,7 +236,7 @@ export default function ProfilePage() {
           </div>
 
           {/* 大使信息 / Ambassador Information */}
-          <div className="bg-gray-900/50 rounded-2xl p-6 border border-gray-700">
+          <div className="bg-gray-900/50 rounded-2xl p-4 sm:p-6 border border-gray-700">
             <div className="flex items-center gap-3 mb-6">
               <FaHandshake className="text-2xl text-orange-400" />
               <h2 className="text-xl font-semibold text-white">
@@ -259,14 +259,14 @@ export default function ProfilePage() {
         </div>
 
         {/* 安全提示 / Security Notice */}
-        <div className="bg-blue-900/20 rounded-2xl p-6 border border-blue-500/30">
-          <div className="flex items-start">
-            <FaShieldAlt className="text-2xl text-blue-400 mr-3 mt-1" />
+        <div className="bg-blue-900/20 rounded-2xl p-4 sm:p-6 border border-blue-500/30">
+          <div className="flex flex-col sm:flex-row items-start gap-3">
+            <FaShieldAlt className="text-xl sm:text-2xl text-blue-400 sm:mr-3 mt-1" />
             <div>
-              <h3 className="text-lg font-semibold text-blue-400 mb-2">
+              <h3 className="text-base sm:text-lg font-semibold text-blue-400 mb-2">
                 Security Notice
               </h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
+              <p className="text-gray-300 text-xs sm:text-sm leading-relaxed">
                 Your personal information is securely stored and only used for account management and event participation. We never share your data with third parties without your explicit consent.
               </p>
             </div>

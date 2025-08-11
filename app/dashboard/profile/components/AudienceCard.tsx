@@ -65,8 +65,8 @@ export default function AudienceCard({
   }
 
   return (
-    <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white/5 rounded-2xl p-4 sm:p-6 border border-white/10">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <div className="flex items-center">
           <FaUsers className="text-2xl text-fanforce-gold mr-3" />
           <h2 className="text-xl font-bold text-white">
@@ -89,10 +89,10 @@ export default function AudienceCard({
             Edit
           </button>
         ) : (
-          <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <button
               onClick={handleCancel}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors flex items-center"
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors flex items-center justify-center"
             >
               <FaUndo className="mr-2" />
               Cancel
@@ -100,7 +100,7 @@ export default function AudienceCard({
             <button
               onClick={handleSave}
               disabled={isLoading}
-              className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center disabled:opacity-50"
+              className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center justify-center disabled:opacity-50"
             >
               <FaSave className="mr-2" />
               {isLoading ? 'Saving...' : 'Save'}
@@ -109,7 +109,7 @@ export default function AudienceCard({
         )}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
         {/* 感兴趣的运动 / Interested Sports */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
@@ -152,10 +152,7 @@ export default function AudienceCard({
             maxLength={200}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
           />
-          <div className="flex justify-between items-center mt-1">
-            <p className="text-xs text-gray-400">
-              支持字母、数字、中文、空格和逗号
-            </p>
+          <div className="flex justify-end mt-1">
             <span className="text-xs text-gray-400">
               {getFieldValue('favoriteTeams').length}/200
             </span>

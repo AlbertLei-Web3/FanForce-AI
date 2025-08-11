@@ -76,8 +76,8 @@ export default function AthleteCard({
   }
 
   return (
-    <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white/5 rounded-2xl p-4 sm:p-6 border border-white/10">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <div className="flex items-center">
           <FaTrophy className="text-2xl text-fanforce-gold mr-3" />
           <h2 className="text-xl font-bold text-white">
@@ -100,10 +100,10 @@ export default function AthleteCard({
             Edit
           </button>
         ) : (
-          <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <button
               onClick={handleCancel}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors flex items-center"
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors flex items-center justify-center"
             >
               <FaUndo className="mr-2" />
               Cancel
@@ -111,7 +111,7 @@ export default function AthleteCard({
             <button
               onClick={handleSave}
               disabled={isLoading}
-              className="px-4 py-2 bg-fanforce-gold hover:bg-fanforce-gold/80 text-black rounded-lg font-medium transition-colors flex items-center disabled:opacity-50"
+              className="px-4 py-2 bg-fanforce-gold hover:bg-fanforce-gold/80 text-black rounded-lg font-medium transition-colors flex items-center justify-center disabled:opacity-50"
             >
               <FaSave className="mr-2" />
               {isLoading ? 'Saving...' : 'Save'}
@@ -120,7 +120,7 @@ export default function AthleteCard({
         )}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
         {/* 主要运动项目 / Primary Sport */}
         <div>
           <label className="block text-sm font-medium text-white mb-2">
@@ -252,36 +252,40 @@ export default function AthleteCard({
         {/* 身高 / Height */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Height
+            Height (cm)
           </label>
           <input
-            type="text"
+            type="number"
             value={getFieldValue('height')}
             onChange={(e) => onFieldChange('height', e.target.value)}
-            placeholder="e.g., 180cm, 1.8m, 5ft 10in"
+            placeholder="e.g., 180"
+            min="100"
+            max="250"
             disabled={!isEditing}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
           />
-          <p className="text-xs text-gray-400 mt-1">
-            支持格式：180cm, 1.8m, 5ft 10in
+          <p className="text-xs text-gray-400 mt-1 text-center">
+            Please enter height in centimeters (100-250 cm)
           </p>
         </div>
 
         {/* 体重 / Weight */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Weight
+            Weight (kg)
           </label>
           <input
-            type="text"
+            type="number"
             value={getFieldValue('weight')}
             onChange={(e) => onFieldChange('weight', e.target.value)}
-            placeholder="e.g., 75kg, 165lb"
+            placeholder="e.g., 75"
+            min="30"
+            max="200"
             disabled={!isEditing}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
           />
-          <p className="text-xs text-gray-400 mt-1">
-            支持格式：75kg, 165lb
+          <p className="text-xs text-gray-400 mt-1 text-center">
+            Please enter weight in kilograms (30-200 kg)
           </p>
         </div>
 
