@@ -26,7 +26,8 @@ import {
   FaTrophy,
   FaUsers,
   FaStar,
-  FaTimes
+  FaTimes,
+  FaEdit
 } from 'react-icons/fa'
 
 // 个人信息接口 / Personal Information Interface
@@ -71,7 +72,13 @@ export default function ProfilePage() {
   })
   
   const [roleSpecificInfo, setRoleSpecificInfo] = useState<RoleSpecificInfo>({})
-  const [isEditing, setIsEditing] = useState(false)
+  
+  // 各卡片的编辑状态 / Edit state for each card
+  const [isEditingPersonal, setIsEditingPersonal] = useState(false)
+  const [isEditingAthlete, setIsEditingAthlete] = useState(false)
+  const [isEditingAudience, setIsEditingAudience] = useState(false)
+  const [isEditingAmbassador, setIsEditingAmbassador] = useState(false)
+  
   const [isLoading, setIsLoading] = useState(false)
   const [originalData, setOriginalData] = useState<any>(null)
 
@@ -102,35 +109,19 @@ export default function ProfilePage() {
     '网球': ['体育学院', '网球学院', '运动训练学院'],
     '羽毛球': ['体育学院', '羽毛球学院', '运动训练学院'],
     '排球': ['体育学院', '排球学院', '运动训练学院'],
-    '其他': ['体育学院', '运动训练学院', '其他学院']
+    '其他': ['体育学院', '运动训练学院']
   }
 
   // 经验水平选项 / Experience level options
   const experienceLevels = [
     '初学者 (0-1年)',
-    '中级 (1-3年)', 
+    '中级 (1-3年)',
     '高级 (3-5年)',
     '专家 (5年以上)',
     '职业/半职业'
   ]
 
-  // 初始化数据 / Initialize data
-  useEffect(() => {
-    if (authState.user) {
-      const userData = {
-        username: authState.user.username || '',
-        email: authState.user.email || '',
-        phone: authState.user.phone || '',
-        emergencyContact: authState.user.emergencyContact || '',
-        regionalLocation: ''
-      }
-      
-      setPersonalInfo(userData)
-      setOriginalData(userData)
-    }
-  }, [authState.user])
-
-  // 分层级地理位置选项 / Hierarchical regional location options
+  // 区域位置选项 / Regional location options
   const regionalLocationOptions = {
     '欧洲': {
       '法国': ['巴黎', '里昂', '马赛', '图卢兹', '尼斯'],
@@ -143,12 +134,28 @@ export default function ProfilePage() {
     }
   }
 
-  // 处理地区选择 / Handle regional location selection
+  // 区域选择状态 / Regional selection state
   const [selectedRegion, setSelectedRegion] = useState<string>('')
   const [selectedCountry, setSelectedCountry] = useState<string>('')
   const [selectedCity, setSelectedCity] = useState<string>('')
   const [selectedInstitution, setSelectedInstitution] = useState<string>('')
 
+  // 初始化数据 / Initialize data
+  useEffect(() => {
+    if (authState.user) {
+      const userData = {
+        username: authState.user.username || '',
+        email: authState.user.email || '',
+        phone: authState.user.phone || '',
+        emergencyContact: authState.user.emergencyContact || '',
+        regionalLocation: ''
+      }
+      setPersonalInfo(userData)
+      setOriginalData(userData)
+    }
+  }, [authState.user])
+
+  // 区域选择处理函数 / Regional selection handlers
   const handleRegionChange = (region: string) => {
     setSelectedRegion(region)
     setSelectedCountry('')
@@ -161,102 +168,191 @@ export default function ProfilePage() {
     setSelectedCountry(country)
     setSelectedCity('')
     setSelectedInstitution('')
-    setPersonalInfo(prev => ({ ...prev, regionalLocation: `${prev.regionalLocation} > ${country}` }))
+    setPersonalInfo(prev => ({ ...prev, regionalLocation: `${selectedRegion} > ${country}` }))
   }
 
   const handleCityChange = (city: string) => {
     setSelectedCity(city)
     setSelectedInstitution('')
-    setPersonalInfo(prev => ({ ...prev, regionalLocation: `${prev.regionalLocation} > ${city}` }))
+    setPersonalInfo(prev => ({ ...prev, regionalLocation: `${selectedRegion} > ${selectedCountry} > ${city}` }))
   }
 
   const handleInstitutionChange = (institution: string) => {
     setSelectedInstitution(institution)
-    setPersonalInfo(prev => ({ ...prev, regionalLocation: `${prev.regionalLocation} > ${institution}` }))
+    setPersonalInfo(prev => ({ ...prev, regionalLocation: `${selectedRegion} > ${selectedCountry} > ${selectedCity} > ${institution}` }))
   }
 
-  // 处理个人信息变更 / Handle personal info changes
+  // 个人信息变更处理 / Personal info change handler
   const handlePersonalInfoChange = (field: keyof PersonalInfo, value: string) => {
-    setPersonalInfo(prev => ({
-      ...prev,
-      [field]: value
-    }))
+    setPersonalInfo(prev => ({ ...prev, [field]: value }))
   }
 
-  // 处理角色特定信息变更 / Handle role-specific info changes
+  // 角色特定信息变更处理 / Role-specific info change handler
   const handleRoleSpecificInfoChange = (field: keyof RoleSpecificInfo, value: any) => {
-    setRoleSpecificInfo(prev => ({
-      ...prev,
-      [field]: value
-    }))
+    setRoleSpecificInfo(prev => ({ ...prev, [field]: value }))
   }
 
-  // 处理位置标签的添加和删除 / Handle position tag addition and removal
+  // 位置标签切换处理 / Position tag toggle handler
   const handlePositionToggle = (position: string) => {
     const currentPositions = roleSpecificInfo.positions || []
-    const newPositions = currentPositions.includes(position)
-      ? currentPositions.filter(p => p !== position)
-      : [...currentPositions, position]
-    
-    handleRoleSpecificInfoChange('positions', newPositions)
+    if (currentPositions.includes(position)) {
+      handleRoleSpecificInfoChange('positions', currentPositions.filter(p => p !== position))
+    } else {
+      handleRoleSpecificInfoChange('positions', [...currentPositions, position])
+    }
   }
 
-  // 保存更改 / Save changes
-  const handleSave = async () => {
+  // 保存个人信息 / Save personal info
+  const handleSavePersonal = async () => {
     setIsLoading(true)
     try {
-      // 这里将来会连接到数据库
-      // This will be connected to database in the future
-      await updateUser({
-        ...personalInfo,
-        ...roleSpecificInfo
-      })
-      
-      setIsEditing(false)
-      showToast({
-        message: language === 'en' ? 'Profile updated successfully!' : '个人资料更新成功！',
-        type: 'success'
-      })
+      // 这里可以添加保存逻辑
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      setIsEditingPersonal(false)
+      showToast({ message: language === 'en' ? 'Personal information updated successfully!' : '个人信息更新成功！', type: 'success' })
     } catch (error) {
-      console.error('Save error:', error)
-      showToast({
-        message: language === 'en' ? 'Failed to update profile' : '更新个人资料失败',
-        type: 'error'
-      })
+      showToast({ message: language === 'en' ? 'Failed to update personal information' : '更新个人信息失败', type: 'error' })
     } finally {
       setIsLoading(false)
     }
   }
 
-  // 取消编辑 / Cancel editing
-  const handleCancel = () => {
+  // 保存运动员信息 / Save athlete info
+  const handleSaveAthlete = async () => {
+    setIsLoading(true)
+    try {
+      // 这里可以添加保存逻辑
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      setIsEditingAthlete(false)
+      showToast({ message: language === 'en' ? 'Athlete information updated successfully!' : '运动员信息更新成功！', type: 'success' })
+    } catch (error) {
+      showToast({ message: language === 'en' ? 'Failed to update athlete information' : '更新运动员信息失败', type: 'error' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 保存观众信息 / Save audience info
+  const handleSaveAudience = async () => {
+    setIsLoading(true)
+    try {
+      // 这里可以添加保存逻辑
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      setIsEditingAudience(false)
+      showToast({ message: language === 'en' ? 'Audience information updated successfully!' : '观众信息更新成功！', type: 'success' })
+    } catch (error) {
+      showToast({ message: language === 'en' ? 'Failed to update audience information' : '更新观众信息失败', type: 'error' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 保存大使信息 / Save ambassador info
+  const handleSaveAmbassador = async () => {
+    setIsLoading(true)
+    try {
+      // 这里可以添加保存逻辑
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      setIsEditingAmbassador(false)
+      showToast({ message: language === 'en' ? 'Ambassador information updated successfully!' : '大使信息更新成功！', type: 'success' })
+    } catch (error) {
+      showToast({ message: language === 'en' ? 'Failed to update ambassador information' : '更新大使信息失败', type: 'error' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 取消编辑个人信息 / Cancel personal info editing
+  const handleCancelPersonal = () => {
     setPersonalInfo(originalData || {
-      username: '',
-      email: '',
-      phone: '',
-      emergencyContact: '',
-      regionalLocation: ''
+      username: '', email: '', phone: '', emergencyContact: '', regionalLocation: ''
     })
-    setRoleSpecificInfo({})
     setSelectedRegion('')
     setSelectedCountry('')
     setSelectedCity('')
     setSelectedInstitution('')
-    setIsEditing(false)
-    showToast({
-      message: language === 'en' ? 'Changes cancelled' : '更改已取消',
-      type: 'info'
-    })
+    setIsEditingPersonal(false)
+    showToast({ message: language === 'en' ? 'Changes cancelled' : '更改已取消', type: 'info' })
+  }
+
+  // 取消编辑运动员信息 / Cancel athlete info editing
+  const handleCancelAthlete = () => {
+    setRoleSpecificInfo(prev => ({
+      ...prev,
+      primarySport: prev.primarySport,
+      experienceLevel: prev.experienceLevel,
+      positions: prev.positions,
+      height: prev.height,
+      weight: prev.weight,
+      achievements: prev.achievements
+    }))
+    setIsEditingAthlete(false)
+    showToast({ message: language === 'en' ? 'Changes cancelled' : '更改已取消', type: 'info' })
+  }
+
+  // 取消编辑观众信息 / Cancel audience info editing
+  const handleCancelAudience = () => {
+    setRoleSpecificInfo(prev => ({
+      ...prev,
+      interestedSports: prev.interestedSports,
+      favoriteTeams: prev.favoriteTeams
+    }))
+    setIsEditingAudience(false)
+    showToast({ message: language === 'en' ? 'Changes cancelled' : '更改已取消', type: 'info' })
+  }
+
+  // 取消编辑大使信息 / Cancel ambassador info editing
+  const handleCancelAmbassador = () => {
+    setRoleSpecificInfo(prev => ({
+      ...prev,
+      department: prev.department
+    }))
+    setIsEditingAmbassador(false)
+    showToast({ message: language === 'en' ? 'Changes cancelled' : '更改已取消', type: 'info' })
   }
 
   // 渲染个人信息表单 / Render personal info form
   const renderPersonalInfoForm = () => (
     <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-      <div className="flex items-center mb-6">
-        <FaUser className="text-2xl text-fanforce-gold mr-3" />
-        <h2 className="text-xl font-bold text-white">
-          {language === 'en' ? 'Basic Personal Information' : '基础个人信息'}
-        </h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center">
+          <FaUser className="text-2xl text-fanforce-gold mr-3" />
+          <h2 className="text-xl font-bold text-white">
+            {language === 'en' ? 'Basic Personal Information' : '基础个人信息'}
+          </h2>
+        </div>
+        
+        {/* 个人信息编辑按钮 / Personal info edit buttons */}
+        {!isEditingPersonal ? (
+          <button
+            onClick={() => setIsEditingPersonal(true)}
+            className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center"
+          >
+            <FaEdit className="mr-2" />
+            {language === 'en' ? 'Edit' : '编辑'}
+          </button>
+        ) : (
+          <div className="flex space-x-2">
+            <button
+              onClick={handleCancelPersonal}
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors flex items-center"
+            >
+              <FaUndo className="mr-2" />
+              {language === 'en' ? 'Cancel' : '取消'}
+            </button>
+            <button
+              onClick={handleSavePersonal}
+              disabled={isLoading}
+              className="px-4 py-2 bg-fanforce-gold hover:bg-fanforce-gold/80 text-black rounded-lg font-medium transition-colors flex items-center disabled:opacity-50"
+            >
+              <FaSave className="mr-2" />
+              {isLoading 
+                ? (language === 'en' ? 'Saving...' : '保存中...') 
+                : (language === 'en' ? 'Save' : '保存')
+              }
+            </button>
+          </div>
+        )}
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -270,7 +366,7 @@ export default function ProfilePage() {
             type="text"
             value={personalInfo.username}
             onChange={(e) => handlePersonalInfoChange('username', e.target.value)}
-            disabled={!isEditing}
+            disabled={!isEditingPersonal}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
             placeholder={language === 'en' ? 'Enter username' : '输入用户名'}
           />
@@ -286,7 +382,7 @@ export default function ProfilePage() {
             type="email"
             value={personalInfo.email}
             onChange={(e) => handlePersonalInfoChange('email', e.target.value)}
-            disabled={!isEditing}
+            disabled={!isEditingPersonal}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
             placeholder={language === 'en' ? 'Enter email' : '输入邮箱'}
           />
@@ -302,7 +398,7 @@ export default function ProfilePage() {
             type="tel"
             value={personalInfo.phone}
             onChange={(e) => handlePersonalInfoChange('phone', e.target.value)}
-            disabled={!isEditing}
+            disabled={!isEditingPersonal}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
             placeholder={language === 'en' ? 'Enter phone number' : '输入电话号码'}
           />
@@ -318,7 +414,7 @@ export default function ProfilePage() {
             type="text"
             value={personalInfo.emergencyContact}
             onChange={(e) => handlePersonalInfoChange('emergencyContact', e.target.value)}
-            disabled={!isEditing}
+            disabled={!isEditingPersonal}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
             placeholder={language === 'en' ? 'Enter emergency contact' : '输入紧急联系人'}
           />
@@ -336,7 +432,7 @@ export default function ProfilePage() {
             <select
               value={selectedRegion}
               onChange={(e) => handleRegionChange(e.target.value)}
-              disabled={!isEditing}
+              disabled={!isEditingPersonal}
               className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
             >
               <option value="">{language === 'en' ? 'Select region' : '选择地区'}</option>
@@ -351,19 +447,13 @@ export default function ProfilePage() {
               <select
                 value={selectedCountry}
                 onChange={(e) => handleCountryChange(e.target.value)}
-                disabled={!isEditing}
+                disabled={!isEditingPersonal}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
               >
                 <option value="">{language === 'en' ? 'Select country' : '选择国家'}</option>
-                {selectedRegion === '欧洲' && (
-                  <>
-                    <option value="法国">法国</option>
-                    <option value="马耳他">马耳他</option>
-                  </>
-                )}
-                {selectedRegion === '东南亚' && (
-                  <option value="印度尼西亚">印度尼西亚</option>
-                )}
+                {Object.keys(regionalLocationOptions[selectedRegion as keyof typeof regionalLocationOptions] || {}).map((country) => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
               </select>
             </div>
           )}
@@ -374,52 +464,40 @@ export default function ProfilePage() {
               <select
                 value={selectedCity}
                 onChange={(e) => handleCityChange(e.target.value)}
-                disabled={!isEditing}
+                disabled={!isEditingPersonal}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
               >
                 <option value="">{language === 'en' ? 'Select city' : '选择城市'}</option>
-                {selectedCountry === '法国' && (
-                  <>
-                    <option value="巴黎">巴黎</option>
-                    <option value="里昂">里昂</option>
-                    <option value="马赛">马赛</option>
-                    <option value="图卢兹">图卢兹</option>
-                    <option value="尼斯">尼斯</option>
-                  </>
-                )}
-                {selectedCountry === '马耳他' && (
-                  <>
-                    <option value="瓦莱塔">瓦莱塔</option>
-                    <option value="斯利马">斯利马</option>
-                    <option value="圣朱利安">圣朱利安</option>
-                    <option value="布吉巴">布吉巴</option>
-                    <option value="姆西达">姆西达</option>
-                  </>
-                )}
-                {selectedCountry === '印度尼西亚' && (
-                  <option value="泗水">泗水</option>
-                )}
+                {Array.isArray(regionalLocationOptions[selectedRegion as keyof typeof regionalLocationOptions]?.[selectedCountry]) ? 
+                  (regionalLocationOptions[selectedRegion as keyof typeof regionalLocationOptions]?.[selectedCountry] as string[]).map((city) => (
+                    <option key={city} value={city}>{city}</option>
+                  )) :
+                  Object.keys(regionalLocationOptions[selectedRegion as keyof typeof regionalLocationOptions]?.[selectedCountry] || {}).map((city) => (
+                    <option key={city} value={city}>{city}</option>
+                  ))
+                }
               </select>
             </div>
           )}
 
-          {/* 第四级：机构选择（仅对印尼泗水） */}
-          {selectedCity === '泗水' && (
+          {/* 第四级：机构选择 */}
+          {selectedCity && !Array.isArray(regionalLocationOptions[selectedRegion as keyof typeof regionalLocationOptions]?.[selectedCountry]) && (
             <div className="mb-3">
               <select
                 value={selectedInstitution}
                 onChange={(e) => handleInstitutionChange(e.target.value)}
-                disabled={!isEditing}
+                disabled={!isEditingPersonal}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
               >
                 <option value="">{language === 'en' ? 'Select institution' : '选择机构'}</option>
-                <option value="Airlangga University">Airlangga University</option>
-                <option value="Sepuluh Nopember Institute of Technology (ITS)">Sepuluh Nopember Institute of Technology (ITS)</option>
+                {regionalLocationOptions[selectedRegion as keyof typeof regionalLocationOptions]?.[selectedCountry]?.[selectedCity]?.map((institution) => (
+                  <option key={institution} value={institution}>{institution}</option>
+                ))}
               </select>
             </div>
           )}
 
-          {/* 显示最终选择的地区 */}
+          {/* 显示已选择的地点 */}
           {personalInfo.regionalLocation && (
             <div className="mt-3 p-3 bg-fanforce-primary/20 border border-fanforce-primary/30 rounded-lg">
               <p className="text-sm text-fanforce-primary font-medium">
@@ -435,17 +513,51 @@ export default function ProfilePage() {
     </div>
   )
 
-  // 渲染角色特定信息表单 / Render role-specific info form
+  // 渲染角色特定表单 / Render role-specific form
   const renderRoleSpecificForm = () => {
     return (
       <div className="space-y-6">
         {/* 运动员信息 / Athlete Information */}
         <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center mb-6">
-            <FaTrophy className="text-2xl text-fanforce-gold mr-3" />
-            <h2 className="text-xl font-bold text-white">
-              {language === 'en' ? 'Athlete Information' : '运动员信息'}
-            </h2>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <FaTrophy className="text-2xl text-fanforce-gold mr-3" />
+              <h2 className="text-xl font-bold text-white">
+                {language === 'en' ? 'Athlete Information' : '运动员信息'}
+              </h2>
+            </div>
+            
+            {/* 运动员信息编辑按钮 / Athlete info edit buttons */}
+            {!isEditingAthlete ? (
+              <button
+                onClick={() => setIsEditingAthlete(true)}
+                className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center"
+              >
+                <FaEdit className="mr-2" />
+                {language === 'en' ? 'Edit' : '编辑'}
+              </button>
+            ) : (
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleCancelAthlete}
+                  className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors flex items-center"
+                >
+                  <FaUndo className="mr-2" />
+                  {language === 'en' ? 'Cancel' : '取消'}
+                </button>
+                <button
+                  onClick={handleSaveAthlete}
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-fanforce-gold hover:bg-fanforce-gold/80 text-black rounded-lg font-medium transition-colors flex items-center disabled:opacity-50"
+                >
+                  <FaSave className="mr-2" />
+                  {isLoading 
+                    ? (language === 'en' ? 'Saving...' : '保存中...') 
+                    : (language === 'en' ? 'Save' : '保存')
+                  }
+                </button>
+              </div>
+            )}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -462,7 +574,7 @@ export default function ProfilePage() {
                   // 清空位置选择当运动项目改变时
                   handleRoleSpecificInfoChange('positions', [])
                 }}
-                disabled={!isEditing}
+                disabled={!isEditingAthlete}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
               >
                 <option value="">{language === 'en' ? 'Select sport' : '选择运动项目'}</option>
@@ -490,7 +602,7 @@ export default function ProfilePage() {
               <select
                 value={roleSpecificInfo.experienceLevel || ''}
                 onChange={(e) => handleRoleSpecificInfoChange('experienceLevel', e.target.value)}
-                disabled={!isEditing}
+                disabled={!isEditingAthlete}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
               >
                 <option value="">{language === 'en' ? 'Select level' : '选择水平'}</option>
@@ -513,7 +625,7 @@ export default function ProfilePage() {
                         key={position}
                         type="button"
                         onClick={() => handlePositionToggle(position)}
-                        disabled={!isEditing}
+                        disabled={!isEditingAthlete}
                         className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
                           (roleSpecificInfo.positions || []).includes(position)
                             ? 'bg-fanforce-primary text-white border border-fanforce-primary'
@@ -533,7 +645,7 @@ export default function ProfilePage() {
                           className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-fanforce-primary/20 text-fanforce-primary border border-fanforce-primary/30"
                         >
                           {position}
-                          {isEditing && (
+                          {isEditingAthlete && (
                             <button
                               type="button"
                               onClick={() => handlePositionToggle(position)}
@@ -563,9 +675,9 @@ export default function ProfilePage() {
                 type="number"
                 value={roleSpecificInfo.height || ''}
                 onChange={(e) => handleRoleSpecificInfoChange('height', e.target.value)}
-                disabled={!isEditing}
+                disabled={!isEditingAthlete}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-                placeholder="175"
+                placeholder={language === 'en' ? 'Enter height in cm' : '输入身高（厘米）'}
               />
             </div>
 
@@ -578,9 +690,9 @@ export default function ProfilePage() {
                 type="number"
                 value={roleSpecificInfo.weight || ''}
                 onChange={(e) => handleRoleSpecificInfoChange('weight', e.target.value)}
-                disabled={!isEditing}
+                disabled={!isEditingAthlete}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-                placeholder="70"
+                placeholder={language === 'en' ? 'Enter weight in kg' : '输入体重（公斤）'}
               />
             </div>
 
@@ -592,10 +704,10 @@ export default function ProfilePage() {
               <textarea
                 value={roleSpecificInfo.achievements || ''}
                 onChange={(e) => handleRoleSpecificInfoChange('achievements', e.target.value)}
-                disabled={!isEditing}
+                disabled={!isEditingAthlete}
                 rows={4}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-                placeholder={language === 'en' ? 'Enter your achievements (one per line)' : '输入您的成就（每行一个）'}
+                placeholder={language === 'en' ? 'Enter achievements and awards (one per line)' : '输入成就和奖项（每行一个）'}
               />
             </div>
           </div>
@@ -603,11 +715,45 @@ export default function ProfilePage() {
 
         {/* 观众信息 / Audience Information */}
         <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center mb-6">
-            <FaUsers className="text-2xl text-fanforce-gold mr-3" />
-            <h2 className="text-xl font-bold text-white">
-              {language === 'en' ? 'Audience Information' : '观众信息'}
-            </h2>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <FaUsers className="text-2xl text-fanforce-gold mr-3" />
+              <h2 className="text-xl font-bold text-white">
+                {language === 'en' ? 'Audience Information' : '观众信息'}
+              </h2>
+            </div>
+            
+            {/* 观众信息编辑按钮 / Audience info edit buttons */}
+            {!isEditingAudience ? (
+              <button
+                onClick={() => setIsEditingAudience(true)}
+                className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center"
+              >
+                <FaEdit className="mr-2" />
+                {language === 'en' ? 'Edit' : '编辑'}
+              </button>
+            ) : (
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleCancelAudience}
+                  className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors flex items-center"
+                >
+                  <FaUndo className="mr-2" />
+                  {language === 'en' ? 'Cancel' : '取消'}
+                </button>
+                <button
+                  onClick={handleSaveAudience}
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center disabled:opacity-50"
+                >
+                  <FaSave className="mr-2" />
+                  {isLoading 
+                    ? (language === 'en' ? 'Saving...' : '保存中...') 
+                    : (language === 'en' ? 'Save' : '保存')
+                  }
+                </button>
+              </div>
+            )}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -620,39 +766,33 @@ export default function ProfilePage() {
               <select
                 value={roleSpecificInfo.interestedSports || ''}
                 onChange={(e) => handleRoleSpecificInfoChange('interestedSports', e.target.value)}
-                disabled={!isEditing}
+                disabled={!isEditingAudience}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
               >
                 <option value="">{language === 'en' ? 'Select sport' : '选择运动项目'}</option>
                 {sportsOptions.map((sport) => (
-                  <option key={sport.value} value={sport.value}>{sport.label}</option>
+                  <option key={sport.value} value={sport.value}>
+                    {sport.label}
+                  </option>
                 ))}
               </select>
-              {/* 显示说明文字 */}
-              {roleSpecificInfo.interestedSports && 
-               sportsOptions.find(s => s.value === roleSpecificInfo.interestedSports)?.note && (
-                <p className="text-xs text-fanforce-gold mt-1 italic">
-                  {sportsOptions.find(s => s.value === roleSpecificInfo.interestedSports)?.note}
-                </p>
-              )}
-              {/* 添加描述 */}
               <p className="text-xs text-fanforce-primary mt-1 italic">
                 {language === 'en' ? 'Affects event push notification priority' : '关系到赛事推送优先级'}
               </p>
             </div>
 
             {/* 喜爱的队伍 / Favorite Teams */}
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 {language === 'en' ? 'Favorite Teams' : '喜爱的队伍'}
               </label>
               <textarea
                 value={roleSpecificInfo.favoriteTeams || ''}
                 onChange={(e) => handleRoleSpecificInfoChange('favoriteTeams', e.target.value)}
-                disabled={!isEditing}
-                rows={3}
+                disabled={!isEditingAudience}
+                rows={4}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-                placeholder={language === 'en' ? 'Enter your favorite teams (one per line)' : '输入您喜爱的队伍（每行一个）'}
+                placeholder={language === 'en' ? 'Enter favorite teams or athletes (one per line)' : '输入喜爱的队伍或运动员（每行一个）'}
               />
             </div>
           </div>
@@ -660,15 +800,49 @@ export default function ProfilePage() {
 
         {/* 大使信息 / Ambassador Information */}
         <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center mb-6">
-            <FaStar className="text-2xl text-fanforce-gold mr-3" />
-            <h2 className="text-xl font-bold text-white">
-              {language === 'en' ? 'Ambassador Information' : '大使信息'}
-            </h2>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <FaStar className="text-2xl text-fanforce-gold mr-3" />
+              <h2 className="text-xl font-bold text-white">
+                {language === 'en' ? 'Ambassador Information' : '大使信息'}
+              </h2>
+            </div>
+            
+            {/* 大使信息编辑按钮 / Ambassador info edit buttons */}
+            {!isEditingAmbassador ? (
+              <button
+                onClick={() => setIsEditingAmbassador(true)}
+                className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center"
+              >
+                <FaEdit className="mr-2" />
+                {language === 'en' ? 'Edit' : '编辑'}
+              </button>
+            ) : (
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleCancelAmbassador}
+                  className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors flex items-center"
+                >
+                  <FaUndo className="mr-2" />
+                  {language === 'en' ? 'Cancel' : '取消'}
+                </button>
+                <button
+                  onClick={handleSaveAmbassador}
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center disabled:opacity-50"
+                >
+                  <FaSave className="mr-2" />
+                  {isLoading 
+                    ? (language === 'en' ? 'Saving...' : '保存中...') 
+                    : (language === 'en' ? 'Save' : '保存')
+                  }
+                </button>
+              </div>
+            )}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 院系 / Department - 与主要运动项目联动 */}
+            {/* 院系 / Department */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 {language === 'en' ? 'Department' : '院系'}
@@ -677,7 +851,7 @@ export default function ProfilePage() {
                 <select
                   value={roleSpecificInfo.department || ''}
                   onChange={(e) => handleRoleSpecificInfoChange('department', e.target.value)}
-                  disabled={!isEditing}
+                  disabled={!isEditingAmbassador}
                   className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
                 >
                   <option value="">{language === 'en' ? 'Select department' : '选择院系'}</option>
@@ -715,39 +889,6 @@ export default function ProfilePage() {
                 : '管理您的账户信息和角色特定详情'
               }
             </p>
-          </div>
-          
-          <div className="flex space-x-3">
-            {!isEditing ? (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="px-6 py-3 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center"
-              >
-                <FaUser className="mr-2" />
-                {language === 'en' ? 'Edit Profile' : '编辑档案'}
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={handleCancel}
-                  className="px-6 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors flex items-center"
-                >
-                  <FaUndo className="mr-2" />
-                  {language === 'en' ? 'Cancel' : '取消'}
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={isLoading}
-                  className="px-6 py-3 bg-fanforce-gold hover:bg-fanforce-gold/80 text-black rounded-lg font-medium transition-colors flex items-center disabled:opacity-50"
-                >
-                  <FaSave className="mr-2" />
-                  {isLoading 
-                    ? (language === 'en' ? 'Saving...' : '保存中...') 
-                    : (language === 'en' ? 'Save Changes' : '保存更改')
-                  }
-                </button>
-              </>
-            )}
           </div>
         </div>
 
