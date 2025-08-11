@@ -20,7 +20,7 @@ import SaveStatus from './components/SaveStatus'
 
 export default function ProfilePage() {
   const { language } = useLanguage()
-  const { authState, updateUser } = useUser()
+  const { authState, updateUserInfo, isAthlete, isAudience, isAmbassador, isAdmin, isSuperAdmin } = useUser()
   const { showToast } = useToast()
   
   // 初始化数据 / Initialize data
@@ -59,8 +59,8 @@ export default function ProfilePage() {
         personalInfo: {
           username: authState.user.username || '',
           email: authState.user.email || '',
-          phone: authState.user.phone || '',
-          emergencyContact: authState.user.emergencyContact || '',
+          phone: '',
+          emergencyContact: '',
           regionalLocation: ''
         },
         roleSpecificInfo: {}
@@ -137,6 +137,20 @@ export default function ProfilePage() {
     startEditing(section as any)
   }
 
+  // 检查用户是否有权限编辑特定角色信息 / Check if user has permission to edit specific role info
+  const canEditRole = (role: string) => {
+    switch (role) {
+      case 'athlete':
+        return isAthlete() || isAdmin() || isSuperAdmin()
+      case 'audience':
+        return isAudience() || isAdmin() || isSuperAdmin()
+      case 'ambassador':
+        return isAmbassador() || isAdmin() || isSuperAdmin()
+      default:
+        return true
+    }
+  }
+
   return (
     <DashboardLayout 
       title={language === 'en' ? 'Personal Profile' : '个人信息'} 
@@ -202,6 +216,7 @@ export default function ProfilePage() {
               isEditing={editStates.athlete}
               isLoading={saveState.isSaving}
               validationErrors={validationErrors}
+              canEdit={canEditRole('athlete')}
             />
           </div>
 
@@ -223,6 +238,7 @@ export default function ProfilePage() {
               isEditing={editStates.audience}
               isLoading={saveState.isSaving}
               validationErrors={validationErrors}
+              canEdit={canEditRole('audience')}
             />
           </div>
 
@@ -244,6 +260,7 @@ export default function ProfilePage() {
               isEditing={editStates.ambassador}
               isLoading={saveState.isSaving}
               validationErrors={validationErrors}
+              canEdit={canEditRole('ambassador')}
             />
           </div>
         </div>

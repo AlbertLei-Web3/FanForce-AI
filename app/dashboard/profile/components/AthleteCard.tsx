@@ -22,9 +22,11 @@ interface AthleteCardProps {
   onFieldChange: (field: string, value: any) => void
   onSave: () => Promise<void>
   onCancel: () => void
+  onStartEditing: () => void
   isEditing: boolean
   isLoading: boolean
   validationErrors?: Record<string, string>
+  canEdit: boolean
 }
 
 export default function AthleteCard({
@@ -32,9 +34,11 @@ export default function AthleteCard({
   onFieldChange,
   onSave,
   onCancel,
+  onStartEditing,
   isEditing,
   isLoading,
-  validationErrors = {}
+  validationErrors = {},
+  canEdit
 }: AthleteCardProps) {
   const { language } = useLanguage()
   const { showToast } = useToast()
@@ -84,8 +88,13 @@ export default function AthleteCard({
         {/* 运动员信息编辑按钮 / Athlete info edit buttons */}
         {!isEditing ? (
           <button
-            onClick={() => onFieldChange('_editMode', true)}
-            className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center"
+            onClick={onStartEditing}
+            disabled={!canEdit}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center ${
+              canEdit 
+                ? 'bg-fanforce-primary hover:bg-fanforce-primary/80 text-white' 
+                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+            }`}
           >
             <FaEdit className="mr-2" />
             {language === 'en' ? 'Edit' : '编辑'}

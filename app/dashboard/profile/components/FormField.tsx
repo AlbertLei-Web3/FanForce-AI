@@ -97,7 +97,11 @@ const FormField: React.FC<FormFieldProps> = ({
     <div className={`space-y-2 ${className}`}>
       <label className="block text-sm font-medium text-gray-300">
         {label}
-        {required && <span className="text-red-400 ml-1">*</span>}
+        {required && (
+          <span className="text-blue-400 ml-1 text-xs font-normal">
+            (必填)
+          </span>
+        )}
       </label>
       
       {renderInput()}

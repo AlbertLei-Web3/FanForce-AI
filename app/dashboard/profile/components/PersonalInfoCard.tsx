@@ -179,7 +179,7 @@ export default function PersonalInfoCard({
             {/* 区域 / Region */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">
-                {language === 'en' ? 'Region' : '区域'} <span className="text-red-400">*</span>
+                {language === 'en' ? 'Region' : '区域'} <span className="text-blue-400 text-xs font-normal">(必填)</span>
               </label>
               <select
                 value={regionalSelection.region}
@@ -226,13 +226,18 @@ export default function PersonalInfoCard({
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50"
               >
                 <option value="">{language === 'en' ? 'Select City' : '选择城市'}</option>
-                {regionalSelection.country && regionalLocationOptions[regionalSelection.region] && 
-                  regionalLocationOptions[regionalSelection.region][regionalSelection.country] && 
-                  Array.isArray(regionalLocationOptions[regionalSelection.region][regionalSelection.country]) &&
-                  regionalLocationOptions[regionalSelection.region][regionalSelection.country].map((city: string) => (
-                    <option key={city} value={city}>{city}</option>
-                  ))
-                }
+                {(() => {
+                  const countryData = regionalSelection.country && 
+                    regionalLocationOptions[regionalSelection.region] && 
+                    regionalLocationOptions[regionalSelection.region][regionalSelection.country];
+                  
+                  if (countryData && Array.isArray(countryData)) {
+                    return countryData.map((city: string) => (
+                      <option key={city} value={city}>{city}</option>
+                    ));
+                  }
+                  return null;
+                })()}
               </select>
             </div>
 
@@ -249,16 +254,19 @@ export default function PersonalInfoCard({
               >
                 <option value="">{language === 'en' ? 'Select Institution' : '选择机构'}</option>
                                  {(() => {
-                   const institutions = regionalSelection.city && 
+                   const countryData = regionalSelection.city && 
                      regionalLocationOptions[regionalSelection.region] && 
-                     regionalLocationOptions[regionalSelection.region][regionalSelection.country] && 
-                     !Array.isArray(regionalLocationOptions[regionalSelection.region][regionalSelection.country]) &&
-                     regionalLocationOptions[regionalSelection.region][regionalSelection.country][regionalSelection.city];
+                     regionalLocationOptions[regionalSelection.region][regionalSelection.country];
                    
-                   return institutions && Array.isArray(institutions) ? 
-                     institutions.map((institution: string) => (
-                       <option key={institution} value={institution}>{institution}</option>
-                     )) : null;
+                   if (countryData && !Array.isArray(countryData) && countryData[regionalSelection.city]) {
+                     const institutions = countryData[regionalSelection.city];
+                     if (Array.isArray(institutions)) {
+                       return institutions.map((institution: string) => (
+                         <option key={institution} value={institution}>{institution}</option>
+                       ));
+                     }
+                   }
+                   return null;
                  })()}
               </select>
             </div>

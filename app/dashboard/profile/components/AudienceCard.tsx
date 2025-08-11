@@ -21,9 +21,11 @@ interface AudienceCardProps {
   onFieldChange: (field: string, value: any) => void
   onSave: () => Promise<void>
   onCancel: () => void
+  onStartEditing: () => void
   isEditing: boolean
   isLoading: boolean
   validationErrors?: Record<string, string>
+  canEdit: boolean
 }
 
 export default function AudienceCard({
@@ -31,9 +33,11 @@ export default function AudienceCard({
   onFieldChange,
   onSave,
   onCancel,
+  onStartEditing,
   isEditing,
   isLoading,
-  validationErrors = {}
+  validationErrors = {},
+  canEdit
 }: AudienceCardProps) {
   const { language } = useLanguage()
   const { showToast } = useToast()
@@ -73,8 +77,13 @@ export default function AudienceCard({
         {/* 观众信息编辑按钮 / Audience info edit buttons */}
         {!isEditing ? (
           <button
-            onClick={() => onFieldChange('_editMode', true)}
-            className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center"
+            onClick={onStartEditing}
+            disabled={!canEdit}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center ${
+              canEdit 
+                ? 'bg-fanforce-primary hover:bg-fanforce-primary/80 text-white' 
+                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+            }`}
           >
             <FaEdit className="mr-2" />
             {language === 'en' ? 'Edit' : '编辑'}
@@ -106,9 +115,9 @@ export default function AudienceCard({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* 感兴趣的运动 / Interested Sports */}
         <div>
-          <label className="block text-sm font-medium text-white mb-2 flex items-center">
-            <FaExclamationTriangle className="text-red-400 mr-2 text-xs" />
-            {language === 'en' ? 'Interested Sports' : '感兴趣的运动'} *
+          <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+            <span className="text-blue-400 text-xs font-normal mr-2">(必填)</span>
+            {language === 'en' ? 'Interested Sports' : '感兴趣的运动'}
           </label>
           <select
             value={getFieldValue('interestedSports')}

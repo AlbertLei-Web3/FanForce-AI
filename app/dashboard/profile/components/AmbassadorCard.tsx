@@ -20,9 +20,11 @@ interface AmbassadorCardProps {
   onFieldChange: (field: string, value: any) => void
   onSave: () => Promise<void>
   onCancel: () => void
+  onStartEditing: () => void
   isEditing: boolean
   isLoading: boolean
   validationErrors?: Record<string, string>
+  canEdit: boolean
 }
 
 export default function AmbassadorCard({
@@ -30,9 +32,11 @@ export default function AmbassadorCard({
   onFieldChange,
   onSave,
   onCancel,
+  onStartEditing,
   isEditing,
   isLoading,
-  validationErrors = {}
+  validationErrors = {},
+  canEdit
 }: AmbassadorCardProps) {
   const { language } = useLanguage()
   const { showToast } = useToast()
@@ -72,8 +76,13 @@ export default function AmbassadorCard({
         {/* 大使信息编辑按钮 / Ambassador info edit buttons */}
         {!isEditing ? (
           <button
-            onClick={() => onFieldChange('_editMode', true)}
-            className="px-4 py-2 bg-fanforce-primary hover:bg-fanforce-primary/80 text-white rounded-lg font-medium transition-colors flex items-center"
+            onClick={onStartEditing}
+            disabled={!canEdit}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center ${
+              canEdit 
+                ? 'bg-fanforce-primary hover:bg-fanforce-primary/80 text-white' 
+                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+            }`}
           >
             <FaEdit className="mr-2" />
             {language === 'en' ? 'Edit' : '编辑'}
@@ -103,32 +112,52 @@ export default function AmbassadorCard({
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* 主要运动项目 / Primary Sport */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            {language === 'en' ? 'Primary Sport' : '主要运动项目'}
+          </label>
+          <select
+            value={getFieldValue('primarySport')}
+            onChange={(e) => onFieldChange('primarySport', e.target.value)}
+            disabled={!isEditing}
+            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
+          >
+            <option value="">{language === 'en' ? 'Select primary sport' : '选择主要运动项目'}</option>
+            {Object.keys(sportDepartments).map((sport) => (
+              <option key={sport} value={sport}>{sport}</option>
+            ))}
+          </select>
+          {/* 显示验证错误 */}
+          {getFieldError('primarySport') && (
+            <p className="text-red-400 text-xs mt-1">{getFieldError('primarySport')}</p>
+          )}
+        </div>
+
         {/* 院系 / Department */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
             {language === 'en' ? 'Department' : '院系'}
           </label>
-          {(() => {
-            const primarySport = getFieldValue('primarySport');
-            const availableDepartments = primarySport && sportDepartments[primarySport] ? sportDepartments[primarySport] : [];
-            
-            return (
-              <select
-                value={getFieldValue('department')}
-                onChange={(e) => onFieldChange('department', e.target.value)}
-                disabled={!isEditing || !primarySport}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-              >
-                <option value="">{language === 'en' ? 'Select department' : '选择院系'}</option>
-                {availableDepartments.map((dept) => (
-                  <option key={dept} value={dept}>{dept}</option>
-                ))}
-              </select>
-            );
-          })()}
+          <select
+            value={getFieldValue('department')}
+            onChange={(e) => onFieldChange('department', e.target.value)}
+            disabled={!isEditing}
+            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
+          >
+            <option value="">{language === 'en' ? 'Select department' : '选择院系'}</option>
+            {(() => {
+              const primarySport = getFieldValue('primarySport');
+              const availableDepartments = primarySport && sportDepartments[primarySport] ? sportDepartments[primarySport] : [];
+              
+              return availableDepartments.map((dept) => (
+                <option key={dept} value={dept}>{dept}</option>
+              ));
+            })()}
+          </select>
           {!getFieldValue('primarySport') && (
             <p className="text-gray-500 text-sm italic mt-1">
-              {language === 'en' ? 'Please select a primary sport first' : '请先选择主要运动项目'}
+              {language === 'en' ? 'Select a primary sport to see available departments' : '选择主要运动项目以查看可用院系'}
             </p>
           )}
           {/* 显示验证错误 */}
