@@ -25,7 +25,8 @@ import {
   FaShieldAlt,
   FaTrophy,
   FaUsers,
-  FaStar
+  FaStar,
+  FaTimes
 } from 'react-icons/fa'
 
 // 个人信息接口 / Personal Information Interface
@@ -41,8 +42,9 @@ interface RoleSpecificInfo {
   // 运动员特有信息 / Athlete-specific information
   primarySport?: string
   experienceLevel?: string
-  position?: string
+  positions?: string[]
   height?: string
+  weight?: string
   achievements?: string
   
   // 观众特有信息 / Audience-specific information
@@ -74,11 +76,25 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [originalData, setOriginalData] = useState<any>(null)
 
-  // 运动项目选项 / Sports options
+  // 运动项目选项 / Sports options (删除田径、武术、游泳、乒乓)
   const sportsOptions = [
-    '足球', '篮球', '网球', '羽毛球', '乒乓球', 
-    '排球', '游泳', '田径', '武术', '其他'
+    { value: '足球', label: '足球' },
+    { value: '篮球', label: '篮球', note: '后续开放组织比赛，敬请期待' },
+    { value: '网球', label: '网球', note: '后续开放组织比赛，敬请期待' },
+    { value: '羽毛球', label: '羽毛球', note: '后续开放组织比赛，敬请期待' },
+    { value: '排球', label: '排球', note: '后续开放组织比赛，敬请期待' },
+    { value: '其他', label: '其他', note: '后续开放组织比赛，敬请期待' }
   ]
+
+  // 运动项目位置映射 / Sport position mapping
+  const sportPositions: { [key: string]: string[] } = {
+    '足球': ['前锋', '中场', '后卫', '守门员', '边锋', '中锋', '后腰', '前腰'],
+    '篮球': ['控球后卫', '得分后卫', '小前锋', '大前锋', '中锋', '第六人'],
+    '网球': ['单打', '双打', '混双'],
+    '羽毛球': ['单打', '双打', '混双'],
+    '排球': ['主攻手', '副攻手', '二传手', '接应', '自由人'],
+    '其他': ['待定']
+  }
 
   // 经验水平选项 / Experience level options
   const experienceLevels = [
@@ -108,11 +124,6 @@ export default function ProfilePage() {
       
       setPersonalInfo(userData)
       setOriginalData(userData)
-      
-      // 设置角色特定信息 / Set role-specific information
-      if (authState.user.roleSpecificData) {
-        setRoleSpecificInfo(authState.user.roleSpecificData)
-      }
     }
   }, [authState.user])
 
@@ -132,22 +143,36 @@ export default function ProfilePage() {
     }))
   }
 
+  // 处理位置标签的添加和删除 / Handle position tag addition and removal
+  const handlePositionToggle = (position: string) => {
+    const currentPositions = roleSpecificInfo.positions || []
+    const newPositions = currentPositions.includes(position)
+      ? currentPositions.filter(p => p !== position)
+      : [...currentPositions, position]
+    
+    handleRoleSpecificInfoChange('positions', newPositions)
+  }
+
   // 保存更改 / Save changes
   const handleSave = async () => {
     setIsLoading(true)
     try {
-      // 这里应该调用API保存数据 / Here should call API to save data
-      // await updateUser({ ...personalInfo, roleSpecificData: roleSpecificInfo })
+      // 这里将来会连接到数据库
+      // This will be connected to database in the future
+      await updateUser({
+        ...personalInfo,
+        ...roleSpecificInfo
+      })
       
+      setIsEditing(false)
       showToast(
-        language === 'en' ? 'Profile updated successfully!' : '档案更新成功！',
+        language === 'en' ? 'Profile updated successfully!' : '个人资料更新成功！',
         'success'
       )
-      setIsEditing(false)
-      setOriginalData({ ...personalInfo, roleSpecificData: roleSpecificInfo })
     } catch (error) {
+      console.error('Save error:', error)
       showToast(
-        language === 'en' ? 'Failed to update profile' : '档案更新失败',
+        language === 'en' ? 'Failed to update profile' : '更新个人资料失败',
         'error'
       )
     } finally {
@@ -157,12 +182,12 @@ export default function ProfilePage() {
 
   // 取消编辑 / Cancel editing
   const handleCancel = () => {
-    setPersonalInfo(originalData)
-    setRoleSpecificInfo(originalData?.roleSpecificData || {})
+    setPersonalInfo(originalData || {})
+    setRoleSpecificInfo({})
     setIsEditing(false)
   }
 
-  // 渲染基础个人信息表单 / Render basic personal info form
+  // 渲染个人信息表单 / Render personal info form
   const renderPersonalInfoForm = () => (
     <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
       <div className="flex items-center mb-6">
@@ -175,7 +200,8 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* 用户名 / Username */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-white mb-2 flex items-center">
+            <FaExclamationTriangle className="text-red-400 mr-2 text-xs" />
             {language === 'en' ? 'Username' : '用户名'} *
           </label>
           <input
@@ -188,10 +214,11 @@ export default function ProfilePage() {
           />
         </div>
 
-        {/* 邮箱地址 / Email */}
+        {/* 邮箱 / Email */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            {language === 'en' ? 'Email Address' : '邮箱地址'} *
+          <label className="block text-sm font-medium text-white mb-2 flex items-center">
+            <FaExclamationTriangle className="text-red-400 mr-2 text-xs" />
+            {language === 'en' ? 'Email' : '邮箱'} *
           </label>
           <input
             type="email"
@@ -203,10 +230,11 @@ export default function ProfilePage() {
           />
         </div>
 
-        {/* 手机号 / Phone */}
+        {/* 电话 / Phone */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            {language === 'en' ? 'Phone Number' : '手机号'}
+          <label className="block text-sm font-medium text-white mb-2 flex items-center">
+            <FaExclamationTriangle className="text-red-400 mr-2 text-xs" />
+            {language === 'en' ? 'Phone' : '电话'} *
           </label>
           <input
             type="tel"
@@ -214,14 +242,15 @@ export default function ProfilePage() {
             onChange={(e) => handlePersonalInfoChange('phone', e.target.value)}
             disabled={!isEditing}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-            placeholder={language === 'en' ? 'Enter phone number' : '输入手机号'}
+            placeholder={language === 'en' ? 'Enter phone number' : '输入电话号码'}
           />
         </div>
 
         {/* 紧急联系人 / Emergency Contact */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            {language === 'en' ? 'Emergency Contact' : '紧急联系人'}
+          <label className="block text-sm font-medium text-white mb-2 flex items-center">
+            <FaExclamationTriangle className="text-red-400 mr-2 text-xs" />
+            {language === 'en' ? 'Emergency Contact' : '紧急联系人'} *
           </label>
           <input
             type="text"
@@ -252,25 +281,40 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* 主要运动项目 / Primary Sport */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2 flex items-center">
+                <FaExclamationTriangle className="text-red-400 mr-2 text-xs" />
                 {language === 'en' ? 'Primary Sport' : '主要运动项目'} *
               </label>
               <select
                 value={roleSpecificInfo.primarySport || ''}
-                onChange={(e) => handleRoleSpecificInfoChange('primarySport', e.target.value)}
+                onChange={(e) => {
+                  handleRoleSpecificInfoChange('primarySport', e.target.value)
+                  // 清空位置选择当运动项目改变时
+                  handleRoleSpecificInfoChange('positions', [])
+                }}
                 disabled={!isEditing}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
               >
                 <option value="">{language === 'en' ? 'Select sport' : '选择运动项目'}</option>
                 {sportsOptions.map((sport) => (
-                  <option key={sport} value={sport}>{sport}</option>
+                  <option key={sport.value} value={sport.value}>
+                    {sport.label}
+                  </option>
                 ))}
               </select>
+              {/* 显示说明文字 */}
+              {roleSpecificInfo.primarySport && 
+               sportsOptions.find(s => s.value === roleSpecificInfo.primarySport)?.note && (
+                <p className="text-xs text-fanforce-gold mt-1 italic">
+                  {sportsOptions.find(s => s.value === roleSpecificInfo.primarySport)?.note}
+                </p>
+              )}
             </div>
 
             {/* 经验水平 / Experience Level */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2 flex items-center">
+                <FaExclamationTriangle className="text-red-400 mr-2 text-xs" />
                 {language === 'en' ? 'Experience Level' : '经验水平'} *
               </label>
               <select
@@ -291,14 +335,53 @@ export default function ProfilePage() {
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 {language === 'en' ? 'Position/Role' : '位置/角色'}
               </label>
-              <input
-                type="text"
-                value={roleSpecificInfo.position || ''}
-                onChange={(e) => handleRoleSpecificInfoChange('position', e.target.value)}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-                placeholder={language === 'en' ? 'e.g., Forward, Midfielder' : '例如：前锋、中场'}
-              />
+              {roleSpecificInfo.primarySport && sportPositions[roleSpecificInfo.primarySport] ? (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {sportPositions[roleSpecificInfo.primarySport].map((position) => (
+                      <button
+                        key={position}
+                        type="button"
+                        onClick={() => handlePositionToggle(position)}
+                        disabled={!isEditing}
+                        className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                          (roleSpecificInfo.positions || []).includes(position)
+                            ? 'bg-fanforce-primary text-white border border-fanforce-primary'
+                            : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {position}
+                      </button>
+                    ))}
+                  </div>
+                  {/* 显示已选择的位置 */}
+                  {(roleSpecificInfo.positions || []).length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {roleSpecificInfo.positions?.map((position) => (
+                        <span
+                          key={position}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-fanforce-primary/20 text-fanforce-primary border border-fanforce-primary/30"
+                        >
+                          {position}
+                          {isEditing && (
+                            <button
+                              type="button"
+                              onClick={() => handlePositionToggle(position)}
+                              className="ml-2 text-fanforce-primary hover:text-white"
+                            >
+                              <FaTimes className="text-xs" />
+                            </button>
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-gray-400 text-sm italic">
+                  {language === 'en' ? 'Please select a primary sport first' : '请先选择主要运动项目'}
+                </div>
+              )}
             </div>
 
             {/* 身高 / Height */}
@@ -313,6 +396,21 @@ export default function ProfilePage() {
                 disabled={!isEditing}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
                 placeholder="175"
+              />
+            </div>
+
+            {/* 体重 / Weight */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                {language === 'en' ? 'Weight (kg)' : '体重 (公斤)'}
+              </label>
+              <input
+                type="number"
+                value={roleSpecificInfo.weight || ''}
+                onChange={(e) => handleRoleSpecificInfoChange('weight', e.target.value)}
+                disabled={!isEditing}
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
+                placeholder="70"
               />
             </div>
 
@@ -345,7 +443,8 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* 支持级别 / Support Level */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2 flex items-center">
+                <FaExclamationTriangle className="text-red-400 mr-2 text-xs" />
                 {language === 'en' ? 'Support Level' : '支持级别'} *
               </label>
               <select
@@ -363,7 +462,8 @@ export default function ProfilePage() {
 
             {/* 感兴趣的运动 / Interested Sports */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2 flex items-center">
+                <FaExclamationTriangle className="text-red-400 mr-2 text-xs" />
                 {language === 'en' ? 'Interested Sports' : '感兴趣的运动'} *
               </label>
               <select
@@ -374,9 +474,16 @@ export default function ProfilePage() {
               >
                 <option value="">{language === 'en' ? 'Select sport' : '选择运动项目'}</option>
                 {sportsOptions.map((sport) => (
-                  <option key={sport} value={sport}>{sport}</option>
+                  <option key={sport.value} value={sport.value}>{sport.label}</option>
                 ))}
               </select>
+              {/* 显示说明文字 */}
+              {roleSpecificInfo.interestedSports && 
+               sportsOptions.find(s => s.value === roleSpecificInfo.interestedSports)?.note && (
+                <p className="text-xs text-fanforce-gold mt-1 italic">
+                  {sportsOptions.find(s => s.value === roleSpecificInfo.interestedSports)?.note}
+                </p>
+              )}
             </div>
 
             {/* 喜爱的队伍 / Favorite Teams */}
@@ -406,10 +513,10 @@ export default function ProfilePage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 校园 / Campus */}
+            {/* 校区 / Campus */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                {language === 'en' ? 'Campus' : '校园'} *
+                {language === 'en' ? 'Campus' : '校区'}
               </label>
               <input
                 type="text"
@@ -417,14 +524,14 @@ export default function ProfilePage() {
                 onChange={(e) => handleRoleSpecificInfoChange('campus', e.target.value)}
                 disabled={!isEditing}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-                placeholder={language === 'en' ? 'Enter campus name' : '输入校园名称'}
+                placeholder={language === 'en' ? 'Enter campus' : '输入校区'}
               />
             </div>
 
-            {/* 部门 / Department */}
+            {/* 院系 / Department */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                {language === 'en' ? 'Department' : '部门'} *
+                {language === 'en' ? 'Department' : '院系'}
               </label>
               <input
                 type="text"
@@ -432,12 +539,12 @@ export default function ProfilePage() {
                 onChange={(e) => handleRoleSpecificInfoChange('department', e.target.value)}
                 disabled={!isEditing}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-                placeholder={language === 'en' ? 'Enter department' : '输入部门'}
+                placeholder={language === 'en' ? 'Enter department' : '输入院系'}
               />
             </div>
 
             {/* 大使级别 / Ambassador Level */}
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 {language === 'en' ? 'Ambassador Level' : '大使级别'}
               </label>
@@ -449,6 +556,7 @@ export default function ProfilePage() {
               >
                 <option value="">{language === 'en' ? 'Select level' : '选择级别'}</option>
                 <option value="junior">初级大使</option>
+                <option value="intermediate">中级大使</option>
                 <option value="senior">高级大使</option>
                 <option value="expert">专家大使</option>
               </select>
