@@ -12,6 +12,10 @@ import {
   dataToFormState,
   hasUnsavedChanges
 } from '../utils'
+import { 
+  validationSchemas, 
+  validateField as validateFieldYup 
+} from '../validation'
 
 export const useProfileForm = (initialData: any) => {
   // 表单状态 / Form state
@@ -42,17 +46,33 @@ export const useProfileForm = (initialData: any) => {
   const updatePersonalField = useCallback((field: string, value: string) => {
     setPersonalFormState(prev => updateFormField(prev, field, value))
     setSaveState(prev => ({ ...prev, hasUnsavedChanges: true }))
+    
+    // 清除该字段的验证错误
+    setValidationErrors(prev => {
+      const newErrors = { ...prev }
+      delete newErrors[field]
+      return newErrors
+    })
   }, [])
 
   // 更新角色信息字段 / Update role-specific info field
   const updateRoleField = useCallback((field: string, value: any) => {
     setRoleFormState(prev => updateFormField(prev, field, value))
     setSaveState(prev => ({ ...prev, hasUnsavedChanges: true }))
+    
+    // 清除该字段的验证错误
+    setValidationErrors(prev => {
+      const newErrors = { ...prev }
+      delete newErrors[field]
+      return newErrors
+    })
   }, [])
 
   // 开始编辑 / Start editing
   const startEditing = useCallback((section: keyof typeof editStates) => {
     setEditStates(prev => ({ ...prev, [section]: true }))
+    // 清除验证错误
+    setValidationErrors({})
   }, [])
 
   // 取消编辑 / Cancel editing
@@ -70,16 +90,30 @@ export const useProfileForm = (initialData: any) => {
     setSaveState(prev => ({ ...prev, hasUnsavedChanges: false }))
   }, [originalData])
 
-  // 验证表单 / Validate form
-  const validateForm = useCallback((section: string) => {
+  // 验证表单（使用yup） / Validate form using yup
+  const validateForm = useCallback(async (section: string) => {
     let errors: ValidationErrors = {}
     
-    if (section === 'personal') {
-      const personalData = formStateToData(personalFormState)
-      errors = validatePersonalInfo(personalData)
-    } else if (section === 'athlete' || section === 'audience' || section === 'ambassador') {
-      const roleData = formStateToData(roleFormState)
-      errors = validateRoleSpecificInfo(roleData, section)
+    try {
+      if (section === 'personal') {
+        const personalData = formStateToData(personalFormState)
+        await validationSchemas.personal.validate(personalData, { abortEarly: false })
+      } else if (section === 'athlete') {
+        const roleData = formStateToData(roleFormState)
+        await validationSchemas.athlete.validate(roleData, { abortEarly: false })
+      } else if (section === 'audience') {
+        const roleData = formStateToData(roleFormState)
+        await validationSchemas.audience.validate(roleData, { abortEarly: false })
+      } else if (section === 'ambassador') {
+        const roleData = formStateToData(roleFormState)
+        await validationSchemas.ambassador.validate(roleData, { abortEarly: false })
+      }
+    } catch (validationError: any) {
+      if (validationError.inner) {
+        validationError.inner.forEach((err: any) => {
+          errors[err.path] = err.message
+        })
+      }
     }
     
     setValidationErrors(errors)
@@ -88,7 +122,8 @@ export const useProfileForm = (initialData: any) => {
 
   // 保存个人信息 / Save personal info
   const savePersonalInfo = useCallback(async () => {
-    if (!validateForm('personal')) {
+    const isValid = await validateForm('personal')
+    if (!isValid) {
       return false
     }
     
@@ -117,7 +152,8 @@ export const useProfileForm = (initialData: any) => {
 
   // 保存角色信息 / Save role-specific info
   const saveRoleInfo = useCallback(async (section: string) => {
-    if (!validateForm(section)) {
+    const isValid = await validateForm(section)
+    if (!isValid) {
       return false
     }
     
@@ -143,6 +179,39 @@ export const useProfileForm = (initialData: any) => {
       return false
     }
   }, [roleFormState, validateForm])
+
+  // 实时验证单个字段 / Real-time validation for single field
+  const validateSingleField = useCallback(async (
+    section: string, 
+    field: string, 
+    value: any
+  ) => {
+    try {
+      let schema
+      if (section === 'personal') {
+        schema = validationSchemas.personal
+      } else if (section === 'athlete') {
+        schema = validationSchemas.athlete
+      } else if (section === 'audience') {
+        schema = validationSchemas.audience
+      } else if (section === 'ambassador') {
+        schema = validationSchemas.ambassador
+      } else {
+        return
+      }
+
+      const error = await validateFieldYup(schema, field, value)
+      
+      setValidationErrors(prev => ({
+        ...prev,
+        [field]: error || undefined
+      }))
+      
+      return error
+    } catch (error) {
+      console.error('Field validation error:', error)
+    }
+  }, [])
 
   // 检查是否有未保存的更改 / Check for unsaved changes
   useEffect(() => {
@@ -197,6 +266,7 @@ export const useProfileForm = (initialData: any) => {
     savePersonalInfo,
     saveRoleInfo,
     validateForm,
+    validateSingleField,
     getCurrentData,
     resetForm
   }

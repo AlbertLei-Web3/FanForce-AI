@@ -124,7 +124,7 @@ export default function AthleteCard({
         {/* 主要运动项目 / Primary Sport */}
         <div>
           <label className="block text-sm font-medium text-white mb-2">
-            Primary Sport <span className="text-blue-400 text-xs font-normal">(Required)</span>
+            Primary Sport <span className="text-red-400 text-xs font-normal">*</span>
           </label>
           <select
             value={getFieldValue('primarySport')}
@@ -152,14 +152,17 @@ export default function AthleteCard({
           )}
           {/* 显示验证错误 */}
           {getFieldError('primarySport') && (
-            <p className="text-red-400 text-xs mt-1">{getFieldError('primarySport')}</p>
+            <p className="text-red-400 text-xs mt-1 flex items-center">
+              <FaExclamationTriangle className="mr-1" />
+              {getFieldError('primarySport')}
+            </p>
           )}
         </div>
 
         {/* 经验水平 / Experience Level */}
         <div>
           <label className="block text-sm font-medium text-white mb-2">
-            Experience Level <span className="text-blue-400 text-xs font-normal">(Required)</span>
+            Experience Level <span className="text-red-400 text-xs font-normal">*</span>
           </label>
           <select
             value={getFieldValue('experienceLevel')}
@@ -174,14 +177,17 @@ export default function AthleteCard({
           </select>
           {/* 显示验证错误 */}
           {getFieldError('experienceLevel') && (
-            <p className="text-red-400 text-xs mt-1">{getFieldError('experienceLevel')}</p>
+            <p className="text-red-400 text-xs mt-1 flex items-center">
+              <FaExclamationTriangle className="mr-1" />
+              {getFieldError('experienceLevel')}
+            </p>
           )}
         </div>
 
         {/* 位置/角色 / Position/Role */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Position/Role
+            Position/Role <span className="text-red-400 text-xs font-normal">*</span>
           </label>
           {getFieldValue('primarySport') && sportPositions[getFieldValue('primarySport')] ? (
             <div className="space-y-3">
@@ -228,6 +234,13 @@ export default function AthleteCard({
                   </div>
                 );
               })()}
+              {/* 显示验证错误 */}
+              {getFieldError('positions') && (
+                <p className="text-red-400 text-xs mt-1 flex items-center">
+                  <FaExclamationTriangle className="mr-1" />
+                  {getFieldError('positions')}
+                </p>
+              )}
             </div>
           ) : (
             <p className="text-gray-500 text-sm italic">
@@ -245,10 +258,13 @@ export default function AthleteCard({
             type="text"
             value={getFieldValue('height')}
             onChange={(e) => onFieldChange('height', e.target.value)}
-            placeholder="e.g., 180cm"
+            placeholder="e.g., 180cm, 1.8m, 5ft 10in"
             disabled={!isEditing}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
           />
+          <p className="text-xs text-gray-400 mt-1">
+            支持格式：180cm, 1.8m, 5ft 10in
+          </p>
         </div>
 
         {/* 体重 / Weight */}
@@ -260,10 +276,13 @@ export default function AthleteCard({
             type="text"
             value={getFieldValue('weight')}
             onChange={(e) => onFieldChange('weight', e.target.value)}
-            placeholder="e.g., 75kg"
+            placeholder="e.g., 75kg, 165lb"
             disabled={!isEditing}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
           />
+          <p className="text-xs text-gray-400 mt-1">
+            支持格式：75kg, 165lb
+          </p>
         </div>
 
         {/* 成就 / Achievements */}
@@ -277,8 +296,17 @@ export default function AthleteCard({
             placeholder="Describe your sports achievements, awards, or notable performances..."
             rows={3}
             disabled={!isEditing}
+            maxLength={500}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50 resize-none"
           />
+          <div className="flex justify-between items-center mt-1">
+            <p className="text-xs text-gray-400">
+              最多500个字符
+            </p>
+            <span className="text-xs text-gray-400">
+              {getFieldValue('achievements').length}/500
+            </span>
+          </div>
         </div>
       </div>
     </div>

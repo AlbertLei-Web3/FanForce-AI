@@ -113,7 +113,7 @@ export default function AudienceCard({
         {/* 感兴趣的运动 / Interested Sports */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
-            <span className="text-blue-400 text-xs font-normal mr-2">(Required)</span>
+            <span className="text-red-400 text-xs font-normal mr-2">*</span>
             Interested Sports
           </label>
           <select
@@ -131,7 +131,10 @@ export default function AudienceCard({
           </select>
           {/* 显示验证错误 */}
           {getFieldError('interestedSports') && (
-            <p className="text-red-400 text-xs mt-1">{getFieldError('interestedSports')}</p>
+            <p className="text-red-400 text-xs mt-1 flex items-center">
+              <FaExclamationTriangle className="mr-1" />
+              {getFieldError('interestedSports')}
+            </p>
           )}
         </div>
 
@@ -146,8 +149,17 @@ export default function AudienceCard({
             onChange={(e) => onFieldChange('favoriteTeams', e.target.value)}
             placeholder="e.g., Lakers, Warriors, Celtics..."
             disabled={!isEditing}
+            maxLength={200}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
           />
+          <div className="flex justify-between items-center mt-1">
+            <p className="text-xs text-gray-400">
+              支持字母、数字、中文、空格和逗号
+            </p>
+            <span className="text-xs text-gray-400">
+              {getFieldValue('favoriteTeams').length}/200
+            </span>
+          </div>
         </div>
       </div>
     </div>

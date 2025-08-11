@@ -10,7 +10,8 @@ import {
   FaStar,
   FaSave,
   FaUndo,
-  FaEdit
+  FaEdit,
+  FaExclamationTriangle
 } from 'react-icons/fa'
 import { FormState } from '../types'
 import { sportsOptions } from '../constants'
@@ -112,7 +113,7 @@ export default function AmbassadorCard({
         {/* 体育项目大使 / Sports Ambassador */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Sports Ambassador Type
+            Sports Ambassador Type <span className="text-red-400 text-xs font-normal">*</span>
           </label>
           <select
             value={getFieldValue('sportsAmbassadorType')}
@@ -129,7 +130,10 @@ export default function AmbassadorCard({
           </select>
           {/* 显示验证错误 */}
           {getFieldError('sportsAmbassadorType') && (
-            <p className="text-red-400 text-xs mt-1">{getFieldError('sportsAmbassadorType')}</p>
+            <p className="text-red-400 text-xs mt-1 flex items-center">
+              <FaExclamationTriangle className="mr-1" />
+              {getFieldError('sportsAmbassadorType')}
+            </p>
           )}
         </div>
       </div>

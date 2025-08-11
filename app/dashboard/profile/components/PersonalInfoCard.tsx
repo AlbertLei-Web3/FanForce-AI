@@ -18,6 +18,7 @@ import {
 import { PersonalInfo, RegionalSelection, FormState, ValidationErrors } from '../types'
 import { regionalLocationOptions } from '../constants'
 import FormField from './FormField'
+import PhoneInput from './PhoneInput'
 
 interface PersonalInfoCardProps {
   formState: FormState
@@ -108,20 +109,20 @@ export default function PersonalInfoCard({
         ) : (
           <div className="flex gap-2">
             <button
-              onClick={handleSave}
-              disabled={isLoading}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 text-white rounded-lg font-medium transition-colors flex items-center"
-            >
-              <FaSave className="mr-2" />
-              {isLoading ? 'Saving...' : 'Save'}
-            </button>
-            <button
               onClick={handleCancel}
               disabled={isLoading}
               className="px-4 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-600/50 text-white rounded-lg font-medium transition-colors flex items-center"
             >
               <FaUndo className="mr-2" />
               Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isLoading}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 text-white rounded-lg font-medium transition-colors flex items-center"
+            >
+              <FaSave className="mr-2" />
+              {isLoading ? 'Saving...' : 'Save'}
             </button>
           </div>
         )}
@@ -138,6 +139,11 @@ export default function PersonalInfoCard({
           required
           disabled={!isEditing}
           onChange={(value) => onFieldChange('username', value)}
+          validationSchema="personal"
+          fieldName="username"
+          maxLength={20}
+          showCharacterCount
+          autoComplete="username"
         />
 
         {/* 邮箱 / Email */}
@@ -145,21 +151,22 @@ export default function PersonalInfoCard({
           label="Email"
           field={formState.email || { value: '', touched: false }}
           type="email"
-          placeholder="Enter your email"
+          placeholder="Enter your email address"
           required
           disabled={!isEditing}
           onChange={(value) => onFieldChange('email', value)}
+          validationSchema="personal"
+          fieldName="email"
+          maxLength={100}
+          autoComplete="email"
         />
 
         {/* 电话号码 / Phone */}
-        <FormField
-          label="Phone Number"
-          field={formState.phone || { value: '', touched: false }}
-          type="tel"
-          placeholder="Enter your phone number"
-          required
-          disabled={!isEditing}
+        <PhoneInput
+          value={formState.phone?.value || ''}
           onChange={(value) => onFieldChange('phone', value)}
+          disabled={!isEditing}
+          required
         />
 
         {/* 紧急联系人 / Emergency Contact */}
@@ -167,10 +174,14 @@ export default function PersonalInfoCard({
           label="Emergency Contact"
           field={formState.emergencyContact || { value: '', touched: false }}
           type="text"
-          placeholder="Enter emergency contact"
+          placeholder="Enter emergency contact name"
           required
           disabled={!isEditing}
           onChange={(value) => onFieldChange('emergencyContact', value)}
+          validationSchema="personal"
+          fieldName="emergencyContact"
+          maxLength={50}
+          autoComplete="name"
         />
 
         {/* 区域位置选择 / Regional Location Selection */}
@@ -179,7 +190,7 @@ export default function PersonalInfoCard({
             {/* 区域 / Region */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">
-                Region <span className="text-blue-400 text-xs font-normal">(Required)</span>
+                Region <span className="text-red-400 text-xs font-normal">*</span>
               </label>
               <select
                 value={regionalSelection.region}
@@ -279,6 +290,21 @@ export default function PersonalInfoCard({
               </select>
             </div>
           </div>
+          
+          {/* 区域位置验证 / Regional location validation */}
+          {isEditing && (
+            <FormField
+              label="Regional Location"
+              field={formState.regionalLocation || { value: '', touched: false }}
+              type="text"
+              placeholder="Selected location will appear here"
+              required
+              disabled={true}
+              onChange={() => {}}
+              validationSchema="personal"
+              fieldName="regionalLocation"
+            />
+          )}
         </div>
       </div>
     </div>
