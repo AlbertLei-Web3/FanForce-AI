@@ -32,8 +32,6 @@ import {
 interface PersonalInfo {
   username: string
   email: string
-  organization: string
-  memberId: string
   phone: string
   emergencyContact: string
 }
@@ -49,7 +47,7 @@ interface RoleSpecificInfo {
   
   // 观众特有信息 / Audience-specific information
   supportLevel?: string
-  interestedSports?: string[]
+  interestedSports?: string
   favoriteTeams?: string
   
   // 大使特有信息 / Ambassador-specific information
@@ -67,8 +65,6 @@ export default function ProfilePage() {
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
     username: '',
     email: '',
-    organization: '',
-    memberId: '',
     phone: '',
     emergencyContact: ''
   })
@@ -77,19 +73,6 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [originalData, setOriginalData] = useState<any>(null)
-
-  // 组织选项 / Organization options
-  const organizationOptions = [
-    '本地体育俱乐部',
-    '健身中心', 
-    '社区中心',
-    '业余体育联盟',
-    '青年体育组织',
-    '休闲体育团体',
-    '专业团队',
-    '独立运动员',
-    '其他组织'
-  ]
 
   // 运动项目选项 / Sports options
   const sportsOptions = [
@@ -119,8 +102,6 @@ export default function ProfilePage() {
       const userData = {
         username: authState.user.username || '',
         email: authState.user.email || '',
-        organization: authState.user.organization || '',
-        memberId: authState.user.memberId || '',
         phone: authState.user.phone || '',
         emergencyContact: authState.user.emergencyContact || ''
       }
@@ -222,39 +203,6 @@ export default function ProfilePage() {
           />
         </div>
 
-        {/* 组织 / Organization */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            {language === 'en' ? 'Organization' : '组织'} *
-          </label>
-          <select
-            value={personalInfo.organization}
-            onChange={(e) => handlePersonalInfoChange('organization', e.target.value)}
-            disabled={!isEditing}
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-          >
-            <option value="">{language === 'en' ? 'Select organization' : '选择组织'}</option>
-            {organizationOptions.map((org) => (
-              <option key={org} value={org}>{org}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* 成员ID / Member ID */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            {language === 'en' ? 'Member ID' : '成员ID'}
-          </label>
-          <input
-            type="text"
-            value={personalInfo.memberId}
-            onChange={(e) => handlePersonalInfoChange('memberId', e.target.value)}
-            disabled={!isEditing}
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
-            placeholder={language === 'en' ? 'Enter member ID' : '输入成员ID'}
-          />
-        </div>
-
         {/* 手机号 / Phone */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -290,10 +238,9 @@ export default function ProfilePage() {
 
   // 渲染角色特定信息表单 / Render role-specific info form
   const renderRoleSpecificForm = () => {
-    const userRole = authState.user?.role
-
-    if (userRole === 'ATHLETE') {
-      return (
+    return (
+      <div className="space-y-6">
+        {/* 运动员信息 / Athlete Information */}
         <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
           <div className="flex items-center mb-6">
             <FaTrophy className="text-2xl text-fanforce-gold mr-3" />
@@ -385,11 +332,8 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-      )
-    }
 
-    if (userRole === 'AUDIENCE') {
-      return (
+        {/* 观众信息 / Audience Information */}
         <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
           <div className="flex items-center mb-6">
             <FaUsers className="text-2xl text-fanforce-gold mr-3" />
@@ -423,22 +367,16 @@ export default function ProfilePage() {
                 {language === 'en' ? 'Interested Sports' : '感兴趣的运动'} *
               </label>
               <select
-                multiple
-                value={roleSpecificInfo.interestedSports || []}
-                onChange={(e) => {
-                  const selected = Array.from(e.target.selectedOptions, option => option.value)
-                  handleRoleSpecificInfoChange('interestedSports', selected)
-                }}
+                value={roleSpecificInfo.interestedSports || ''}
+                onChange={(e) => handleRoleSpecificInfoChange('interestedSports', e.target.value)}
                 disabled={!isEditing}
                 className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-fanforce-primary focus:ring-1 focus:ring-fanforce-primary disabled:opacity-50"
               >
+                <option value="">{language === 'en' ? 'Select sport' : '选择运动项目'}</option>
                 {sportsOptions.map((sport) => (
                   <option key={sport} value={sport}>{sport}</option>
                 ))}
               </select>
-              <p className="text-xs text-gray-400 mt-1">
-                {language === 'en' ? 'Hold Ctrl/Cmd to select multiple' : '按住Ctrl/Cmd选择多个'}
-              </p>
             </div>
 
             {/* 喜爱的队伍 / Favorite Teams */}
@@ -457,11 +395,8 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-      )
-    }
 
-    if (userRole === 'AMBASSADOR') {
-      return (
+        {/* 大使信息 / Ambassador Information */}
         <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
           <div className="flex items-center mb-6">
             <FaStar className="text-2xl text-fanforce-gold mr-3" />
@@ -520,10 +455,8 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-      )
-    }
-
-    return null
+      </div>
+    )
   }
 
   return (
