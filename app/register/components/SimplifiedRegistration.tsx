@@ -136,11 +136,12 @@ export default function SimplifiedRegistration({
                   completedSteps: [],
                   selectedPrimaryRole: selectedRole,
                   selectedSecondaryRoles: [],
-                  authMethod: null,
+                  authMethod: userData?.authMethod || null,
                   personalInfo: {},
                   roleSpecificData: {},
                   isProcessing: false,
-                  errors: {}
+                  errors: {},
+                  userId: userData?.userId || `user-${Date.now()}` // 添加用户ID / Add user ID
                 }}
                 updateState={(updates) => {
                   if (updates.selectedPrimaryRole) {

@@ -91,6 +91,7 @@ export interface RegistrationState {
   roleSpecificData: RoleSpecificData
   isProcessing: boolean
   errors: Record<string, string>
+  userId?: string // 用户ID，用于邀请码生成 / User ID for invite code generation
 }
 
 // 初始注册状态 / Initial Registration State

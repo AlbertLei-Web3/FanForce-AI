@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { useLanguage } from '../../../context/LanguageContext'
 import { UserRole } from '../../../context/UserContext'
 import { RegistrationState } from '../RegistrationWizard'
+import InviteCodeDisplay from '../../../components/shared/InviteCodeDisplay'
 
 interface IdentitySelectorProps {
   registrationState: RegistrationState
@@ -296,6 +297,17 @@ export default function IdentitySelector({
           )
         })}
       </div>
+
+      {/* 邀请码显示区域 / Invite Code Display Area */}
+      {registrationState.selectedPrimaryRole && (
+        <div className="mb-6">
+          <InviteCodeDisplay 
+            userId={registrationState.userId || `user-${Date.now()}`}
+            userRole={registrationState.selectedPrimaryRole}
+            className="mb-6"
+          />
+        </div>
+      )}
 
       {/* 帮助信息 / Help Information */}
       <div className="bg-gradient-to-r from-white/5 to-white/10 rounded-2xl p-6 border border-white/20 backdrop-blur-sm">
