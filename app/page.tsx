@@ -20,6 +20,8 @@ export default function HomePage() {
   const { language, toggleLanguage } = useLanguage()
   const router = useRouter()
   const [showQuickRegistration, setShowQuickRegistration] = useState(false)
+  const [showIdentitySelection, setShowIdentitySelection] = useState(false)
+  const [userData, setUserData] = useState<any>(null)
 
   // 如果已登录，自动跳转到仪表板 / Auto redirect to dashboard if logged in
   // 临时注释掉自动跳转，用于测试ICP登录功能
@@ -32,6 +34,19 @@ export default function HomePage() {
   // 处理快速注册模态窗口的关闭 / Handle quick registration modal close
   const handleCloseQuickRegistration = () => {
     setShowQuickRegistration(false)
+  }
+
+  // 处理登录成功，显示角色选择 / Handle login success, show role selection
+  const handleAuthSuccess = (authMethod: string, data: any) => {
+    setUserData({ ...data, authMethod })
+    setShowQuickRegistration(false)
+    setShowIdentitySelection(true)
+  }
+
+  // 处理角色选择模态窗口的关闭 / Handle identity selection modal close
+  const handleCloseIdentitySelection = () => {
+    setShowIdentitySelection(false)
+    setUserData(null)
   }
 
   return (
@@ -57,12 +72,12 @@ export default function HomePage() {
               >
                 {language === 'en' ? '中' : 'EN'}
               </button>
-              <Link
-                href="/login"
+              <button
+                onClick={() => setShowQuickRegistration(true)}
                 className="bg-fanforce-primary hover:bg-fanforce-secondary text-white px-4 py-2 rounded-md text-sm transition-colors"
               >
                 {language === 'en' ? 'Login' : '登录'}
-              </Link>
+              </button>
                 </div>
               </div>
             </div>
@@ -146,19 +161,12 @@ export default function HomePage() {
                   
           {/* 操作按钮 / Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <Link
-              href="/login"
+            <button
+              onClick={() => setShowQuickRegistration(true)}
               className="bg-fanforce-primary hover:bg-fanforce-secondary text-white px-8 py-4 rounded-lg text-lg font-medium transition-colors flex items-center"
             >
               <span className="mr-2">🚀</span>
               {language === 'en' ? 'Access Dashboard' : '访问仪表板'}
-            </Link>
-            <button
-              onClick={() => setShowQuickRegistration(true)}
-              className="bg-fanforce-accent hover:bg-green-600 text-white px-8 py-4 rounded-lg text-lg font-medium transition-colors flex items-center"
-            >
-              <span className="mr-2">🔍</span>
-              {language === 'en' ? 'Explore Login' : '探索登录'}
             </button>
             <Link
               href="/websocket-demo"
@@ -219,27 +227,53 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 快速注册模态窗口 / Quick Registration Modal */}
+      {/* 快速注册模态窗口 / Quick Registration Modal - 第一页：登录按钮 */}
       {showQuickRegistration && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-fanforce-dark via-gray-900 to-fanforce-primary rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-white/20">
-                         {/* 模态窗口头部 / Modal Header */}
-             <div className="bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800 p-4 text-white">
-               <div className="flex justify-end">
-                 <button
-                   onClick={handleCloseQuickRegistration}
-                   className="text-white/80 hover:text-white text-2xl font-light w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-all duration-200 hover:scale-110"
-                 >
-                   ×
-                 </button>
-               </div>
-             </div>
+          <div className="bg-gradient-to-br from-fanforce-dark via-gray-900 to-fanforce-primary rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-white/20 relative">
+            {/* 关闭按钮 / Close Button */}
+            <button
+              onClick={handleCloseQuickRegistration}
+              className="absolute top-4 right-4 text-white/80 hover:text-white text-xl font-light w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-all duration-200 hover:scale-110 z-10"
+            >
+              ×
+            </button>
             
-            {/* 模态窗口内容 / Modal Content */}
-            <div className="p-6 overflow-y-auto custom-scrollbar" style={{
-              maxHeight: 'calc(90vh - 120px)'
+            {/* 模态窗口内容 / Modal Content - 只显示登录步骤 */}
+            <div className="p-6 pt-8">
+              <SimplifiedRegistration 
+                onBack={handleCloseQuickRegistration} 
+                isModal={true}
+                onAuthSuccess={handleAuthSuccess}
+                showOnlyAuth={true}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 角色选择模态窗口 / Identity Selection Modal - 第二页：角色选择卡片 */}
+      {showIdentitySelection && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-fanforce-dark via-gray-900 to-fanforce-primary rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-white/20 relative">
+            {/* 关闭按钮 / Close Button */}
+            <button
+              onClick={handleCloseIdentitySelection}
+              className="absolute top-4 right-4 text-white/80 hover:text-white text-2xl font-light w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-all duration-200 hover:scale-110 z-10"
+            >
+              ×
+            </button>
+            
+            {/* 模态窗口内容 / Modal Content - 显示角色选择步骤 */}
+            <div className="p-6 pt-12 overflow-y-auto role-selection-scrollbar" style={{
+              maxHeight: 'calc(90vh - 60px)'
             }}>
-              <SimplifiedRegistration onBack={handleCloseQuickRegistration} isModal={true} />
+              <SimplifiedRegistration 
+                onBack={handleCloseIdentitySelection} 
+                isModal={true}
+                userData={userData}
+                showOnlyIdentity={true}
+              />
             </div>
           </div>
         </div>
@@ -247,24 +281,34 @@ export default function HomePage() {
 
       {/* 自定义滚动条样式 / Custom Scrollbar Styles */}
       <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
+        /* 角色选择页面的滚动条样式 / Role selection page scrollbar styles */
+        .role-selection-scrollbar::-webkit-scrollbar {
+          width: 10px;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 4px;
+        .role-selection-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 8px;
+          margin: 4px;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
+        .role-selection-scrollbar::-webkit-scrollbar-thumb {
           background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-          border-radius: 4px;
-          transition: all 0.2s ease;
+          border-radius: 8px;
+          border: 2px solid transparent;
+          background-clip: content-box;
+          transition: all 0.3s ease;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #2563eb, #1e40af);
+        .role-selection-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(135deg, #60a5fa, #3b82f6);
           transform: scaleX(1.1);
         }
-        .custom-scrollbar::-webkit-scrollbar-corner {
+        .role-selection-scrollbar::-webkit-scrollbar-corner {
           background: transparent;
+        }
+        
+        /* Firefox 滚动条样式 / Firefox scrollbar styles */
+        .role-selection-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: #3b82f6 rgba(255, 255, 255, 0.05);
         }
       `}</style>
     </div>

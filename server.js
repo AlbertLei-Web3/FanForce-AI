@@ -14,6 +14,13 @@ const winston = require('winston');
 const { body, validationResult } = require('express-validator');
 const http = require('http'); // HTTP server for Socket.io / 用于Socket.io的HTTP服务器
 const { Server } = require('socket.io'); // Socket.io server / Socket.io服务器
+
+// Social Login Dependencies / 社交登录依赖
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const TwitterStrategy = require('passport-twitter').Strategy;
+const session = require('express-session');
+
 require('dotenv').config(); // Load environment variables / 加载环境变量
 
 // Create Express app
@@ -123,6 +130,21 @@ app.use(morgan('combined', {
   }
 }));
 
+// Session middleware for Passport / Passport的会话中间件
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'fanforce-ai-session-secret-2024',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours / 24小时
+  }
+}));
+
+// Passport middleware / Passport中间件
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Body parsing middleware
 // 请求体解析中间件
 app.use(express.json({ limit: '10mb' }));
@@ -152,6 +174,111 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
+// Passport Configuration / Passport配置
+// Serialize user for session / 序列化用户会话
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+// Deserialize user from session / 从会话反序列化用户
+passport.deserializeUser(async (id, done) => {
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+    if (result.rows.length > 0) {
+      done(null, result.rows[0]);
+    } else {
+      done(null, false);
+    }
+  } catch (error) {
+    done(error, null);
+  }
+});
+
+// Google OAuth2 Strategy / Google OAuth2策略
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3001/api/auth/google/callback'
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    logger.info(`🔐 Google OAuth callback for user: ${profile.emails[0]?.value}`);
+    
+    // Check if user exists / 检查用户是否存在
+    let user = await pool.query('SELECT * FROM users WHERE google_id = $1', [profile.id]);
+    
+    if (user.rows.length === 0) {
+      // Create new user / 创建新用户
+      const newUser = await pool.query(
+        'INSERT INTO users (google_id, email, role, auth_type, profile_data, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) RETURNING *',
+        [
+          profile.id,
+          profile.emails[0]?.value || null,
+          'audience',
+          'google',
+          JSON.stringify({
+            name: profile.displayName,
+            avatar: profile.photos[0]?.value,
+            googleId: profile.id
+          })
+        ]
+      );
+      user = newUser;
+    } else {
+      // Update last login time / 更新最后登录时间
+      await pool.query('UPDATE users SET updated_at = NOW() WHERE google_id = $1', [profile.id]);
+      user = await pool.query('SELECT * FROM users WHERE google_id = $1', [profile.id]);
+    }
+    
+    return done(null, user.rows[0]);
+  } catch (error) {
+    logger.error('Google OAuth error:', error);
+    return done(error, null);
+  }
+}));
+
+// Twitter OAuth Strategy / Twitter OAuth策略
+passport.use(new TwitterStrategy({
+  consumerKey: process.env.TWITTER_CLIENT_ID,
+  consumerSecret: process.env.TWITTER_CLIENT_SECRET,
+  callbackURL: process.env.TWITTER_REDIRECT_URI || 'http://localhost:3001/api/auth/twitter/callback'
+}, async (token, tokenSecret, profile, done) => {
+  try {
+    logger.info(`🔐 Twitter OAuth callback for user: ${profile.username}`);
+    
+    // Check if user exists / 检查用户是否存在
+    let user = await pool.query('SELECT * FROM users WHERE twitter_id = $1', [profile.id]);
+    
+    if (user.rows.length === 0) {
+      // Create new user / 创建新用户
+      const newUser = await pool.query(
+        'INSERT INTO users (twitter_id, username, role, auth_type, profile_data, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) RETURNING *',
+        [
+          profile.id,
+          profile.username,
+          'audience',
+          'twitter',
+          JSON.stringify({
+            name: profile.displayName,
+            avatar: profile.profileImageUrl,
+            twitterId: profile.id,
+            screenName: profile.username
+          })
+        ]
+      );
+      user = newUser;
+    } else {
+      // Update last login time / 更新最后登录时间
+      await pool.query('UPDATE users SET updated_at = NOW() WHERE twitter_id = $1', [profile.id]);
+      user = await pool.query('SELECT * FROM users WHERE twitter_id = $1', [profile.id]);
+    }
+    
+    return done(null, user.rows[0]);
+  } catch (error) {
+    logger.error('Twitter OAuth error:', error);
+    return done(error, null);
+  }
+}));
 
 // WebSocket JWT authentication middleware
 // WebSocket JWT认证中间件
@@ -395,6 +522,73 @@ app.get('/health', async (req, res) => {
 // API路由
 
 // Authentication routes / 认证路由
+
+// Google OAuth2 Login Routes / Google OAuth2登录路由
+app.get('/api/auth/google', passport.authenticate('google', { 
+  scope: ['profile', 'email'] 
+}));
+
+app.get('/api/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  async (req, res) => {
+    try {
+      const user = req.user;
+      
+      // Generate JWT token / 生成JWT令牌
+      const token = jwt.sign(
+        { 
+          userId: user.id, 
+          googleId: user.google_id,
+          role: user.role,
+          authType: 'google'
+        },
+        process.env.JWT_SECRET || 'fanforce-ai-super-secret-jwt-key-2024',
+        { expiresIn: '24h' }
+      );
+      
+      // Redirect to frontend with token / 重定向到前端并携带token
+      const redirectUrl = `${process.env.CORS_ORIGIN || 'http://localhost:3000'}/auth/callback?token=${token}&authType=google`;
+      res.redirect(redirectUrl);
+      
+    } catch (error) {
+      logger.error('Google OAuth callback error:', error);
+      res.redirect(`${process.env.CORS_ORIGIN || 'http://localhost:3000'}/login?error=google_auth_failed`);
+    }
+  }
+);
+
+// Twitter OAuth Login Routes / Twitter OAuth登录路由
+app.get('/api/auth/twitter', passport.authenticate('twitter'));
+
+app.get('/api/auth/twitter/callback', 
+  passport.authenticate('twitter', { failureRedirect: '/login' }),
+  async (req, res) => {
+    try {
+      const user = req.user;
+      
+      // Generate JWT token / 生成JWT令牌
+      const token = jwt.sign(
+        { 
+          userId: user.id, 
+          twitterId: user.twitter_id,
+          role: user.role,
+          authType: 'twitter'
+        },
+        process.env.JWT_SECRET || 'fanforce-ai-super-secret-jwt-key-2024',
+        { expiresIn: '24h' }
+      );
+      
+      // Redirect to frontend with token / 重定向到前端并携带token
+      const redirectUrl = `${process.env.CORS_ORIGIN || 'http://localhost:3000'}/auth/callback?token=${token}&authType=twitter`;
+      res.redirect(redirectUrl);
+      
+    } catch (error) {
+      logger.error('Twitter OAuth callback error:', error);
+      res.redirect(`${process.env.CORS_ORIGIN || 'http://localhost:3000'}/login?error=twitter_auth_failed`);
+    }
+  }
+);
+
 // ICP身份登录路由 / ICP Identity Login Route
 app.post('/api/auth/icp-login', [
   body('principalId').isLength({ min: 1 }).withMessage('Principal ID is required / Principal ID是必需的'),
