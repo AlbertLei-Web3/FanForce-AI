@@ -564,6 +564,7 @@ export default function PersonalInfoCard({
           </div>
           
           {/* 区域位置验证 / Regional location validation */}
+          <div className="mt-8"></div>
           {isEditing && (
             <FormField
               label="Regional Location"

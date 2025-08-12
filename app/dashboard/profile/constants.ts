@@ -50,7 +50,10 @@ export const regionalLocationOptions: RegionalLocationOptions = {
   },
   'Asia': {
     'Indonesia': {
-      'Surabaya': ['Airlangga University', 'Sepuluh Nopember Institute of Technology (ITS)']
+      'Surabaya': [
+        'Institut Teknologi Sepuluh Nopember (ITS)',
+        'Universitas Negeri Surabaya (UNESA)'
+      ]
     }
   }
 }
