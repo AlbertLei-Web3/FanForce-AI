@@ -90,23 +90,45 @@ export default function PersonalInfoCard({
     onStartEditing()
   }
 
-  // Phone number validation helper
+  // Phone number validation helper - 修复验证逻辑，为不同国家设置正确的位数要求 / Fix validation logic with correct digit requirements for different countries
   const validatePhoneNumber = (phone: string) => {
     if (!phone) return false;
     
-    // Check if it's a full international format
+    // 获取国家代码和数字部分 / Get country code and number part
+    let countryCode = '';
+    let numberPart = '';
+    
     if (phone.startsWith('+') && phone.includes(' ')) {
       const parts = phone.split(' ');
       if (parts.length >= 2) {
-        const countryCode = parts[0];
-        const numberPart = parts.slice(1).join('');
-        return countryCode.length >= 2 && numberPart.length >= 7 && numberPart.length <= 15 && /^\d+$/.test(numberPart);
+        countryCode = parts[0];
+        numberPart = parts.slice(1).join('');
+      }
+    } else {
+      // 如果没有空格，尝试从开头提取国家代码 / If no space, try to extract country code from start
+      const match = phone.match(/^\+(\d+)/);
+      if (match) {
+        countryCode = '+' + match[1];
+        numberPart = phone.replace(/^\+\d+/, '');
+      } else {
+        numberPart = phone;
       }
     }
     
-    // Check if it's just the number part
-    const numberPart = phone.replace(/^\+\d+\s*/, '');
-    return numberPart.length >= 7 && numberPart.length <= 15 && /^\d+$/.test(numberPart);
+    // 验证数字部分是否只包含数字 / Validate number part contains only digits
+    if (!/^\d+$/.test(numberPart)) return false;
+    
+    // 根据国家代码设置不同的位数要求 / Set different digit requirements based on country code
+    const digitRequirements = {
+      '+62': { min: 9, max: 11 },  // 印度尼西亚：9-11位 / Indonesia: 9-11 digits
+      '+33': { min: 10, max: 10 }, // 法国：10位 / France: 10 digits  
+      '+356': { min: 8, max: 8 }   // 马耳他：8位 / Malta: 8 digits
+    };
+    
+    const requirements = digitRequirements[countryCode as keyof typeof digitRequirements];
+    if (!requirements) return false;
+    
+    return numberPart.length >= requirements.min && numberPart.length <= requirements.max;
   }
 
   // Get current country code from state
@@ -114,12 +136,13 @@ export default function PersonalInfoCard({
     return selectedCountryCode;
   }
 
-  // Initialize phone number with default country code if empty
+  // Initialize phone number with default country code if empty - 修复重复+号问题 / Fix duplicate + sign issue
   useEffect(() => {
     if (!formState.phone?.value && selectedCountryCode) {
-      onFieldChange('phone', `+${selectedCountryCode} `);
+      // selectedCountryCode 已经包含+号，不需要再添加 / selectedCountryCode already contains + sign
+      onFieldChange('phone', `${selectedCountryCode} `);
     }
-  }, [selectedCountryCode]);
+  }, []); // 只在组件挂载时执行一次 / Only run once when component mounts
 
   // Get country name and flag from country code - 只包含三个指定国家 / Only includes three specified countries
   const getCountryInfo = (countryCode: string) => {
@@ -278,12 +301,17 @@ export default function PersonalInfoCard({
                   const countryCode = e.target.value;
                   setSelectedCountryCode(countryCode);
                   const phoneValue = formState.phone?.value || '';
-                  if (phoneValue && !phoneValue.startsWith('+')) {
-                    onFieldChange('phone', `+${countryCode} ${phoneValue}`);
-                  } else if (phoneValue && phoneValue.startsWith('+')) {
-                    // Update existing phone with new country code
+                  
+                  if (phoneValue && phoneValue.includes(' ')) {
+                    // 如果已有电话号码，只更新国家代码部分 / If phone number exists, only update country code part
                     const numberPart = phoneValue.replace(/^\+\d+\s*/, '');
-                    onFieldChange('phone', `+${countryCode} ${numberPart}`);
+                    onFieldChange('phone', `${countryCode} ${numberPart}`);
+                  } else if (phoneValue && !phoneValue.startsWith('+')) {
+                    // 如果只有数字部分，添加国家代码 / If only number part, add country code
+                    onFieldChange('phone', `${countryCode} ${phoneValue}`);
+                  } else if (!phoneValue) {
+                    // 如果没有电话号码，只设置国家代码 / If no phone number, only set country code
+                    onFieldChange('phone', `${countryCode} `);
                   }
                 }}
                 value={selectedCountryCode}
@@ -313,22 +341,22 @@ export default function PersonalInfoCard({
               onChange={(e) => {
                 const inputValue = e.target.value;
                 
-                // Check if user is entering a full international number
+                // 用户输入的是完整的国际号码 / User is entering full international number
                 if (inputValue.startsWith('+') && inputValue.includes(' ')) {
                   onFieldChange('phone', inputValue);
-                  // Try to extract and set the country code
+                  // 尝试提取并设置国家代码 / Try to extract and set country code
                   const parts = inputValue.split(' ');
                   if (parts.length >= 2) {
                     const countryCode = parts[0];
-                    // Find if this country code exists in our options
+                    // 检查这个国家代码是否在我们的选项中 / Check if this country code exists in our options
                     const option = Array.from(countrySelectRef.current?.options || []).find(opt => opt.value === countryCode);
                     if (option) {
                       setSelectedCountryCode(countryCode);
                     }
                   }
                 } else {
-                  // User is entering just the number part
-                  onFieldChange('phone', `+${selectedCountryCode} ${inputValue}`);
+                  // 用户只输入数字部分，自动添加国家代码 / User is entering just the number part, auto-add country code
+                  onFieldChange('phone', `${selectedCountryCode} ${inputValue}`);
                 }
               }}
               placeholder={`Enter ${getCountryFlag(selectedCountryCode)} ${getCountryName(selectedCountryCode)} phone number`}
@@ -340,7 +368,14 @@ export default function PersonalInfoCard({
                   ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-600'
               }`}
-              maxLength={15}
+              maxLength={(() => {
+                const requirements = {
+                  '+62': 11,  // 印度尼西亚：最大11位 / Indonesia: max 11 digits
+                  '+33': 10,  // 法国：最大10位 / France: max 10 digits
+                  '+356': 8   // 马耳他：最大8位 / Malta: max 8 digits
+                };
+                return requirements[selectedCountryCode as keyof typeof requirements] || 11;
+              })()}
             />
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-between text-xs text-gray-400">
@@ -351,7 +386,17 @@ export default function PersonalInfoCard({
               <span className={`text-center sm:text-right ${
                 validatePhoneNumber(formState.phone.value) ? 'text-green-400' : 'text-red-400'
               }`}>
-                {formState.phone.value.replace(/^\+\d+\s*/, '').length}/15 digits
+                                 {(() => {
+                   const numberPart = formState.phone.value.replace(/^\+\d+\s*/, '');
+                   const countryCode = formState.phone.value.match(/^\+(\d+)/)?.[0] || selectedCountryCode;
+                   const requirements = {
+                     '+62': { min: 9, max: 11 },  // 印度尼西亚 / Indonesia
+                     '+33': { min: 10, max: 10 }, // 法国 / France
+                     '+356': { min: 8, max: 8 }   // 马耳他 / Malta
+                   };
+                   const req = requirements[countryCode as keyof typeof requirements];
+                   return `${numberPart.length}/${req ? req.max : '?'} digits`;
+                 })()}
               </span>
             )}
           </div>
@@ -380,7 +425,16 @@ export default function PersonalInfoCard({
                   {formState.phone.value}
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  Country: {getCountryFlag(selectedCountryCode)} {selectedCountryCode} ({getCountryName(selectedCountryCode)}) | Length: {formState.phone.value.replace(/^\+\d+\s*/, '').length} digits
+                                     Country: {getCountryFlag(selectedCountryCode)} {selectedCountryCode} ({getCountryName(selectedCountryCode)}) | Length: {(() => {
+                     const numberPart = formState.phone.value.replace(/^\+\d+\s*/, '');
+                     const requirements = {
+                       '+62': { min: 9, max: 11 },  // 印度尼西亚 / Indonesia
+                       '+33': { min: 10, max: 10 }, // 法国 / France
+                       '+356': { min: 8, max: 8 }   // 马耳他 / Malta
+                     };
+                     const req = requirements[selectedCountryCode as keyof typeof requirements];
+                     return `${numberPart.length} digits (${req ? `${req.min}-${req.max}` : 'unknown'} required)`;
+                   })()}
                 </div>
               </div>
             </div>
