@@ -12,7 +12,6 @@ import { useRouter } from 'next/navigation'
 import { useUser } from '../context/UserContext'
 import { useLanguage } from '../context/LanguageContext'
 import Link from 'next/link'
-import RegistrationWizard from './components/RegistrationWizard'
 import SimplifiedRegistration from './components/SimplifiedRegistration'
 
 export default function RegisterPage() {
@@ -20,7 +19,7 @@ export default function RegisterPage() {
   const { language } = useLanguage()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
-  const [registrationMode, setRegistrationMode] = useState<'choice' | 'simplified' | 'full'>('choice')
+  const [registrationMode, setRegistrationMode] = useState<'choice'>('choice')
 
   // 检查是否有强制注册参数 / Check for force registration parameter
   const [forceRegister, setForceRegister] = useState(false)
@@ -120,87 +119,40 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {/* 注册模式选择器 / Registration Mode Selector */}
-        {registrationMode === 'choice' && (
-          <div className="max-w-4xl mx-auto mb-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 简化注册选项 / Simplified Registration Option */}
-              <div 
-                onClick={() => setRegistrationMode('simplified')}
-                className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 hover:border-fanforce-accent/50 transition-all duration-300 cursor-pointer group hover:scale-105"
-              >
-                <div className="text-center">
-                  <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-300">🚀</div>
-                  <h3 className="text-2xl font-bold text-white mb-3">
-                    {language === 'en' ? 'Quick Start' : '快速开始'}
-                  </h3>
-                  <p className="text-gray-300 mb-6">
-                    {language === 'en'
-                      ? 'Simple 2-step process: authenticate and choose your role'
-                      : '简单的2步流程：身份验证和角色选择'
-                    }
-                  </p>
-                  <div className="space-y-2 text-sm text-gray-400">
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="w-2 h-2 bg-fanforce-accent rounded-full"></span>
-                      <span>{language === 'en' ? 'Multiple login methods' : '多种登录方式'}</span>
-                    </div>
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="w-2 h-2 bg-fanforce-accent rounded-full"></span>
-                      <span>{language === 'en' ? 'Instant role selection' : '即时角色选择'}</span>
-                    </div>
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="w-2 h-2 bg-fanforce-accent rounded-full"></span>
-                      <span>{language === 'en' ? 'Direct platform access' : '直接平台访问'}</span>
-                    </div>
-                  </div>
+        {/* 直接进入简化注册 / Direct to Simplified Registration */}
+        <div className="max-w-4xl mx-auto mb-12">
+          <div className="text-center">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 mx-auto max-w-2xl">
+              <div className="text-6xl mb-4">🚀</div>
+              <h3 className="text-2xl font-bold text-white mb-3">
+                {language === 'en' ? 'Quick Start Registration' : '快速开始注册'}
+              </h3>
+              <p className="text-gray-300 mb-6">
+                {language === 'en'
+                  ? 'Simple 2-step process: authenticate and choose your role'
+                  : '简单的2步流程：身份验证和角色选择'
+                }
+              </p>
+              <div className="space-y-2 text-sm text-gray-400">
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="w-2 h-2 bg-fanforce-accent rounded-full"></span>
+                  <span>{language === 'en' ? 'Multiple login methods' : '多种登录方式'}</span>
                 </div>
-              </div>
-
-              {/* 完整注册选项 / Full Registration Option */}
-              <div 
-                onClick={() => setRegistrationMode('full')}
-                className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 hover:border-fanforce-primary/50 transition-all duration-300 cursor-pointer group hover:scale-105"
-              >
-                <div className="text-center">
-                  <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-300">⚙️</div>
-                  <h3 className="text-2xl font-bold text-white mb-3">
-                    {language === 'en' ? 'Complete Setup' : '完整设置'}
-                  </h3>
-                  <p className="text-gray-300 mb-6">
-                    {language === 'en'
-                      ? 'Comprehensive registration with detailed profile setup'
-                      : '完整的注册流程，包含详细的档案设置'
-                    }
-                  </p>
-                  <div className="space-y-2 text-sm text-gray-400">
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="w-2 h-2 bg-fanforce-primary rounded-full"></span>
-                      <span>{language === 'en' ? 'Detailed profile creation' : '详细档案创建'}</span>
-                    </div>
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="flex items-center justify-center space-x-2">
-                        <span className="w-2 h-2 bg-fanforce-primary rounded-full"></span>
-                        <span>{language === 'en' ? 'Multi-role support' : '多角色支持'}</span>
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="w-2 h-2 bg-fanforce-primary rounded-full"></span>
-                      <span>{language === 'en' ? 'Advanced customization' : '高级自定义'}</span>
-                    </div>
-                  </div>
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="w-2 h-2 bg-fanforce-accent rounded-full"></span>
+                  <span>{language === 'en' ? 'Instant role selection' : '即时角色选择'}</span>
+                </div>
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="w-2 h-2 bg-fanforce-accent rounded-full"></span>
+                  <span>{language === 'en' ? 'Direct platform access' : '直接平台访问'}</span>
                 </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
 
         {/* 注册向导组件 / Registration Wizard Component */}
-        {registrationMode === 'simplified' ? (
-          <SimplifiedRegistration onBack={() => setRegistrationMode('choice')} />
-        ) : registrationMode === 'full' ? (
-          <RegistrationWizard />
-        ) : null}
+        <SimplifiedRegistration onBack={() => setRegistrationMode('choice')} />
       </div>
 
       {/* 底部帮助信息 / Bottom Help Information */}
