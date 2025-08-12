@@ -189,6 +189,10 @@ export default function AthleteCard({
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Position/Role <span className="text-red-400 text-xs font-normal">*</span>
           </label>
+                     {/* 多选提示 / Multi-select hint */}
+           <p className="text-xs text-blue-400 mb-3 text-center bg-blue-900/20 rounded-lg p-2 border border-blue-500/30">
+             💡 {language === 'en' ? 'You can select multiple positions/roles. During competitions, you will be assigned from your selected positions.' : '您可以选择多个位置/角色。之后参赛将从您选择的位置中分配。'}
+           </p>
           {getFieldValue('primarySport') && sportPositions[getFieldValue('primarySport')] ? (
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
@@ -200,7 +204,7 @@ export default function AthleteCard({
                     disabled={!isEditing}
                     className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
                       (getFieldValue('positions') || []).includes(position)
-                        ? 'bg-fanforce-primary text-white border border-fanforce-primary'
+                        ? 'bg-emerald-600 text-white border border-emerald-500 hover:bg-emerald-700'
                         : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
@@ -217,14 +221,14 @@ export default function AthleteCard({
                     {positionsArray.map((position: string) => (
                       <span
                         key={position}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-fanforce-primary/20 text-fanforce-primary border border-fanforce-primary/30"
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-emerald-600/20 text-emerald-400 border border-emerald-500/30"
                       >
                         {position}
                         {isEditing && (
                           <button
                             type="button"
                             onClick={() => handlePositionToggle(position)}
-                            className="ml-2 text-fanforce-primary hover:text-white"
+                            className="ml-2 text-emerald-400 hover:text-white"
                           >
                             <FaTimes className="text-xs" />
                           </button>
