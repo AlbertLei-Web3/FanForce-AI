@@ -49,7 +49,7 @@ export default function PersonalInfoCard({
     institution: ''
   })
   
-  const [selectedCountryCode, setSelectedCountryCode] = useState('+86')
+  const [selectedCountryCode, setSelectedCountryCode] = useState('+62') // 默认选择印度尼西亚 / Default to Indonesia
   const [countrySearchTerm, setCountrySearchTerm] = useState('')
   const countrySelectRef = useRef<HTMLSelectElement>(null)
 
@@ -121,45 +121,12 @@ export default function PersonalInfoCard({
     }
   }, [selectedCountryCode]);
 
-  // Get country name and flag from country code
+  // Get country name and flag from country code - 只包含三个指定国家 / Only includes three specified countries
   const getCountryInfo = (countryCode: string) => {
     const countryData: { [key: string]: { name: string; flag: string } } = {
-      '+86': { name: 'China', flag: '🇨🇳' },
-      '+1': { name: 'USA/Canada', flag: '🇺🇸' },
-      '+44': { name: 'UK', flag: '🇬🇧' },
-      '+81': { name: 'Japan', flag: '🇯🇵' },
-      '+49': { name: 'Germany', flag: '🇩🇪' },
-      '+33': { name: 'France', flag: '🇫🇷' },
-      '+61': { name: 'Australia', flag: '🇦🇺' },
-      '+7': { name: 'Russia', flag: '🇷🇺' },
-      '+91': { name: 'India', flag: '🇮🇳' },
-      '+55': { name: 'Brazil', flag: '🇧🇷' },
-      '+82': { name: 'South Korea', flag: '🇰🇷' },
-      '+39': { name: 'Italy', flag: '🇮🇹' },
-      '+34': { name: 'Spain', flag: '🇪🇸' },
-      '+31': { name: 'Netherlands', flag: '🇳🇱' },
-      '+46': { name: 'Sweden', flag: '🇸🇪' },
-      '+47': { name: 'Norway', flag: '🇳🇴' },
-      '+45': { name: 'Denmark', flag: '🇩🇰' },
-      '+358': { name: 'Finland', flag: '🇫🇮' },
-      '+41': { name: 'Switzerland', flag: '🇨🇭' },
-      '+43': { name: 'Austria', flag: '🇦🇹' },
-      '+852': { name: 'Hong Kong', flag: '🇭🇰' },
-      '+886': { name: 'Taiwan', flag: '🇹🇼' },
-      '+65': { name: 'Singapore', flag: '🇸🇬' },
-      '+60': { name: 'Malaysia', flag: '🇲🇾' },
-      '+66': { name: 'Thailand', flag: '🇹🇭' },
-      '+84': { name: 'Vietnam', flag: '🇻🇳' },
-      '+971': { name: 'UAE', flag: '🇦🇪' },
-      '+966': { name: 'Saudi Arabia', flag: '🇸🇦' },
-      '+20': { name: 'Egypt', flag: '🇪🇬' },
-      '+27': { name: 'South Africa', flag: '🇿🇦' },
-      '+234': { name: 'Nigeria', flag: '🇳🇬' },
-      '+254': { name: 'Kenya', flag: '🇰🇪' },
-      '+52': { name: 'Mexico', flag: '🇲🇽' },
-      '+54': { name: 'Argentina', flag: '🇦🇷' },
-      '+56': { name: 'Chile', flag: '🇨🇱' },
-      '+57': { name: 'Colombia', flag: '🇨🇴' }
+      '+62': { name: 'Indonesia', flag: '🇮🇩' }, // 印度尼西亚 / Indonesia
+      '+33': { name: 'France', flag: '🇫🇷' },   // 法国 / France
+      '+356': { name: 'Malta', flag: '🇲🇹' }    // 马耳他 / Malta
     };
     return countryData[countryCode] || { name: 'Unknown', flag: '🏳️' };
   };
@@ -172,23 +139,16 @@ export default function PersonalInfoCard({
     return getCountryInfo(countryCode).flag;
   };
 
-  // Get filtered country options based on search
+  // Get filtered country options based on search - 限制为三个指定国家 / Limited to three specified countries
   const getFilteredCountries = () => {
-    const popularCountries = ['+86', '+1', '+44', '+81', '+49', '+33', '+61', '+7', '+91', '+55'];
-    const allCountries = [
-      '+86', '+1', '+44', '+81', '+49', '+33', '+61', '+7', '+91', '+55',
-      '+82', '+39', '+34', '+31', '+46', '+47', '+45', '+358', '+41', '+43',
-      '+852', '+886', '+65', '+60', '+66', '+84', '+971', '+966', '+20', '+27',
-      '+234', '+254', '+52', '+54', '+56', '+57'
-    ];
+    // 只显示三个指定的国家 / Only show three specified countries
+    const allowedCountries = ['+62', '+33', '+356']; // 印度尼西亚、法国、马耳他 / Indonesia, France, Malta
     
     if (!countrySearchTerm) {
-      // Show popular countries first, then others
-      const others = allCountries.filter(c => !popularCountries.includes(c));
-      return [...popularCountries, ...others];
+      return allowedCountries;
     }
     
-    return allCountries.filter(countryCode => {
+    return allowedCountries.filter(countryCode => {
       const countryName = getCountryName(countryCode);
       return countryName.toLowerCase().includes(countrySearchTerm.toLowerCase()) ||
              countryCode.includes(countrySearchTerm);
@@ -330,20 +290,10 @@ export default function PersonalInfoCard({
               >
                 {getFilteredCountries().length > 0 ? (
                   getFilteredCountries().map((countryCode, index) => {
-                    const isPopular = ['+86', '+1', '+44', '+81', '+49', '+33', '+61', '+7', '+91', '+55'].includes(countryCode);
-                    const showSeparator = !countrySearchTerm && index === 10; // After popular countries
-                    
                     return (
-                      <React.Fragment key={countryCode}>
-                        {showSeparator && (
-                          <option value="" disabled className="text-gray-500">
-                            ──────────────────────────
-                          </option>
-                        )}
-                        <option value={countryCode} className={isPopular ? 'font-semibold' : ''}>
-                          {getCountryFlag(countryCode)} {countryCode} ({getCountryName(countryCode)}) {isPopular ? '⭐' : ''}
-                        </option>
-                      </React.Fragment>
+                      <option key={countryCode} value={countryCode} className="font-semibold">
+                        {getCountryFlag(countryCode)} {countryCode} ({getCountryName(countryCode)}) ⭐
+                      </option>
                     );
                   })
                 ) : (
