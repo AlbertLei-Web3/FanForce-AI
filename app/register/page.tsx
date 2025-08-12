@@ -4,7 +4,6 @@
 // 关联文件:
 // - UserContext.tsx: 用户认证和会话管理
 // - RegistrationWizard.tsx: 注册向导核心逻辑
-// - app/login/page.tsx: 登录页面参考设计
 
 'use client'
 
@@ -89,7 +88,7 @@ export default function RegisterPage() {
       {/* 已有账户链接 / Already Have Account Link */}
       <div className="absolute top-6 right-6 z-10">
         <Link 
-          href="/login"
+          href="/"
           className="flex items-center text-gray-300 hover:text-white transition-colors"
         >
           {language === 'en' ? 'Already have an account?' : '已有账户？'}

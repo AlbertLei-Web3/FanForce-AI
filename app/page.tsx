@@ -3,7 +3,6 @@
 // Main entry page for the new role-based dashboard system
 // 关联文件:
 // - UserContext.tsx: 用户认证和角色管理
-// - /login: 登录页面
 // - /dashboard: 角色仪表板路由
 
 'use client'

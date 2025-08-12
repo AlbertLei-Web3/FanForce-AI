@@ -529,7 +529,7 @@ app.get('/api/auth/google', passport.authenticate('google', {
 }));
 
 app.get('/api/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/login' }),
+  passport.authenticate('google', { failureRedirect: '/' }),
   async (req, res) => {
     try {
       const user = req.user;
@@ -552,7 +552,7 @@ app.get('/api/auth/google/callback',
       
     } catch (error) {
       logger.error('Google OAuth callback error:', error);
-      res.redirect(`${process.env.CORS_ORIGIN || 'http://localhost:3000'}/login?error=google_auth_failed`);
+      res.redirect(`${process.env.CORS_ORIGIN || 'http://localhost:3000'}/?error=google_auth_failed`);
     }
   }
 );
@@ -561,7 +561,7 @@ app.get('/api/auth/google/callback',
 app.get('/api/auth/twitter', passport.authenticate('twitter'));
 
 app.get('/api/auth/twitter/callback', 
-  passport.authenticate('twitter', { failureRedirect: '/login' }),
+  passport.authenticate('twitter', { failureRedirect: '/' }),
   async (req, res) => {
     try {
       const user = req.user;
@@ -584,7 +584,7 @@ app.get('/api/auth/twitter/callback',
       
     } catch (error) {
       logger.error('Twitter OAuth callback error:', error);
-      res.redirect(`${process.env.CORS_ORIGIN || 'http://localhost:3000'}/login?error=twitter_auth_failed`);
+      res.redirect(`${process.env.CORS_ORIGIN || 'http://localhost:3000'}/?error=twitter_auth_failed`);
     }
   }
 );

@@ -20,8 +20,8 @@ export default function DashboardRouter() {
   useEffect(() => {
     // 检查用户认证状态 / Check user authentication state
     if (!authState.isAuthenticated) {
-      console.log('❌ 用户未认证，跳转到登录页面 / User not authenticated, redirecting to login')
-      router.push('/login')
+      console.log('❌ 用户未认证，跳转到主页 / User not authenticated, redirecting to home page')
+      router.push('/')
       return
     }
 
