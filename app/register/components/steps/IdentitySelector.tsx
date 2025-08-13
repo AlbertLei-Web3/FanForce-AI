@@ -82,7 +82,7 @@ export default function IdentitySelector({
   }
 
   return (
-    <div className="space-y-8 px-4 backdrop-blur-sm">
+    <div className="space-y-8 px-4 backdrop-blur-sm -mt-12">
       {/* 步骤标题 / Step Title */}
       <div className="text-center">
         <h2 className="text-3xl font-bold text-white mb-3 drop-shadow-lg">
@@ -151,20 +151,14 @@ export default function IdentitySelector({
       {userInviteCode && (
         <div className="text-center animate-fadeIn mb-6">
           <div className="bg-gradient-to-r from-blue-500/15 to-indigo-600/15 rounded-2xl p-6 border border-blue-400/20 backdrop-blur-sm shadow-2xl shadow-blue-500/15">
-                         {/* 金钱暗示图标 - 三个堆叠的金砖 / Money-suggesting Icon - Three stacked gold bars */}
+                         {/* 金钱暗示图标 - 美元符号 / Money-suggesting Icon - Dollar sign */}
              <div className="flex items-center justify-center space-x-3 mb-4">
-               <div className="w-8 h-8 bg-gradient-to-r from-fanforce-gold to-yellow-500 rounded-full flex items-center justify-center shadow-lg">
-                 <svg className="w-5 h-5 text-fanforce-dark" fill="currentColor" viewBox="0 0 24 24">
-                   {/* 三个堆叠的金砖图标 / Three stacked gold bars icon */}
-                   <rect x="4" y="8" width="16" height="3" rx="1" fill="currentColor"/>
-                   <rect x="5" y="12" width="14" height="3" rx="1" fill="currentColor"/>
-                   <rect x="6" y="16" width="12" height="3" rx="1" fill="currentColor"/>
-                   {/* 金砖上的光泽效果 / Shine effect on gold bars */}
-                   <rect x="4" y="8" width="2" height="3" fill="currentColor" opacity="0.3"/>
-                   <rect x="5" y="12" width="2" height="3" fill="currentColor" opacity="0.3"/>
-                   <rect x="6" y="16" width="2" height="3" fill="currentColor" opacity="0.3"/>
-                 </svg>
-               </div>
+                               <div className="w-8 h-8 bg-gradient-to-r from-fanforce-gold to-yellow-500 rounded-full flex items-center justify-center shadow-lg">
+                  <svg className="w-5 h-5 text-fanforce-dark" fill="currentColor" viewBox="0 0 24 24">
+                    {/* 标准美元符号图标 / Standard dollar sign icon */}
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/>
+                  </svg>
+                </div>
                <p className="text-white font-bold text-lg">
                  {language === 'en' ? 'Your Invitation Code' : '您的邀请码'}
                </p>
