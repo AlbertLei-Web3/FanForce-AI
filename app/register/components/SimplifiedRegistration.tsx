@@ -88,18 +88,6 @@ export default function SimplifiedRegistration({
         />
       ) : (
         <div className="min-h-screen">
-          {/* 返回按钮 / Back Button */}
-          <div className="absolute top-6 left-6 z-10">
-            <button
-              onClick={handleBackToAuth}
-              className="flex items-center text-fanforce-gold hover:text-fanforce-secondary transition-colors"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              {language === 'en' ? 'Back to Login' : '返回登录'}
-            </button>
-          </div>
 
           {/* 身份选择器 / Identity Selector */}
           <div className="pt-20 pb-8 px-4">
