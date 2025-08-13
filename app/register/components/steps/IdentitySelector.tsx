@@ -9,6 +9,7 @@ import { useLanguage } from '../../../context/LanguageContext'
 import { UserRole } from '../../../context/UserContext'
 import { roleOptions } from './roleConfig'
 import RoleCard from './RoleCard'
+import RoleConfirmationModal from './RoleConfirmationModal'
 import InvitationCodeModal from './InvitationCodeModal'
 import AdminVerificationModal from './AdminVerificationModal'
 import { IdentitySelectorProps } from './types'
@@ -21,6 +22,9 @@ export default function IdentitySelector({
   onNext 
 }: IdentitySelectorProps) {
   const { language } = useLanguage()
+  
+  // 角色确认弹窗状态 / Role confirmation modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
   
   // 邀请码弹窗状态 / Invitation code modal state
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -38,12 +42,30 @@ export default function IdentitySelector({
       errors: { ...registrationState.errors, primaryRole: undefined }
     })
     
+    // 选择角色后显示确认弹窗 / Show confirmation modal after role selection
+    setShowConfirmModal(true)
+  }
+
+  // 处理角色确认 / Handle role confirmation
+  const handleRoleConfirm = () => {
+    setShowConfirmModal(false)
+    
     // 立即生成用户的邀请码 / Generate user's invitation code immediately
     const generatedCode = generateInviteCode('temp-user-id') // 临时用户ID，实际使用时应该传入真实用户ID
     setUserInviteCode(generatedCode.code)
     
-    // 选择角色后显示邀请码弹窗 / Show invitation code modal after role selection
+    // 确认角色后显示邀请码弹窗 / Show invitation code modal after role confirmation
     setShowInviteModal(true)
+  }
+
+  // 处理角色确认取消 / Handle role confirmation cancellation
+  const handleRoleCancel = () => {
+    setShowConfirmModal(false)
+    // 重置选中的角色 / Reset selected role
+    updateState({
+      selectedPrimaryRole: null,
+      errors: { ...registrationState.errors, primaryRole: undefined }
+    })
   }
 
   // 处理邀请码弹窗确认 / Handle invitation code modal confirmation
@@ -246,6 +268,14 @@ export default function IdentitySelector({
           </div>
         </div>
       </div>
+
+      {/* 角色确认弹窗 / Role Confirmation Modal */}
+      <RoleConfirmationModal
+        isOpen={showConfirmModal}
+        selectedRole={registrationState.selectedPrimaryRole}
+        onConfirm={handleRoleConfirm}
+        onCancel={handleRoleCancel}
+      />
 
       {/* 邀请码弹窗 / Invitation Code Modal */}
       <InvitationCodeModal
