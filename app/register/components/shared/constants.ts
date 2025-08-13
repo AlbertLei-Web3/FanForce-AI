@@ -19,8 +19,7 @@ export const STORAGE_KEYS = {
 // 认证提供商配置 / Authentication Provider Configuration
 export const AUTH_PROVIDERS = {
   GOOGLE: 'google',
-  FACEBOOK: 'facebook',
-  TWITTER: 'twitter',
+  TWITTER: 'twitter', // 更新：从FACEBOOK改为TWITTER / Updated: changed from FACEBOOK to TWITTER
   WEB3: 'web3',
   ICP: 'icp'
 }
