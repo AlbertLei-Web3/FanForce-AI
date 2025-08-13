@@ -41,7 +41,7 @@ export default function InvitationCodeModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 flex items-center justify-center p-4">
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 border border-white/20 shadow-2xl max-w-md w-full mx-4 transform -translate-y-40">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 border border-white/20 shadow-2xl max-w-md w-full mx-4 transform -translate-y-80">
         {/* 弹窗标题 / Modal Title */}
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">

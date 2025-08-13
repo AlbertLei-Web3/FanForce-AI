@@ -13,6 +13,7 @@ import InvitationCodeModal from './InvitationCodeModal'
 import AdminVerificationModal from './AdminVerificationModal'
 import { IdentitySelectorProps } from './types'
 import { getDashboardPath } from '../shared/utils'
+import { generateInviteCode, formatInviteCode } from '../../../utils/inviteCodeGenerator'
 
 export default function IdentitySelector({ 
   registrationState, 
@@ -26,6 +27,9 @@ export default function IdentitySelector({
   
   // Admin验证码弹窗状态 / Admin verification code modal state
   const [showAdminModal, setShowAdminModal] = useState(false)
+  
+  // 用户自己的邀请码状态 / User's own invitation code state
+  const [userInviteCode, setUserInviteCode] = useState<string | null>(null)
 
   // 处理角色选择 / Handle role selection
   const handleRoleSelect = (role: UserRole) => {
@@ -33,6 +37,10 @@ export default function IdentitySelector({
       selectedPrimaryRole: role,
       errors: { ...registrationState.errors, primaryRole: undefined }
     })
+    
+    // 立即生成用户的邀请码 / Generate user's invitation code immediately
+    const generatedCode = generateInviteCode('temp-user-id') // 临时用户ID，实际使用时应该传入真实用户ID
+    setUserInviteCode(generatedCode.code)
     
     // 选择角色后显示邀请码弹窗 / Show invitation code modal after role selection
     setShowInviteModal(true)
@@ -135,6 +143,76 @@ export default function IdentitySelector({
                 </svg>
               </div>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 用户邀请码显示卡片 / User Invitation Code Display Card */}
+      {userInviteCode && (
+        <div className="text-center animate-fadeIn mb-6">
+          <div className="bg-gradient-to-r from-fanforce-gold/20 to-yellow-500/20 rounded-2xl p-6 border border-fanforce-gold/30 backdrop-blur-sm shadow-2xl shadow-fanforce-gold/20">
+            {/* 礼包图标 - 改进设计，提高对比度 / Gift Package Icon - Improved design with better contrast */}
+            <div className="flex items-center justify-center space-x-4 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-fanforce-gold to-yellow-500 rounded-full flex items-center justify-center shadow-lg">
+                <svg className="w-7 h-7 text-fanforce-dark" fill="currentColor" viewBox="0 0 24 24">
+                  {/* 重新设计的礼包图标，使用深色背景提高对比度 / Redesigned gift package icon with dark background for better contrast */}
+                  <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="currentColor"/>
+                  <path d="M19 15H5V17H19V15Z" fill="currentColor"/>
+                  <path d="M19 19H5V21H19V19Z" fill="currentColor"/>
+                </svg>
+              </div>
+              <div className="text-left">
+                <h4 className="text-white font-bold text-lg">
+                  {language === 'en' ? 'Your Invitation Code' : '您的邀请码'}
+                </h4>
+                <p className="text-fanforce-gold text-sm">
+                  {language === 'en' ? 'Share with friends to earn rewards!' : '与朋友分享获得奖励！'}
+                </p>
+              </div>
+            </div>
+            
+            {/* 邀请码显示 / Invitation Code Display */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 mb-4">
+              <p className="text-gray-300 text-sm mb-2">
+                {language === 'en' ? 'Invite Code' : '邀请码'}
+              </p>
+              <div className="flex items-center justify-center space-x-2">
+                <code className="text-2xl font-mono font-bold text-fanforce-gold tracking-wider">
+                  {formatInviteCode(userInviteCode)}
+                </code>
+                <button
+                  onClick={() => navigator.clipboard.writeText(userInviteCode)}
+                  className="ml-2 p-2 bg-fanforce-gold/20 hover:bg-fanforce-gold/30 rounded-lg transition-colors duration-200"
+                  title={language === 'en' ? 'Copy to clipboard' : '复制到剪贴板'}
+                >
+                  <svg className="w-5 h-5 text-fanforce-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            {/* 描述性提示 - 增加激励性文字 / Descriptive Prompts - Add motivational text */}
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-center space-x-2 text-fanforce-gold">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>{language === 'en' ? 'Invite friends to earn real rewards' : '邀请朋友获得真实奖金'}</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2 text-fanforce-gold">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>{language === 'en' ? 'Build your community network' : '建立您的社区网络'}</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2 text-fanforce-gold">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>{language === 'en' ? 'Earn bonus rewards together' : '一起获得额外奖励'}</span>
+              </div>
+            </div>
           </div>
         </div>
       )}
