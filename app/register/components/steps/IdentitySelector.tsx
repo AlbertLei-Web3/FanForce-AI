@@ -37,13 +37,17 @@ export default function IdentitySelector({
   
   // 角色确认状态 / Role confirmation state - 只有确认后才显示成功提示
   const [isRoleConfirmed, setIsRoleConfirmed] = useState(false)
+  
+  // 邀请码弹窗完成状态 / Invitation code modal completion state - 只有完成邀请码弹窗后才显示卡片
+  const [isInviteModalCompleted, setIsInviteModalCompleted] = useState(false)
 
   // 处理角色选择 / Handle role selection
   const handleRoleSelect = (role: UserRole) => {
-    // 如果选择的是不同的角色，重置确认状态
-    // If selecting a different role, reset confirmation state
+    // 如果选择的是不同的角色，重置确认状态和邀请码弹窗完成状态
+    // If selecting a different role, reset confirmation state and invitation code modal completion state
     if (registrationState.selectedPrimaryRole !== role) {
       setIsRoleConfirmed(false)
+      setIsInviteModalCompleted(false)
     }
     
     updateState({
@@ -59,8 +63,8 @@ export default function IdentitySelector({
   const handleRoleConfirm = () => {
     setShowConfirmModal(false)
     
-    // 设置角色确认状态为true，这样才会显示"角色已选择"提示
-    // Set role confirmation state to true, so "Role Selected" prompt will be shown
+    // 设置角色确认状态为true，但邀请码弹窗完成状态仍为false
+    // Set role confirmation state to true, but invitation code modal completion state remains false
     setIsRoleConfirmed(true)
     
     // 立即生成用户的邀请码 / Generate user's invitation code immediately
@@ -74,24 +78,35 @@ export default function IdentitySelector({
   // 处理角色确认取消 / Handle role confirmation cancellation
   const handleRoleCancel = () => {
     setShowConfirmModal(false)
-    // 重置选中的角色和确认状态 / Reset selected role and confirmation state
+    // 重置选中的角色、确认状态和邀请码弹窗完成状态 / Reset selected role, confirmation state and invitation code modal completion state
     updateState({
       selectedPrimaryRole: null,
       errors: { ...registrationState.errors, primaryRole: undefined }
     })
     setIsRoleConfirmed(false)
+    setIsInviteModalCompleted(false)
   }
 
   // 处理邀请码弹窗确认 / Handle invitation code modal confirmation
   const handleInviteCodeConfirm = (code: string) => {
     // 这里可以添加邀请码验证逻辑 / Add invitation code validation logic here
     setShowInviteModal(false)
+    
+    // 设置邀请码弹窗完成状态为true，这样才会显示"角色已选择"和"邀请码"卡片
+    // Set invitation code modal completion state to true, so "Role Selected" and "Invitation Code" cards will be shown
+    setIsInviteModalCompleted(true)
+    
     // 弹窗关闭后，用户需要点击start journey按钮继续 / After modal closes, user needs to click start journey button
   }
 
   // 处理邀请码弹窗跳过 / Handle invitation code modal skip
   const handleInviteCodeSkip = () => {
     setShowInviteModal(false)
+    
+    // 设置邀请码弹窗完成状态为true，这样才会显示"角色已选择"和"邀请码"卡片
+    // Set invitation code modal completion state to true, so "Role Selected" and "Invitation Code" cards will be shown
+    setIsInviteModalCompleted(true)
+    
     // 弹窗关闭后，用户需要点击start journey按钮继续 / After modal closes, user needs to click start journey button
   }
 
@@ -138,8 +153,8 @@ export default function IdentitySelector({
       </div>
 
       {/* 角色选择成功提示（显示在卡片上方）/ Role Selection Success Toast (shown above cards) */}
-      {/* 只有角色被确认后才显示成功提示 / Only show success prompt after role is confirmed */}
-      {registrationState.selectedPrimaryRole && isRoleConfirmed && (
+      {/* 只有角色被确认且邀请码弹窗完成后才显示成功提示 / Only show success prompt after role is confirmed AND invitation code modal is completed */}
+      {registrationState.selectedPrimaryRole && isRoleConfirmed && isInviteModalCompleted && (
         <div className="text-center animate-fadeIn mb-6">
           <div className="bg-gradient-to-r from-blue-500/15 to-indigo-600/15 rounded-2xl p-6 border border-blue-400/20 backdrop-blur-sm shadow-2xl shadow-blue-500/15">
             <div className="flex items-center justify-center space-x-3 mb-4">
@@ -185,7 +200,8 @@ export default function IdentitySelector({
       )}
 
       {/* 用户邀请码显示卡片 / User Invitation Code Display Card */}
-      {userInviteCode && (
+      {/* 只有邀请码弹窗完成后才显示邀请码卡片 / Only show invitation code card after invitation code modal is completed */}
+      {userInviteCode && isInviteModalCompleted && (
         <div className="text-center animate-fadeIn mb-6">
           <div className="bg-gradient-to-r from-blue-500/15 to-indigo-600/15 rounded-2xl p-6 border border-blue-400/20 backdrop-blur-sm shadow-2xl shadow-blue-500/15">
                          {/* 金钱暗示图标 - 美元符号 / Money-suggesting Icon - Dollar sign */}
