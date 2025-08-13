@@ -31,7 +31,7 @@ export default function RoleConfirmationModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 border border-white/20 shadow-2xl max-w-lg w-full mx-4 transform animate-fadeIn">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 border border-white/20 shadow-2xl max-w-lg w-full mx-4 animate-fadeIn">
         {/* 弹窗标题 / Modal Title */}
         <div className="text-center mb-6">
           <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">

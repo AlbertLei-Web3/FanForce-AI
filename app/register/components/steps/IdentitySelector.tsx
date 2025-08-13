@@ -34,9 +34,18 @@ export default function IdentitySelector({
   
   // 用户自己的邀请码状态 / User's own invitation code state
   const [userInviteCode, setUserInviteCode] = useState<string | null>(null)
+  
+  // 角色确认状态 / Role confirmation state - 只有确认后才显示成功提示
+  const [isRoleConfirmed, setIsRoleConfirmed] = useState(false)
 
   // 处理角色选择 / Handle role selection
   const handleRoleSelect = (role: UserRole) => {
+    // 如果选择的是不同的角色，重置确认状态
+    // If selecting a different role, reset confirmation state
+    if (registrationState.selectedPrimaryRole !== role) {
+      setIsRoleConfirmed(false)
+    }
+    
     updateState({
       selectedPrimaryRole: role,
       errors: { ...registrationState.errors, primaryRole: undefined }
@@ -50,6 +59,10 @@ export default function IdentitySelector({
   const handleRoleConfirm = () => {
     setShowConfirmModal(false)
     
+    // 设置角色确认状态为true，这样才会显示"角色已选择"提示
+    // Set role confirmation state to true, so "Role Selected" prompt will be shown
+    setIsRoleConfirmed(true)
+    
     // 立即生成用户的邀请码 / Generate user's invitation code immediately
     const generatedCode = generateInviteCode('temp-user-id') // 临时用户ID，实际使用时应该传入真实用户ID
     setUserInviteCode(generatedCode.code)
@@ -61,11 +74,12 @@ export default function IdentitySelector({
   // 处理角色确认取消 / Handle role confirmation cancellation
   const handleRoleCancel = () => {
     setShowConfirmModal(false)
-    // 重置选中的角色 / Reset selected role
+    // 重置选中的角色和确认状态 / Reset selected role and confirmation state
     updateState({
       selectedPrimaryRole: null,
       errors: { ...registrationState.errors, primaryRole: undefined }
     })
+    setIsRoleConfirmed(false)
   }
 
   // 处理邀请码弹窗确认 / Handle invitation code modal confirmation
@@ -124,7 +138,8 @@ export default function IdentitySelector({
       </div>
 
       {/* 角色选择成功提示（显示在卡片上方）/ Role Selection Success Toast (shown above cards) */}
-      {registrationState.selectedPrimaryRole && (
+      {/* 只有角色被确认后才显示成功提示 / Only show success prompt after role is confirmed */}
+      {registrationState.selectedPrimaryRole && isRoleConfirmed && (
         <div className="text-center animate-fadeIn mb-6">
           <div className="bg-gradient-to-r from-blue-500/15 to-indigo-600/15 rounded-2xl p-6 border border-blue-400/20 backdrop-blur-sm shadow-2xl shadow-blue-500/15">
             <div className="flex items-center justify-center space-x-3 mb-4">
