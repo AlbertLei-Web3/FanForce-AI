@@ -13,6 +13,8 @@ import { useUser } from '../context/UserContext'
 import { useLanguage } from '../context/LanguageContext'
 import Link from 'next/link'
 import SimplifiedRegistration from './components/SimplifiedRegistration'
+import { REGISTRATION_ROUTES, LOADING_DELAYS } from './components/shared/constants'
+import { delay } from './components/shared/utils'
 
 export default function RegisterPage() {
   const { authState } = useUser()
@@ -38,13 +40,13 @@ export default function RegisterPage() {
       
       // 等待认证状态稳定
       // Wait for auth state to stabilize
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await delay(LOADING_DELAYS.AUTH_CHECK)
       
       // 如果用户已登录且没有强制注册参数，则重定向到仪表板
       // If user is logged in and no force registration parameter, redirect to dashboard
       if (authState.isAuthenticated && authState.user && !forceRegister) {
         console.log('✅ 用户已登录，重定向到仪表板 / User already logged in, redirecting to dashboard')
-        router.push('/dashboard')
+        router.push(REGISTRATION_ROUTES.DASHBOARD)
         return
       }
       
@@ -74,7 +76,7 @@ export default function RegisterPage() {
       {/* 返回首页链接 / Back to Home Link */}
       <div className="absolute top-6 left-6 z-10">
         <Link 
-          href="/"
+          href={REGISTRATION_ROUTES.HOME}
           className="flex items-center text-fanforce-gold hover:text-fanforce-secondary transition-colors"
         >
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,7 +89,7 @@ export default function RegisterPage() {
       {/* 已有账户链接 / Already Have Account Link */}
       <div className="absolute top-6 right-6 z-10">
         <Link 
-          href="/"
+          href={REGISTRATION_ROUTES.HOME}
           className="flex items-center text-gray-300 hover:text-white transition-colors"
         >
           {language === 'en' ? 'Already have an account?' : '已有账户？'}

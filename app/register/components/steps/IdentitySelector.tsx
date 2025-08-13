@@ -12,6 +12,7 @@ import RoleCard from './RoleCard'
 import InvitationCodeModal from './InvitationCodeModal'
 import AdminVerificationModal from './AdminVerificationModal'
 import { IdentitySelectorProps } from './types'
+import { getDashboardPath } from '../shared/utils'
 
 export default function IdentitySelector({ 
   registrationState, 
@@ -53,7 +54,7 @@ export default function IdentitySelector({
   // 处理管理员验证 / Handle admin verification
   const handleAdminVerify = (code: string) => {
     // 验证成功后直接跳转到大使dashboard / After successful verification, go directly to ambassador dashboard
-    window.location.href = '/dashboard/ambassador'
+    window.location.href = getDashboardPath(UserRole.AMBASSADOR)
   }
 
   // 处理继续按钮点击 / Handle continue button click
@@ -64,20 +65,7 @@ export default function IdentitySelector({
         setShowAdminModal(true)
       } else {
         // 其他角色直接跳转到对应的dashboard页面 / Other roles go directly to their dashboard
-        const role = registrationState.selectedPrimaryRole
-        let dashboardPath = '/dashboard'
-        
-        // 根据角色跳转到对应的dashboard / Navigate to role-specific dashboard
-        switch (role) {
-          case UserRole.AUDIENCE:
-            dashboardPath = '/dashboard/audience'
-            break
-          case UserRole.ATHLETE:
-            dashboardPath = '/dashboard/athlete'
-            break
-          default:
-            dashboardPath = '/dashboard'
-        }
+        const dashboardPath = getDashboardPath(registrationState.selectedPrimaryRole)
         
         // 使用window.location.href进行页面跳转 / Use window.location.href for navigation
         window.location.href = dashboardPath
