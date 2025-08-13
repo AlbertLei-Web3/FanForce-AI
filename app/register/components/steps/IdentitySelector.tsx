@@ -7,83 +7,11 @@
 import { useState } from 'react'
 import { useLanguage } from '../../../context/LanguageContext'
 import { UserRole } from '../../../context/UserContext'
-// 定义简化的注册状态接口 / Define simplified registration state interface
-interface RegistrationState {
-  currentStep: number
-  completedSteps: number[]
-  selectedPrimaryRole: UserRole | null
-  selectedSecondaryRoles: UserRole[]
-  authMethod: string | null
-  personalInfo: Record<string, any>
-  roleSpecificData: Record<string, any>
-  isProcessing: boolean
-  errors: Record<string, string | undefined>
-  userId: string
-}
-
-
-interface IdentitySelectorProps {
-  registrationState: RegistrationState
-  updateState: (updates: Partial<RegistrationState>) => void
-  onNext: () => void
-}
-
-// 角色选项配置 / Role Options Configuration  
-// 排序：观众(左) → 运动员(中) → 大使(右) / Order: Audience(left) → Athlete(center) → Ambassador(right)
-const roleOptions = [
-  {
-    role: UserRole.AUDIENCE,
-    icon: '🙋‍♂️',
-    title: { en: 'Audience Supporter', cn: '观众支持者' },
-    description: { 
-      en: 'Support teams through staking and tier rewards',
-      cn: '通过质押和层级奖励支持队伍'
-    },
-    features: [
-      { en: 'Stake on match outcomes', cn: '对比赛结果质押' },
-      { en: 'Attend exclusive events', cn: '参加专属活动' },
-      { en: 'Three-tier rewards', cn: '三层奖励系统' },
-      { en: 'QR check-ins', cn: '二维码签到' }
-    ],
-    gradient: 'from-blue-500 to-indigo-600',
-    popular: true
-  },
-  {
-    role: UserRole.ATHLETE,
-    icon: '🏃‍♂️',
-    title: { en: 'Community Athlete', cn: '社区运动员' },
-    description: { 
-      en: 'Compete in matches and earn season bonuses',
-      cn: '参与比赛，获得排名，领取赛季奖金'
-    },
-    features: [
-      { en: 'Join competitions', cn: '参与比赛' },
-      { en: 'Build athletic profile', cn: '建立运动档案' },
-      { en: 'Earn season bonuses', cn: '获得赛季奖金' },
-      { en: 'Track performance', cn: '追踪表现' }
-    ],
-    gradient: 'from-green-500 to-emerald-600',
-    popular: true
-  },
-  {
-    role: UserRole.AMBASSADOR,
-    icon: '🧑‍💼',
-    title: { en: 'Ambassador', cn: '大使' },
-    description: { 
-      en: 'Organize events and earn commission fees',
-      cn: '组织活动，招募运动员，获得佣金费用'
-    },
-    features: [
-      { en: 'Create events', cn: '创建活动' },
-      { en: 'Recruit athletes', cn: '招募运动员' },
-      { en: 'Earn 1% commission', cn: '获得1%佣金' },
-      { en: 'Partner with merchants', cn: '与商户合作' }
-    ],
-    gradient: 'from-yellow-500 to-orange-600',
-    popular: false,
-    requiresInvite: true // 需要邀请码 / Requires invitation code
-  }
-]
+import { roleOptions } from './roleConfig'
+import RoleCard from './RoleCard'
+import InvitationCodeModal from './InvitationCodeModal'
+import AdminVerificationModal from './AdminVerificationModal'
+import { IdentitySelectorProps } from './types'
 
 export default function IdentitySelector({ 
   registrationState, 
@@ -92,10 +20,11 @@ export default function IdentitySelector({
 }: IdentitySelectorProps) {
   const { language } = useLanguage()
   
+  // 邀请码弹窗状态 / Invitation code modal state
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  
   // Admin验证码弹窗状态 / Admin verification code modal state
   const [showAdminModal, setShowAdminModal] = useState(false)
-  const [adminCode, setAdminCode] = useState('')
-  const [adminError, setAdminError] = useState('')
 
   // 处理角色选择 / Handle role selection
   const handleRoleSelect = (role: UserRole) => {
@@ -103,6 +32,28 @@ export default function IdentitySelector({
       selectedPrimaryRole: role,
       errors: { ...registrationState.errors, primaryRole: undefined }
     })
+    
+    // 选择角色后显示邀请码弹窗 / Show invitation code modal after role selection
+    setShowInviteModal(true)
+  }
+
+  // 处理邀请码弹窗确认 / Handle invitation code modal confirmation
+  const handleInviteCodeConfirm = (code: string) => {
+    // 这里可以添加邀请码验证逻辑 / Add invitation code validation logic here
+    setShowInviteModal(false)
+    // 弹窗关闭后，用户需要点击start journey按钮继续 / After modal closes, user needs to click start journey button
+  }
+
+  // 处理邀请码弹窗跳过 / Handle invitation code modal skip
+  const handleInviteCodeSkip = () => {
+    setShowInviteModal(false)
+    // 弹窗关闭后，用户需要点击start journey按钮继续 / After modal closes, user needs to click start journey button
+  }
+
+  // 处理管理员验证 / Handle admin verification
+  const handleAdminVerify = (code: string) => {
+    // 验证成功后直接跳转到大使dashboard / After successful verification, go directly to ambassador dashboard
+    window.location.href = '/dashboard/ambassador'
   }
 
   // 处理继续按钮点击 / Handle continue button click
@@ -187,9 +138,9 @@ export default function IdentitySelector({
                 animate-bounce-custom
               "
             >
-                             <span>
-                 {language === 'en' ? 'Start Journey' : '开始旅程'}
-               </span>
+              <span>
+                {language === 'en' ? 'Start Journey' : '开始旅程'}
+              </span>
               <div className="bg-white/20 rounded-full p-1">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -205,112 +156,15 @@ export default function IdentitySelector({
         {/* 移动端：单列布局，更好的触控体验 */}
         {/* 平板端：双列布局，适中的卡片大小 */}
         {/* 桌面端：三列布局，完美的视觉平衡 */}
-        {roleOptions.map((option) => {
-          const isSelected = registrationState.selectedPrimaryRole === option.role
-          
-          return (
-            <div
-              key={option.role}
-              className={`
-                relative group cursor-pointer transition-all duration-300
-                ${isSelected ? 'scale-105' : 'hover:scale-102'}
-                min-h-[280px] sm:min-h-[260px] lg:min-h-[300px]
-              `}
-              onClick={() => handleRoleSelect(option.role)}
-            >
-              {/* 热门标签 / Popular Badge */}
-              {option.popular && (
-                <div className="absolute -top-2 -right-2 z-10">
-                  <div className="bg-fanforce-gold text-fanforce-dark text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                    {language === 'en' ? 'Popular' : '热门'}
-                  </div>
-                </div>
-              )}
-
-              {/* 邀请码要求标签 / Invitation Required Badge */}
-              {option.requiresInvite && (
-                <div className="absolute -top-2 -right-2 z-10">
-                  <div className="bg-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                    {language === 'en' ? 'Invite Required' : '需要邀请码'}
-                  </div>
-                </div>
-              )}
-
-              {/* 卡片主体 / Card Body */}
-              <div className={`
-                relative p-6 rounded-2xl border-2 transition-all duration-300
-                bg-gradient-to-br ${option.gradient} bg-opacity-15
-                ${isSelected 
-                  ? 'border-fanforce-gold shadow-2xl shadow-fanforce-gold/30' 
-                  : 'border-white/20 hover:border-white/40'
-                }
-                backdrop-blur-sm h-full flex flex-col
-                hover:shadow-xl hover:shadow-${option.gradient.split(' ')[1]}/20
-              `}>
-                {/* 选中指示器 / Selected Indicator */}
-                {isSelected && (
-                  <div className="absolute top-4 right-4 z-10">
-                    <div className="w-6 h-6 bg-fanforce-gold rounded-full flex items-center justify-center shadow-lg">
-                      <svg className="w-4 h-4 text-fanforce-dark" fill="currentColor" viewBox="0 0 20 20">
-                        <path 
-                          fillRule="evenodd" 
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" 
-                          clipRule="evenodd" 
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                )}
-
-                {/* 角色图标和标题 / Role Icon and Title */}
-                <div className="text-center mb-4">
-                  <div className="text-3xl mb-2 transform hover:scale-110 transition-transform duration-200">
-                    {option.icon}
-                  </div>
-                  <h3 className="text-lg font-bold text-white drop-shadow-lg">
-                    {language === 'en' ? option.title.en : option.title.cn}
-                  </h3>
-                </div>
-
-                {/* 角色描述 / Role Description */}
-                <p className="text-white/90 mb-4 text-sm leading-relaxed text-center flex-grow font-medium drop-shadow">
-                  {language === 'en' ? option.description.en : option.description.cn}
-                </p>
-
-                {/* 功能特性列表 / Feature List */}
-                {/* 已删除功能特性列表，使卡片更简洁 / Removed feature list for cleaner card design */}
-                {/* <div className="space-y-3 mt-auto">
-                  {option.features.map((feature, index) => (
-                    <div key={index} className="flex items-center space-x-3 text-sm">
-                      <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path 
-                            fillRule="evenodd" 
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" 
-                            clipRule="evenodd" 
-                          />
-                        </svg>
-                      </div>
-                      <span className="text-white/90 font-medium drop-shadow">
-                        {language === 'en' ? feature.en : feature.cn}
-                      </span>
-                    </div>
-                  ))}
-                </div> */}
-
-                {/* 悬停效果 / Hover Effect */}
-                <div className={`
-                  absolute inset-0 rounded-2xl transition-opacity duration-300
-                  bg-gradient-to-br ${option.gradient} opacity-0 group-hover:opacity-5
-                  ${isSelected ? 'opacity-10' : ''}
-                `} />
-              </div>
-            </div>
-          )
-        })}
+        {roleOptions.map((option) => (
+          <RoleCard
+            key={option.role}
+            option={option}
+            isSelected={registrationState.selectedPrimaryRole === option.role}
+            onSelect={handleRoleSelect}
+          />
+        ))}
       </div>
-
-
 
       {/* 帮助信息 / Help Information */}
       <div className="bg-gradient-to-r from-white/5 to-white/10 rounded-2xl p-6 border border-white/20 backdrop-blur-sm">
@@ -340,79 +194,20 @@ export default function IdentitySelector({
         </div>
       </div>
 
-      {/* 快速继续按钮（选中角色后显示）/ Quick Continue Button (shown after role selection) */}
-      {/* 已删除，替换为上方的新提示组件 / Removed, replaced with new toast component above */}
-      
+      {/* 邀请码弹窗 / Invitation Code Modal */}
+      <InvitationCodeModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        onConfirm={handleInviteCodeConfirm}
+        onSkip={handleInviteCodeSkip}
+      />
+
       {/* Admin验证码弹窗 / Admin Verification Code Modal */}
-      {showAdminModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 border border-white/20 shadow-2xl max-w-md w-full">
-            {/* 弹窗标题 / Modal Title */}
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">🔐</span>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                {language === 'en' ? 'Admin Verification Required' : '需要管理员验证'}
-              </h3>
-              <p className="text-gray-300 text-sm">
-                {language === 'en' 
-                  ? 'Ambassador role requires admin verification code'
-                  : '大使角色需要管理员验证码'
-                }
-              </p>
-            </div>
-            
-            {/* 验证码输入框 / Verification Code Input */}
-            <div className="mb-6">
-              <label className="block text-white text-sm font-medium mb-2">
-                {language === 'en' ? 'Admin Code' : '管理员验证码'}
-              </label>
-              <input
-                type="password"
-                value={adminCode}
-                onChange={(e) => setAdminCode(e.target.value)}
-                placeholder={language === 'en' ? 'Enter admin code' : '请输入管理员验证码'}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200"
-              />
-              {adminError && (
-                <p className="text-red-400 text-sm mt-2">{adminError}</p>
-              )}
-            </div>
-            
-            {/* 弹窗按钮 / Modal Buttons */}
-            <div className="flex space-x-3">
-              <button
-                onClick={() => {
-                  setShowAdminModal(false)
-                  setAdminCode('')
-                  setAdminError('')
-                }}
-                className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl border border-white/20 transition-all duration-200"
-              >
-                {language === 'en' ? 'Cancel' : '取消'}
-              </button>
-              <button
-                onClick={() => {
-                  // 这里可以添加实际的admin码验证逻辑 / Add actual admin code verification logic here
-                  if (adminCode === 'admin123') { // 示例验证码，实际应该从后端验证 / Example code, should verify from backend
-                    setShowAdminModal(false)
-                    setAdminCode('')
-                    setAdminError('')
-                    // 验证成功后直接跳转到大使dashboard / After successful verification, go directly to ambassador dashboard
-                    window.location.href = '/dashboard/ambassador'
-                  } else {
-                    setAdminError(language === 'en' ? 'Invalid admin code' : '验证码无效')
-                  }
-                }}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-yellow-600 hover:from-orange-600 hover:to-yellow-700 text-white font-bold rounded-xl transition-all duration-200"
-              >
-                {language === 'en' ? 'Verify' : '验证'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AdminVerificationModal
+        isOpen={showAdminModal}
+        onClose={() => setShowAdminModal(false)}
+        onVerify={handleAdminVerify}
+      />
     </div>
   )
 }
