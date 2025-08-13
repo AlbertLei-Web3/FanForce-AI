@@ -40,6 +40,9 @@ export default function IdentitySelector({
   
   // 邀请码弹窗完成状态 / Invitation code modal completion state - 只有完成邀请码弹窗后才显示卡片
   const [isInviteModalCompleted, setIsInviteModalCompleted] = useState(false)
+  
+  // 复制邀请码成功反馈状态 / Copy invitation code success feedback state
+  const [showCopySuccess, setShowCopySuccess] = useState(false)
 
   // 处理角色选择 / Handle role selection
   const handleRoleSelect = (role: UserRole) => {
@@ -48,6 +51,7 @@ export default function IdentitySelector({
     if (registrationState.selectedPrimaryRole !== role) {
       setIsRoleConfirmed(false)
       setIsInviteModalCompleted(false)
+      setShowCopySuccess(false)
     }
     
     updateState({
@@ -85,6 +89,7 @@ export default function IdentitySelector({
     })
     setIsRoleConfirmed(false)
     setIsInviteModalCompleted(false)
+    setShowCopySuccess(false)
   }
 
   // 处理邀请码弹窗确认 / Handle invitation code modal confirmation
@@ -114,6 +119,18 @@ export default function IdentitySelector({
   const handleAdminVerify = (code: string) => {
     // 验证成功后直接跳转到大使dashboard / After successful verification, go directly to ambassador dashboard
     window.location.href = getDashboardPath(UserRole.AMBASSADOR)
+  }
+
+  // 处理复制邀请码 / Handle copy invitation code
+  const handleCopyInviteCode = async () => {
+    try {
+      await navigator.clipboard.writeText(userInviteCode)
+      setShowCopySuccess(true)
+      // 3秒后自动隐藏成功提示 / Auto-hide success message after 3 seconds
+      setTimeout(() => setShowCopySuccess(false), 3000)
+    } catch (error) {
+      console.error('Failed to copy invitation code:', error)
+    }
   }
 
   // 处理继续按钮点击 / Handle continue button click
@@ -233,13 +250,28 @@ export default function IdentitySelector({
                    {formatInviteCode(userInviteCode)}
                  </code>
                  <button
-                   onClick={() => navigator.clipboard.writeText(userInviteCode)}
-                   className="ml-2 p-2 bg-fanforce-gold/20 hover:bg-fanforce-gold/30 rounded-lg transition-colors duration-200"
+                   onClick={handleCopyInviteCode}
+                   className="ml-2 p-2 bg-fanforce-gold/20 hover:bg-fanforce-gold/30 rounded-lg transition-colors duration-200 relative"
                    title={language === 'en' ? 'Copy to clipboard' : '复制到剪贴板'}
                  >
-                   <svg className="w-5 h-5 text-fanforce-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                   </svg>
+                   {showCopySuccess ? (
+                     // 成功状态：显示绿色勾号 / Success state: show green checkmark
+                     <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                     </svg>
+                   ) : (
+                     // 默认状态：显示复制图标 / Default state: show copy icon
+                     <svg className="w-5 h-5 text-fanforce-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                     </svg>
+                   )}
+                   
+                   {/* 复制成功提示 / Copy success tooltip */}
+                   {showCopySuccess && (
+                     <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap animate-fadeIn">
+                       {language === 'en' ? 'Copied!' : '已复制！'}
+                     </div>
+                   )}
                  </button>
                </div>
              </div>
