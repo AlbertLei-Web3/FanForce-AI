@@ -100,7 +100,7 @@ export default function RegisterPage() {
       </div>
 
       {/* 主标题区域 / Main Title Area */}
-      <div className="container mx-auto px-4 pt-20 pb-8">
+      <div className="px-4 pt-20 pb-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             {language === 'en' ? 'Join ' : '加入 '}

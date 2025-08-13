@@ -87,7 +87,7 @@ export default function SimplifiedRegistration({
           isModal={isModal}
         />
       ) : (
-        <div className="min-h-screen bg-gradient-to-br from-fanforce-dark via-blue-900 to-fanforce-primary">
+        <div className="min-h-screen">
           {/* 返回按钮 / Back Button */}
           <div className="absolute top-6 left-6 z-10">
             <button
@@ -102,7 +102,7 @@ export default function SimplifiedRegistration({
           </div>
 
           {/* 身份选择器 / Identity Selector */}
-          <div className="pt-20 pb-8">
+          <div className="pt-20 pb-8 px-4">
             <IdentitySelector
               registrationState={{
                 currentStep: 2,

@@ -74,13 +74,13 @@ export default function IdentitySelector({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 px-4 backdrop-blur-sm">
       {/* 步骤标题 / Step Title */}
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-white mb-3">
+        <h2 className="text-3xl font-bold text-white mb-3 drop-shadow-lg">
           {language === 'en' ? 'Choose Your Identity' : '选择您的身份'}
         </h2>
-        <p className="text-gray-300 text-lg">
+        <p className="text-gray-300 text-lg drop-shadow">
           {language === 'en' 
             ? 'Select your primary role in the FanForce AI community ecosystem'
             : '在FanForce AI社区生态系统中选择您的主要角色'
@@ -96,7 +96,7 @@ export default function IdentitySelector({
       {/* 角色选择成功提示（显示在卡片上方）/ Role Selection Success Toast (shown above cards) */}
       {registrationState.selectedPrimaryRole && (
         <div className="text-center animate-fadeIn mb-6">
-          <div className="bg-gradient-to-r from-blue-500/20 to-indigo-600/20 rounded-2xl p-6 border border-blue-400/30 backdrop-blur-sm shadow-2xl shadow-blue-500/20">
+          <div className="bg-gradient-to-r from-blue-500/15 to-indigo-600/15 rounded-2xl p-6 border border-blue-400/20 backdrop-blur-sm shadow-2xl shadow-blue-500/15">
             <div className="flex items-center justify-center space-x-3 mb-4">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
                 <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -140,7 +140,7 @@ export default function IdentitySelector({
       )}
 
       {/* 角色选项网格 / Role Options Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto backdrop-blur-sm">
         {/* 移动端：单列布局，更好的触控体验 */}
         {/* 平板端：双列布局，适中的卡片大小 */}
         {/* 桌面端：三列布局，完美的视觉平衡 */}
@@ -155,7 +155,7 @@ export default function IdentitySelector({
       </div>
 
       {/* 帮助信息 / Help Information */}
-      <div className="bg-gradient-to-r from-white/5 to-white/10 rounded-2xl p-6 border border-white/20 backdrop-blur-sm">
+      <div className="bg-gradient-to-r from-white/3 to-white/6 rounded-2xl p-6 border border-white/10 backdrop-blur-sm">
         <div className="flex items-start space-x-4">
           <div className="w-12 h-12 bg-fanforce-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
             <div className="text-fanforce-gold text-2xl">💡</div>

@@ -93,7 +93,7 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
   }
 
   return (
-    <div className={isModal ? "w-full flex justify-center" : "min-h-screen bg-gradient-to-br from-fanforce-dark via-blue-900 to-fanforce-primary flex items-center justify-center p-4"}>
+    <div className={isModal ? "w-full flex justify-center" : "min-h-screen flex items-center justify-center p-4"}>
       <div className={`${isModal ? 'w-full max-w-sm mx-auto flex flex-col items-center' : 'w-full max-w-md'}`}>
         {/* 返回按钮 / Back Button */}
         <button
@@ -111,11 +111,11 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
         </button>
 
         {/* 标题 / Title */}
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2">
+        <div className="text-center mb-8 backdrop-blur-sm">
+          <h2 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
             {language === 'en' ? 'Welcome Back!' : '欢迎回来！'}
           </h2>
-          <p className="text-gray-300">
+          <p className="text-gray-300 drop-shadow">
             {language === 'en' 
               ? 'Choose your preferred login method' 
               : '选择您偏好的登录方式'
