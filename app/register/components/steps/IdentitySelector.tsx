@@ -14,7 +14,7 @@ import InvitationCodeModal from './InvitationCodeModal'
 import AdminVerificationModal from './AdminVerificationModal'
 import { IdentitySelectorProps } from './types'
 import { getDashboardPath } from '../shared/utils'
-import { generateInviteCode, formatInviteCode } from '../../../utils/inviteCodeGenerator'
+import { inviteCodeService } from '../../../services/inviteCodeService'
 import { authService } from '../../../services/authService'
 
 export default function IdentitySelector({ 
@@ -65,16 +65,34 @@ export default function IdentitySelector({
   }
 
   // 处理角色确认 / Handle role confirmation
-  const handleRoleConfirm = () => {
+  const handleRoleConfirm = async () => {
     setShowConfirmModal(false)
     
     // 设置角色确认状态为true，但邀请码弹窗完成状态仍为false
     // Set role confirmation state to true, but invitation code modal completion state remains false
     setIsRoleConfirmed(true)
     
-    // 立即生成用户的邀请码 / Generate user's invitation code immediately
-    const generatedCode = generateInviteCode('temp-user-id') // 临时用户ID，实际使用时应该传入真实用户ID
-    setUserInviteCode(generatedCode.code)
+    // 获取或生成用户的终身邀请码 / Get or generate user's lifetime invite code
+    if (registrationState.userId && registrationState.userId !== '') {
+      try {
+        const result = await inviteCodeService.getOrGenerateLifetimeInviteCode(registrationState.userId)
+        if (result.success && result.inviteCode) {
+          setUserInviteCode(result.inviteCode)
+          console.log(`✅ 邀请码${result.isNew ? '生成' : '获取'}成功:`, result.inviteCode)
+        } else {
+          console.error('❌ 邀请码获取失败:', result.error)
+          // 生成临时邀请码作为fallback / Generate temporary invite code as fallback
+          setUserInviteCode('FF-TEMP' + Math.random().toString(36).substr(2, 4).toUpperCase())
+        }
+      } catch (error) {
+        console.error('❌ 邀请码服务调用失败:', error)
+        // 生成临时邀请码作为fallback / Generate temporary invite code as fallback
+        setUserInviteCode('FF-TEMP' + Math.random().toString(36).substr(2, 4).toUpperCase())
+      }
+    } else {
+      // 如果没有真实用户ID，生成临时邀请码 / If no real user ID, generate temporary invite code
+      setUserInviteCode('FF-TEMP' + Math.random().toString(36).substr(2, 4).toUpperCase())
+    }
     
     // 确认角色后显示邀请码弹窗 / Show invitation code modal after role confirmation
     setShowInviteModal(true)
@@ -294,7 +312,7 @@ export default function IdentitySelector({
                </p>
                <div className="flex items-center justify-center space-x-2">
                  <code className="text-2xl font-mono font-bold text-fanforce-gold tracking-wider">
-                   {formatInviteCode(userInviteCode)}
+                   {inviteCodeService.formatInviteCode(userInviteCode)}
                  </code>
                  <button
                    onClick={handleCopyInviteCode}
