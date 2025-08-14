@@ -118,6 +118,50 @@ export async function GET(request: NextRequest): Promise<NextResponse<DatabaseTe
   }
 }
 
+// Handle database queries via POST method
+// 通过POST方法处理数据库查询
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  try {
+    const body = await request.json();
+    const { query: sqlQuery, params = [] } = body;
+
+    if (!sqlQuery) {
+      return NextResponse.json({
+        success: false,
+        message: 'SQL query is required',
+        message_cn: 'SQL查询是必需的',
+        error: 'Missing SQL query parameter'
+      }, { status: 400 });
+    }
+
+    console.log('🔍 执行数据库查询:', { sqlQuery, params });
+    
+    // Execute the query
+    // 执行查询
+    const result = await query(sqlQuery, params);
+    
+    console.log('✅ 查询执行成功，返回行数:', result.rowCount);
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Query executed successfully',
+      message_cn: '查询执行成功',
+      rows: result.rows,
+      rowCount: result.rowCount
+    });
+
+  } catch (error) {
+    console.error('❌ 数据库查询执行失败:', error);
+    
+    return NextResponse.json({
+      success: false,
+      message: 'Query execution failed',
+      message_cn: '查询执行失败',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}
+
 // Health check endpoint specifically for database
 // 专门用于数据库的健康检查端点
 export async function HEAD(request: NextRequest): Promise<NextResponse> {

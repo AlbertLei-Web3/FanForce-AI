@@ -126,7 +126,7 @@ class InviteCodeService {
   private async generateAndStoreLifetimeInviteCode(userId: string): Promise<string | null> {
     try {
       // 生成唯一的邀请码 / Generate unique invite code
-      const inviteCode = this.generateUniqueInviteCode()
+      const inviteCode = await this.generateUniqueInviteCode()
       
       console.log('🔐 尝试存储邀请码到数据库:', { userId, inviteCode })
       
@@ -174,7 +174,7 @@ class InviteCodeService {
    * Generate unique invite code
    * @returns 唯一的邀请码 / Unique invite code
    */
-  private generateUniqueInviteCode(): string {
+  private async generateUniqueInviteCode(): Promise<string> {
     const prefix = 'FF'
     const separator = '-'
     const length = 6
@@ -184,6 +184,8 @@ class InviteCodeService {
     let attempts = 0
     const maxAttempts = 100
     
+    console.log('🎲 开始生成唯一邀请码...')
+    
     do {
       code = prefix + separator
       for (let i = 0; i < length; i++) {
@@ -192,13 +194,26 @@ class InviteCodeService {
       }
       attempts++
       
+      console.log(`🎯 尝试第 ${attempts} 次，生成邀请码: ${code}`)
+      
       // 防止无限循环 / Prevent infinite loop
       if (attempts > maxAttempts) {
+        console.error(`❌ 达到最大尝试次数 ${maxAttempts}，无法生成唯一邀请码`)
         throw new Error('Failed to generate unique invite code after maximum attempts')
       }
-    } while (this.isCodeInUse(code)) // 检查是否已被使用 / Check if code is already in use
+      
+      // 检查是否已被使用 / Check if code is already in use
+      const isUsed = await this.isCodeInUse(code)
+      if (!isUsed) {
+        console.log(`✅ 找到唯一邀请码: ${code}`)
+        return code
+      }
+      
+      console.log(`⚠️ 邀请码 ${code} 已被使用，继续尝试...`)
+    } while (true) // 改为无限循环，因为我们在循环内部处理退出条件 / Change to infinite loop since we handle exit condition inside
     
-    return code
+    // 这里永远不会执行到，但为了TypeScript类型检查 / This will never execute, but for TypeScript type checking
+    throw new Error('Unexpected error in generateUniqueInviteCode')
   }
 
   /**
@@ -209,6 +224,8 @@ class InviteCodeService {
    */
   private async isCodeInUse(code: string): Promise<boolean> {
     try {
+      console.log('🔍 检查邀请码是否已被使用:', code)
+      
       const response = await fetch(`${this.baseUrl}/database/test`, {
         method: 'POST',
         headers: {
@@ -230,7 +247,12 @@ class InviteCodeService {
       }
 
       const result = await response.json()
-      return result.rows && result.rows.length > 0 && result.rows[0].count > 0
+      console.log('📊 邀请码使用状态检查结果:', result)
+      
+      const isUsed = result.rows && result.rows.length > 0 && parseInt(result.rows[0].count) > 0
+      console.log(`🔍 邀请码 ${code} ${isUsed ? '已被使用' : '可用'}`)
+      
+      return isUsed
     } catch (error) {
       console.error('❌ 检查邀请码使用状态时出错:', error)
       return false // 如果检查失败，假设可用 / If check fails, assume available

@@ -40,12 +40,24 @@ export default function SimplifiedRegistration({
 
   // 处理认证成功 / Handle authentication success
   const handleAuthSuccess = (authMethod: string, data: any) => {
+    console.log('🔐 认证成功，用户数据:', data)
+    
+    // 确保用户ID被正确设置 / Ensure user ID is properly set
+    const userId = data.userId || data.id || data.user?.id || data.user?.userId
+    
+    if (!userId) {
+      console.error('❌ 用户ID缺失，无法继续注册流程')
+      return
+    }
+    
     const newUserData = { 
       ...data, 
       authMethod,
-      // 确保用户ID被正确设置 / Ensure user ID is properly set
-      id: data.userId || data.id || `temp-${Date.now()}`
+      id: userId,
+      userId: userId  // 确保两个字段都有值 / Ensure both fields have values
     }
+    
+    console.log('✅ 设置用户数据:', newUserData)
     setUserData(newUserData)
     
     if (showOnlyAuth && onAuthSuccess) {

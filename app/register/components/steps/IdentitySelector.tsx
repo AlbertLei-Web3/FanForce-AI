@@ -72,27 +72,11 @@ export default function IdentitySelector({
     // Set role confirmation state to true, but invitation code modal completion state remains false
     setIsRoleConfirmed(true)
     
-    // 获取或生成用户的终身邀请码 / Get or generate user's lifetime invite code
-    if (registrationState.userId && registrationState.userId !== '') {
-      try {
-        const result = await inviteCodeService.getOrGenerateLifetimeInviteCode(registrationState.userId)
-        if (result.success && result.inviteCode) {
-          setUserInviteCode(result.inviteCode)
-          console.log(`✅ 邀请码${result.isNew ? '生成' : '获取'}成功:`, result.inviteCode)
-        } else {
-          console.error('❌ 邀请码获取失败:', result.error)
-          // 生成临时邀请码作为fallback / Generate temporary invite code as fallback
-          setUserInviteCode('FF-TEMP' + Math.random().toString(36).substr(2, 4).toUpperCase())
-        }
-      } catch (error) {
-        console.error('❌ 邀请码服务调用失败:', error)
-        // 生成临时邀请码作为fallback / Generate temporary invite code as fallback
-        setUserInviteCode('FF-TEMP' + Math.random().toString(36).substr(2, 4).toUpperCase())
-      }
-    } else {
-      // 如果没有真实用户ID，生成临时邀请码 / If no real user ID, generate temporary invite code
-      setUserInviteCode('FF-TEMP' + Math.random().toString(36).substr(2, 4).toUpperCase())
-    }
+    // 生成真实的邀请码用于显示（稍后点击开始旅程时保存到数据库）
+    // Generate real invite code for display (to be saved to database when clicking Start Journey)
+    const realInviteCode = 'FF-' + Math.random().toString(36).substr(2, 6).toUpperCase()
+    setUserInviteCode(realInviteCode)
+    console.log('🎫 生成真实邀请码用于显示（稍后保存到数据库）:', realInviteCode)
     
     // 确认角色后显示邀请码弹窗 / Show invitation code modal after role confirmation
     setShowInviteModal(true)
@@ -176,41 +160,106 @@ export default function IdentitySelector({
 
   // 处理继续按钮点击 / Handle continue button click
   const handleContinue = async () => {
+    console.log('🚀 ===== 开始旅程按钮被点击 =====')
+    console.log('📋 当前注册状态:', registrationState)
+    console.log('🎭 选中的角色:', registrationState.selectedPrimaryRole)
+    console.log('🆔 用户ID:', registrationState.userId)
+    
     if (registrationState.selectedPrimaryRole) {
       try {
         // 如果是大使角色，需要验证admin码 / If ambassador role, need admin verification
         if (registrationState.selectedPrimaryRole === UserRole.AMBASSADOR) {
+          console.log('👑 检测到大使角色，显示管理员验证弹窗')
           setShowAdminModal(true)
           return
         }
 
-        // 更新用户在数据库中的角色 / Update user's role in database
-        if (registrationState.userId && registrationState.userId !== '') {
-          console.log('🔄 更新用户角色:', registrationState.userId, registrationState.selectedPrimaryRole)
+        console.log('✅ 开始处理非大使角色的邀请码生成和角色更新...')
+
+        // 将前端已显示的邀请码保存到数据库 / Save the invite code already displayed on frontend to database
+        if (registrationState.userId && registrationState.userId !== '' && userInviteCode) {
+          console.log('🎯 开始保存前端已显示的邀请码到数据库:', { userId: registrationState.userId, inviteCode: userInviteCode })
           
-          const updateSuccess = await authService.updateUserRole(
-            registrationState.userId, 
-            registrationState.selectedPrimaryRole
-          )
-          
-          if (updateSuccess) {
-            console.log('✅ 用户角色更新成功')
-          } else {
-            console.warn('⚠️ 用户角色更新失败，但继续跳转')
+          try {
+            // 直接保存邀请码到数据库，而不是重新生成 / Save invite code directly to database instead of regenerating
+            const response = await fetch('/api/database/test', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                query: `
+                  UPDATE users 
+                  SET lifetime_invite_code = $1, invite_code_generated_at = CURRENT_TIMESTAMP
+                  WHERE id = $2 AND lifetime_invite_code IS NULL
+                  RETURNING lifetime_invite_code
+                `,
+                params: [userInviteCode, registrationState.userId]
+              })
+            })
+            
+            if (response.ok) {
+              const result = await response.json()
+              if (result.rows && result.rows.length > 0) {
+                console.log('✅ 邀请码保存到数据库成功:', userInviteCode)
+              } else {
+                console.warn('⚠️ 邀请码可能已被保存，继续处理')
+              }
+            } else {
+              console.error('❌ 保存邀请码到数据库失败:', response.status)
+            }
+          } catch (error) {
+            console.error('❌ 保存邀请码时出错:', error)
           }
+        } else {
+          console.warn('⚠️ 用户ID或邀请码缺失，无法保存邀请码')
         }
 
+        // 更新用户在数据库中的角色 / Update user's role in database
+        if (registrationState.userId && registrationState.userId !== '') {
+          console.log('🔄 开始更新用户角色:', registrationState.userId, registrationState.selectedPrimaryRole)
+          
+          try {
+            const updateSuccess = await authService.updateUserRole(
+              registrationState.userId, 
+              registrationState.selectedPrimaryRole
+            )
+            
+            if (updateSuccess) {
+              console.log('✅ 用户角色更新成功')
+            } else {
+              console.warn('⚠️ 用户角色更新失败，但继续跳转')
+            }
+          } catch (error) {
+            console.error('❌ 角色更新服务调用失败:', error)
+          }
+        } else {
+          console.warn('⚠️ 用户ID缺失，无法更新角色')
+        }
+
+        // 等待一小段时间确保邀请码和角色更新完成 / Wait a bit to ensure invite code and role updates complete
+        console.log('⏳ 等待1秒确保数据库操作完成...')
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        console.log('🚀 准备跳转到dashboard...')
+        
         // 其他角色直接跳转到对应的dashboard页面 / Other roles go directly to their dashboard
         const dashboardPath = getDashboardPath(registrationState.selectedPrimaryRole)
+        console.log('🎯 目标dashboard路径:', dashboardPath)
         
         // 使用window.location.href进行页面跳转 / Use window.location.href for navigation
+        console.log('🌐 执行页面跳转...')
         window.location.href = dashboardPath
       } catch (error) {
         console.error('❌ 处理继续按钮时出错:', error)
+        console.log('🔍 错误详情:', error)
         // 即使出错也尝试跳转 / Try to navigate even if there's an error
         const dashboardPath = getDashboardPath(registrationState.selectedPrimaryRole)
+        console.log('🔄 错误恢复：尝试跳转到:', dashboardPath)
         window.location.href = dashboardPath
       }
+    } else {
+      console.warn('⚠️ 没有选中角色，无法继续')
     }
   }
 
