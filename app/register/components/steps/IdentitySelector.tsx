@@ -15,6 +15,7 @@ import AdminVerificationModal from './AdminVerificationModal'
 import { IdentitySelectorProps } from './types'
 import { getDashboardPath } from '../shared/utils'
 import { generateInviteCode, formatInviteCode } from '../../../utils/inviteCodeGenerator'
+import { authService } from '../../../services/authService'
 
 export default function IdentitySelector({ 
   registrationState, 
@@ -116,9 +117,31 @@ export default function IdentitySelector({
   }
 
   // 处理管理员验证 / Handle admin verification
-  const handleAdminVerify = (code: string) => {
-    // 验证成功后直接跳转到大使dashboard / After successful verification, go directly to ambassador dashboard
-    window.location.href = getDashboardPath(UserRole.AMBASSADOR)
+  const handleAdminVerify = async (code: string) => {
+    try {
+      // 验证成功后更新用户角色为大使 / After successful verification, update user role to ambassador
+      if (registrationState.userId && registrationState.userId !== '') {
+        console.log('🔄 验证成功后更新用户角色为大使:', registrationState.userId)
+        
+        const updateSuccess = await authService.updateUserRole(
+          registrationState.userId, 
+          UserRole.AMBASSADOR
+        )
+        
+        if (updateSuccess) {
+          console.log('✅ 用户角色更新为大使成功')
+        } else {
+          console.warn('⚠️ 用户角色更新失败，但继续跳转')
+        }
+      }
+      
+      // 跳转到大使dashboard / Navigate to ambassador dashboard
+      window.location.href = getDashboardPath(UserRole.AMBASSADOR)
+    } catch (error) {
+      console.error('❌ 处理管理员验证时出错:', error)
+      // 即使出错也尝试跳转 / Try to navigate even if there's an error
+      window.location.href = getDashboardPath(UserRole.AMBASSADOR)
+    }
   }
 
   // 处理复制邀请码 / Handle copy invitation code
@@ -134,16 +157,40 @@ export default function IdentitySelector({
   }
 
   // 处理继续按钮点击 / Handle continue button click
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (registrationState.selectedPrimaryRole) {
-      // 如果是大使角色，需要验证admin码 / If ambassador role, need admin verification
-      if (registrationState.selectedPrimaryRole === UserRole.AMBASSADOR) {
-        setShowAdminModal(true)
-      } else {
+      try {
+        // 如果是大使角色，需要验证admin码 / If ambassador role, need admin verification
+        if (registrationState.selectedPrimaryRole === UserRole.AMBASSADOR) {
+          setShowAdminModal(true)
+          return
+        }
+
+        // 更新用户在数据库中的角色 / Update user's role in database
+        if (registrationState.userId && registrationState.userId !== '') {
+          console.log('🔄 更新用户角色:', registrationState.userId, registrationState.selectedPrimaryRole)
+          
+          const updateSuccess = await authService.updateUserRole(
+            registrationState.userId, 
+            registrationState.selectedPrimaryRole
+          )
+          
+          if (updateSuccess) {
+            console.log('✅ 用户角色更新成功')
+          } else {
+            console.warn('⚠️ 用户角色更新失败，但继续跳转')
+          }
+        }
+
         // 其他角色直接跳转到对应的dashboard页面 / Other roles go directly to their dashboard
         const dashboardPath = getDashboardPath(registrationState.selectedPrimaryRole)
         
         // 使用window.location.href进行页面跳转 / Use window.location.href for navigation
+        window.location.href = dashboardPath
+      } catch (error) {
+        console.error('❌ 处理继续按钮时出错:', error)
+        // 即使出错也尝试跳转 / Try to navigate even if there's an error
+        const dashboardPath = getDashboardPath(registrationState.selectedPrimaryRole)
         window.location.href = dashboardPath
       }
     }

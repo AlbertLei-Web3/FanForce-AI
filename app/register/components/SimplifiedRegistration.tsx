@@ -40,7 +40,12 @@ export default function SimplifiedRegistration({
 
   // 处理认证成功 / Handle authentication success
   const handleAuthSuccess = (authMethod: string, data: any) => {
-    const newUserData = { ...data, authMethod }
+    const newUserData = { 
+      ...data, 
+      authMethod,
+      // 确保用户ID被正确设置 / Ensure user ID is properly set
+      id: data.userId || data.id || `temp-${Date.now()}`
+    }
     setUserData(newUserData)
     
     if (showOnlyAuth && onAuthSuccess) {
@@ -102,7 +107,7 @@ export default function SimplifiedRegistration({
                 roleSpecificData: {},
                 isProcessing: false,
                 errors: {},
-                userId: userData?.id || ''
+                userId: userData?.id || userData?.userId || ''
               }}
               updateState={(updates) => {
                 if (updates.selectedPrimaryRole) {

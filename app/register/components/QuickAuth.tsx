@@ -5,9 +5,11 @@
 'use client'
 
 import { useLanguage } from '../../context/LanguageContext'
+import { useICP } from '../../context/ICPContext'
 import { useState } from 'react'
 import { AUTH_PROVIDERS, LOADING_DELAYS, ERROR_MESSAGES } from './shared/constants'
 import { delay } from './shared/utils'
+import { authService } from '../../services/authService'
 
 interface QuickAuthProps {
   onAuthSuccess: (authMethod: string, userData?: any) => void
@@ -17,6 +19,7 @@ interface QuickAuthProps {
 
 export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: QuickAuthProps) {
   const { language } = useLanguage()
+  const { login: icpLogin, authState: icpAuthState } = useICP()
   const [isLoading, setIsLoading] = useState<string | null>(null)
 
   // 处理社交媒体登录 / Handle social media login
@@ -54,10 +57,31 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
         })
         
         if (accounts.length > 0) {
-          onAuthSuccess(AUTH_PROVIDERS.WEB3, { 
-            address: accounts[0],
-            provider: 'MetaMask'
-          })
+          const walletAddress = accounts[0]
+          console.log('✅ 钱包连接成功，地址:', walletAddress)
+          
+          // 使用认证服务验证/创建用户 / Use auth service to verify/create user
+          const authResult = await authService.authenticateWithWallet(walletAddress)
+          
+          if (authResult.success) {
+            console.log('✅ 钱包用户认证/创建成功:', authResult.user)
+            
+            onAuthSuccess(AUTH_PROVIDERS.WEB3, { 
+              address: walletAddress,
+              provider: 'MetaMask',
+              authType: 'wallet',
+              userId: authResult.user.id,
+              username: authResult.user.username,
+              role: authResult.user.role,
+              isNewUser: authResult.isNewUser
+            })
+          } else {
+            console.error('❌ 钱包用户认证失败:', authResult.error)
+            alert(language === 'en' 
+              ? `Wallet authentication failed: ${authResult.error}` 
+              : `钱包认证失败: ${authResult.error}`
+            )
+          }
         }
       } else {
         // 提示安装MetaMask / Prompt to install MetaMask
@@ -73,20 +97,56 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
     }
   }
 
-  // 处理ICP登录 / Handle ICP login
+  // 处理真实ICP登录 / Handle real ICP login
   const handleICPLogin = async () => {
     setIsLoading(AUTH_PROVIDERS.ICP)
     try {
-      // 这里应该集成ICP身份验证逻辑 / Here should integrate ICP identity verification logic
-      console.log('ICP login initiated')
+      console.log('🔐 开始真实ICP身份认证 / Starting real ICP Identity authentication...')
       
-      // 模拟成功登录 / Simulate successful login
-      onAuthSuccess(AUTH_PROVIDERS.ICP, { 
-        provider: 'ICP',
-        identity: 'icp-identity-123'
-      })
+      // 调用真实的ICP登录方法 / Call real ICP login method
+      const principalId = await icpLogin()
+      
+      if (principalId) {
+        console.log('✅ ICP身份认证成功，Principal ID:', principalId)
+        
+        // 使用认证服务验证/创建用户 / Use auth service to verify/create user
+        const authResult = await authService.authenticateWithICP(principalId)
+        
+        if (authResult.success) {
+          console.log('✅ 用户认证/创建成功:', authResult.user)
+          
+          // 认证成功，传递用户数据 / Authentication successful, pass user data
+          onAuthSuccess(AUTH_PROVIDERS.ICP, { 
+            provider: 'ICP',
+            identity: principalId,
+            principalId: principalId,
+            authType: 'icp',
+            userId: authResult.user.id,
+            username: authResult.user.username,
+            role: authResult.user.role,
+            isNewUser: authResult.isNewUser
+          })
+        } else {
+          console.error('❌ 用户认证失败:', authResult.error)
+          alert(language === 'en' 
+            ? `User authentication failed: ${authResult.error}` 
+            : `用户认证失败: ${authResult.error}`
+          )
+        }
+      } else {
+        console.error('❌ ICP身份认证失败 / ICP Identity authentication failed')
+        // 这里可以显示错误提示 / Here you can show error message
+        alert(language === 'en' 
+          ? 'ICP authentication failed. Please try again.' 
+          : 'ICP身份认证失败，请重试。'
+        )
+      }
     } catch (error) {
-      console.error('ICP login failed:', error)
+      console.error('❌ ICP登录过程中出错 / Error during ICP login:', error)
+      alert(language === 'en' 
+        ? 'Error during ICP authentication. Please try again.' 
+        : 'ICP身份认证过程中出错，请重试。'
+      )
     } finally {
       setIsLoading(null)
     }
@@ -218,10 +278,10 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
           {/* ICP登录 / ICP Login - 使用官方ICP图标 */}
           <button
             onClick={handleICPLogin}
-            disabled={isLoading !== null}
+            disabled={isLoading !== null || icpAuthState.isLoading}
             className="w-full flex items-center justify-center space-x-3 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading === AUTH_PROVIDERS.ICP ? (
+            {isLoading === AUTH_PROVIDERS.ICP || icpAuthState.isLoading ? (
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
             ) : (
               <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 85 40" fill="none">
@@ -242,7 +302,7 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
               </svg>
             )}
             <span>
-              {isLoading === AUTH_PROVIDERS.ICP 
+              {isLoading === AUTH_PROVIDERS.ICP || icpAuthState.isLoading
                 ? (language === 'en' ? 'Connecting...' : '连接中...')
                 : (language === 'en' ? 'Connect ICP Identity' : '连接ICP身份')
               }
