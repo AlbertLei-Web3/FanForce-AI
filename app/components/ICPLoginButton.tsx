@@ -11,8 +11,13 @@ import {
   FaNetworkWired, 
   FaSpinner, 
   FaCheckCircle, 
-  FaExclamationTriangle 
+  FaExclamationTriangle,
+  FaShieldAlt,
+  FaClipboardList,
+  FaEye,
+  FaEyeSlash
 } from 'react-icons/fa'
+import { InviteCodeVerification } from '@/app/utils/icpService'
 
 interface ICPLoginButtonProps {
   onSuccess?: (principalId: string) => void
@@ -20,6 +25,9 @@ interface ICPLoginButtonProps {
   className?: string
   size?: 'sm' | 'md' | 'lg'
   variant?: 'primary' | 'secondary' | 'outline'
+  showVerificationStatus?: boolean
+  showInviteCodeVerification?: boolean
+  showOperationLogs?: boolean
 }
 
 export default function ICPLoginButton({
@@ -27,11 +35,26 @@ export default function ICPLoginButton({
   onError,
   className = '',
   size = 'md',
-  variant = 'primary'
+  variant = 'primary',
+  showVerificationStatus = false,
+  showInviteCodeVerification = false,
+  showOperationLogs = false
 }: ICPLoginButtonProps) {
-  const { authState, login } = useICP()
+  const { 
+    authState, 
+    verificationState, 
+    operationLogState,
+    login, 
+    verifyIdentity, 
+    verifyInviteCode,
+    refreshOperationLogs,
+    logOperation
+  } = useICP()
   const { language } = useLanguage()
   const [isLoggingIn, setIsLoggingIn] = useState(false)
+  const [showDetails, setShowDetails] = useState(false)
+  const [inviteCode, setInviteCode] = useState('')
+  const [verificationResult, setVerificationResult] = useState<InviteCodeVerification | null>(null)
 
   // 处理登录点击 / Handle login click
   const handleLogin = async () => {
@@ -59,6 +82,41 @@ export default function ICPLoginButton({
       onError?.(error instanceof Error ? error.message : 'Login failed')
     } finally {
       setIsLoggingIn(false)
+    }
+  }
+
+  // 处理身份验证 / Handle identity verification
+  const handleVerifyIdentity = async () => {
+    try {
+      const result = await verifyIdentity()
+      console.log('身份验证结果:', result)
+    } catch (error) {
+      console.error('身份验证失败:', error)
+    }
+  }
+
+  // 处理邀请码验证 / Handle invite code verification
+  const handleVerifyInviteCode = async () => {
+    if (!inviteCode.trim()) {
+      alert('请输入邀请码')
+      return
+    }
+    
+    try {
+      const result = await verifyInviteCode(inviteCode)
+      setVerificationResult(result)
+      console.log('邀请码验证结果:', result)
+    } catch (error) {
+      console.error('邀请码验证失败:', error)
+    }
+  }
+
+  // 处理操作日志刷新 / Handle operation logs refresh
+  const handleRefreshLogs = async () => {
+    try {
+      await refreshOperationLogs()
+    } catch (error) {
+      console.error('刷新操作日志失败:', error)
     }
   }
 
@@ -131,15 +189,151 @@ export default function ICPLoginButton({
     return 'enabled'
   }
 
+  // 格式化时间戳 / Format timestamp
+  const formatTimestamp = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString('zh-CN')
+  }
+
   return (
-    <button
-      onClick={handleLogin}
-      disabled={getButtonState() === 'disabled'}
-      className={getButtonStyles()}
-      title={language === 'en' ? 'Login with Internet Computer Identity' : '使用互联网计算机身份登录'}
-    >
-      {getButtonContent()}
-    </button>
+    <div className="space-y-4">
+      {/* 主登录按钮 / Main Login Button */}
+      <button
+        onClick={handleLogin}
+        disabled={getButtonState() === 'disabled'}
+        className={getButtonStyles()}
+        title={language === 'en' ? 'Login with Internet Computer Identity' : '使用互联网计算机身份登录'}
+      >
+        {getButtonContent()}
+      </button>
+
+      {/* 扩展功能区域 / Extended Features Area */}
+      {authState.isAuthenticated && (
+        <div className="space-y-4">
+          {/* 状态切换按钮 / Status Toggle Button */}
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            {showDetails ? <FaEyeSlash /> : <FaEye />}
+            {showDetails ? '隐藏详情' : '显示详情'}
+          </button>
+
+          {/* 详细状态信息 / Detailed Status Information */}
+          {showDetails && (
+            <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+              {/* 身份验证状态 / Identity Verification Status */}
+              {showVerificationStatus && (
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm flex items-center gap-2">
+                    <FaShieldAlt className="text-green-600" />
+                    身份验证状态 / Identity Verification Status
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <span>验证状态:</span>
+                    <span className={verificationState.isVerified ? 'text-green-600' : 'text-red-600'}>
+                      {verificationState.isVerified ? '✅ 已验证' : '❌ 未验证'}
+                    </span>
+                    <span>最后验证:</span>
+                    <span>{verificationState.lastVerified ? formatTimestamp(verificationState.lastVerified) : 'N/A'}</span>
+                  </div>
+                  {verificationState.verificationError && (
+                    <p className="text-red-600 text-sm">错误: {verificationState.verificationError}</p>
+                  )}
+                  <button
+                    onClick={handleVerifyIdentity}
+                    className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                  >
+                    🔍 验证身份
+                  </button>
+                </div>
+              )}
+
+              {/* 邀请码验证 / Invite Code Verification */}
+              {showInviteCodeVerification && (
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">🎫 邀请码验证 / Invite Code Verification</h3>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={inviteCode}
+                      onChange={(e) => setInviteCode(e.target.value)}
+                      placeholder="输入邀请码 (如: FF-ABC123)"
+                      className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={handleVerifyInviteCode}
+                      className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700"
+                    >
+                      验证
+                    </button>
+                  </div>
+                  
+                  {verificationResult && (
+                    <div className="p-2 bg-white rounded border text-xs">
+                      <div className="grid grid-cols-2 gap-1">
+                        <span>邀请码:</span>
+                        <span>{verificationResult.code}</span>
+                        <span>有效性:</span>
+                        <span className={verificationResult.isValid ? 'text-green-600' : 'text-red-600'}>
+                          {verificationResult.isValid ? '✅ 有效' : '❌ 无效'}
+                        </span>
+                        <span>邀请人角色:</span>
+                        <span>{verificationResult.inviterRole || 'N/A'}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 操作日志 / Operation Logs */}
+              {showOperationLogs && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm flex items-center gap-2">
+                      <FaClipboardList className="text-blue-600" />
+                      操作日志 / Operation Logs
+                    </h3>
+                    <button
+                      onClick={handleRefreshLogs}
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      刷新
+                    </button>
+                  </div>
+                  
+                  {operationLogState.isLoading ? (
+                    <p className="text-xs text-gray-600">⏳ 加载中...</p>
+                  ) : operationLogState.error ? (
+                    <p className="text-xs text-red-600">❌ 错误: {operationLogState.error}</p>
+                  ) : (
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {operationLogState.operations.length === 0 ? (
+                        <p className="text-xs text-gray-600">暂无操作日志</p>
+                      ) : (
+                        operationLogState.operations.slice(0, 3).map((log, index) => (
+                          <div key={index} className="p-2 bg-white rounded border text-xs">
+                            <div className="flex justify-between items-start">
+                              <span className="font-medium">{log.action}</span>
+                              <span className={`text-xs px-1 rounded ${
+                                log.status === 'success' ? 'bg-green-100 text-green-800' : 
+                                log.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                              }`}>
+                                {log.status}
+                              </span>
+                            </div>
+                            <p className="text-gray-600">{formatTimestamp(log.timestamp)}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -155,6 +349,25 @@ export function SimpleICPLoginButton({ onSuccess, onError }: {
       variant="primary"
       size="md"
       className="w-full"
+    />
+  )
+}
+
+// 增强的ICP登录按钮 / Enhanced ICP Login Button
+export function EnhancedICPLoginButton({ onSuccess, onError }: {
+  onSuccess?: (principalId: string) => void
+  onError?: (error: string) => void
+}) {
+  return (
+    <ICPLoginButton
+      onSuccess={onSuccess}
+      onError={onError}
+      variant="primary"
+      size="md"
+      className="w-full"
+      showVerificationStatus={true}
+      showInviteCodeVerification={true}
+      showOperationLogs={true}
     />
   )
 }

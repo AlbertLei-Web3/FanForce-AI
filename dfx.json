@@ -1,5 +1,9 @@
 {
   "canisters": {
+    "fanforce_verifier": {
+      "type": "motoko",
+      "main": "src/fanforce_verifier/main.mo"
+    },
     "fanforce_season_bonus": {
       "type": "motoko",
       "main": "src/fanforce_season_bonus/main.mo"

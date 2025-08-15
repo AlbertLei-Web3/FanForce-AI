@@ -46,6 +46,40 @@ export interface CanisterStats {
   totalDistributed: number;
 }
 
+// 新增：用户身份验证接口 / New: User Identity Verification Interface
+export interface UserIdentity {
+  principalId: string;
+  walletAddress?: string;
+  role: string;
+  inviteCode: string;
+  invitedBy?: string;
+  createdAt: number;
+  lastActive: number;
+  isVerified: boolean;
+}
+
+// 新增：邀请码验证接口 / New: Invite Code Verification Interface
+export interface InviteCodeVerification {
+  code: string;
+  isValid: boolean;
+  inviterPrincipalId?: string;
+  inviterRole?: string;
+  usageCount: number;
+  maxUsage?: number;
+  expiresAt?: number;
+}
+
+// 新增：操作日志接口 / New: Operation Log Interface
+export interface OperationLog {
+  userId: string;
+  principalId: string;
+  action: string;
+  timestamp: number;
+  metadata?: any;
+  txHash?: string;
+  status: 'pending' | 'success' | 'failed';
+}
+
 // Mock ICP Canister ID for demo purposes / 用于演示的模拟ICP容器ID
 const MOCK_CANISTER_ID = "bkyz2-fmaaa-aaaaa-aaaqa-cai"; // Mock canister ID / 模拟容器ID
 
@@ -76,6 +110,150 @@ class ICPService {
       return false;
     }
   }
+
+  // ========== 新增：用户身份验证方法 / New: User Identity Verification Methods ==========
+  
+  // 验证用户ICP身份 / Verify user ICP identity
+  async verifyUserIdentity(principalId: string): Promise<UserIdentity | null> {
+    if (!this.isConnected) {
+      await this.initialize();
+    }
+
+    try {
+      console.log("🔐 验证用户ICP身份:", principalId);
+      
+      // 模拟ICP身份验证 / Simulate ICP identity verification
+      const mockIdentity: UserIdentity = {
+        principalId: principalId,
+        walletAddress: `icp_wallet_${principalId.slice(0, 8)}`,
+        role: "audience", // 默认角色，实际应从数据库获取 / Default role, should get from database
+        inviteCode: `FF-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+        createdAt: Date.now(),
+        lastActive: Date.now(),
+        isVerified: true
+      };
+
+      // 模拟验证延迟 / Simulate verification delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      console.log("✅ ICP身份验证成功:", mockIdentity);
+      return mockIdentity;
+    } catch (error) {
+      console.error("❌ ICP身份验证失败:", error);
+      return null;
+    }
+  }
+
+  // 验证邀请码 / Verify invite code
+  async verifyInviteCode(code: string): Promise<InviteCodeVerification | null> {
+    if (!this.isConnected) {
+      await this.initialize();
+    }
+
+    try {
+      console.log("🔍 验证邀请码:", code);
+      
+      // 模拟邀请码验证 / Simulate invite code verification
+      const mockVerification: InviteCodeVerification = {
+        code: code,
+        isValid: code.startsWith("FF-") && code.length === 9,
+        inviterPrincipalId: "75ps5-fwgjd-mdwrb-qq6ab-sagkb-li6ap-dplnp-nwggq-3lktb-ytwpj-7ae",
+        inviterRole: "ambassador",
+        usageCount: 0,
+        maxUsage: 100,
+        expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000 // 1年后过期 / Expires in 1 year
+      };
+
+      // 模拟验证延迟 / Simulate verification delay
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      console.log("✅ 邀请码验证完成:", mockVerification);
+      return mockVerification;
+    } catch (error) {
+      console.error("❌ 邀请码验证失败:", error);
+      return null;
+    }
+  }
+
+  // 记录操作日志到链上 / Log operation to blockchain
+  async logOperation(
+    userId: string, 
+    principalId: string, 
+    action: string, 
+    metadata?: any
+  ): Promise<OperationLog | null> {
+    if (!this.isConnected) {
+      await this.initialize();
+    }
+
+    try {
+      console.log("📝 记录操作到链上:", { userId, principalId, action });
+      
+      // 模拟链上日志记录 / Simulate blockchain logging
+      const mockLog: OperationLog = {
+        userId: userId,
+        principalId: principalId,
+        action: action,
+        timestamp: Date.now(),
+        metadata: metadata,
+        txHash: `icp_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        status: 'success'
+      };
+
+      // 模拟链上操作延迟 / Simulate blockchain operation delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      console.log("✅ 操作日志记录成功:", mockLog);
+      return mockLog;
+    } catch (error) {
+      console.error("❌ 操作日志记录失败:", error);
+      return null;
+    }
+  }
+
+  // 获取用户操作历史 / Get user operation history
+  async getUserOperationHistory(principalId: string): Promise<OperationLog[]> {
+    if (!this.isConnected) {
+      await this.initialize();
+    }
+
+    try {
+      console.log("📚 获取用户操作历史:", principalId);
+      
+      // 模拟操作历史数据 / Simulate operation history data
+      const mockHistory: OperationLog[] = [
+        {
+          userId: "user_123",
+          principalId: principalId,
+          action: "user_registration",
+          timestamp: Date.now() - 86400000, // 1天前 / 1 day ago
+          metadata: { role: "audience", inviteCode: "FF-ABC123" },
+          txHash: "icp_tx_1234567890_abc123",
+          status: 'success'
+        },
+        {
+          userId: "user_123",
+          principalId: principalId,
+          action: "profile_update",
+          timestamp: Date.now() - 3600000, // 1小时前 / 1 hour ago
+          metadata: { updatedFields: ["username", "profile_data"] },
+          txHash: "icp_tx_1234567890_def456",
+          status: 'success'
+        }
+      ];
+
+      // 模拟查询延迟 / Simulate query delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      console.log("✅ 获取操作历史成功:", mockHistory);
+      return mockHistory;
+    } catch (error) {
+      console.error("❌ 获取操作历史失败:", error);
+      return [];
+    }
+  }
+
+  // ========== 现有方法保持不变 / Existing methods remain unchanged ==========
 
   // Get athlete profile from ICP / 从ICP获取运动员档案
   async getAthleteProfile(athleteId: string): Promise<AthleteProfile | null> {

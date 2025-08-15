@@ -34,11 +34,55 @@ class AuthService {
     try {
       console.log('🔐 通过ICP Principal ID认证用户:', principalId)
       
+      // 新增：ICP Canister身份验证 / New: ICP Canister identity verification
+      console.log('🔍 开始ICP Canister身份验证...')
+      const { icpService } = await import('../utils/icpService')
+      
+      try {
+        const canisterVerification = await icpService.verifyUserIdentity(principalId)
+        if (!canisterVerification) {
+          console.warn('⚠️ ICP Canister验证失败，继续使用Web2认证')
+        } else {
+          console.log('✅ ICP Canister身份验证成功:', canisterVerification)
+          
+          // 记录用户登录操作到链上 / Log user login operation to blockchain
+          await icpService.logOperation(
+            canisterVerification.principalId,
+            principalId,
+            'user_login',
+            { 
+              timestamp: Date.now(),
+              userAgent: navigator.userAgent,
+              ip: '127.0.0.1' // 实际应从请求中获取 / Should get from request in reality
+            }
+          )
+        }
+      } catch (canisterError) {
+        console.warn('⚠️ ICP Canister验证出错，继续使用Web2认证:', canisterError)
+      }
+      
       // 检查用户是否已存在 / Check if user already exists
       const existingUser = await this.findUserByICP(principalId)
       
       if (existingUser) {
         console.log('✅ 找到现有ICP用户:', existingUser)
+        
+        // 新增：更新用户最后活跃时间到链上 / New: Update user last active time on blockchain
+        try {
+          await icpService.logOperation(
+            existingUser.id,
+            principalId,
+            'user_login_existing',
+            { 
+              userId: existingUser.id,
+              role: existingUser.role,
+              lastLogin: Date.now()
+            }
+          )
+        } catch (logError) {
+          console.warn('⚠️ 链上日志记录失败，不影响登录流程:', logError)
+        }
+        
         return {
           success: true,
           user: existingUser,
@@ -49,6 +93,23 @@ class AuthService {
       // 创建新ICP用户 / Create new ICP user
       console.log('🆕 创建新ICP用户:', principalId)
       const newUser = await this.createICPUser(principalId)
+      
+      // 新增：记录新用户注册到链上 / New: Log new user registration to blockchain
+      try {
+        await icpService.logOperation(
+          newUser.id,
+          principalId,
+          'user_registration',
+          { 
+            userId: newUser.id,
+            role: newUser.role,
+            inviteCode: newUser.lifetime_invite_code,
+            registrationTime: Date.now()
+          }
+        )
+      } catch (logError) {
+        console.warn('⚠️ 链上日志记录失败，不影响注册流程:', logError)
+      }
       
       return {
         success: true,

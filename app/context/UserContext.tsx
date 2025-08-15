@@ -3,6 +3,7 @@
 // Global user state management with role authentication and session management
 // 关联文件:
 // - Web3Context.tsx: 钱包连接管理
+// - ICPContext.tsx: ICP身份验证管理
 // - Backend API: 用户认证和角色验证
 // - PostgreSQL: 用户数据存储
 
@@ -10,6 +11,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { useWeb3 } from './Web3Context'
+import { useICP } from './ICPContext'
 
 // 用户角色枚举 / User Role Enum
 export enum UserRole {
@@ -30,6 +32,10 @@ export interface UserInfo {
   profilePhoto?: string
   createdAt: string
   lastLogin: string
+  // 新增：ICP相关信息 / New: ICP-related information
+  icpPrincipalId?: string
+  icpVerified?: boolean
+  icpLastVerified?: string
   // 角色特定信息 / Role-specific information
   roleData?: {
     // 管理员特有数据 / Admin-specific data
@@ -60,16 +66,35 @@ export interface AuthState {
   error: string | null
 }
 
+// 新增：ICP集成状态接口 / New: ICP Integration State Interface
+export interface ICPIntegrationState {
+  isICPLoggedIn: boolean
+  principalId: string | null
+  isVerified: boolean
+  verificationData: any | null
+  lastVerified: string | null
+  operationLogs: any[]
+  logsLastUpdated: string | null
+}
+
 // 用户上下文接口 / User Context Interface
 interface UserContextType {
   // 认证状态 / Authentication State
   authState: AuthState
+  
+  // 新增：ICP集成状态 / New: ICP Integration State
+  icpIntegrationState: ICPIntegrationState
   
   // 认证方法 / Authentication Methods
   login: (signature: string, message: string) => Promise<boolean>
   loginWithICP: (principalId: string) => Promise<boolean> // 新增ICP登录方法 / Add ICP login method
   logout: () => Promise<void>
   refreshSession: () => Promise<void>
+  
+  // 新增：ICP集成方法 / New: ICP Integration Methods
+  refreshICPStatus: () => Promise<void>
+  verifyICPIdentity: () => Promise<boolean>
+  refreshICPLogs: () => Promise<void>
   
   // 用户信息方法 / User Information Methods
   updateUserInfo: (updates: Partial<UserInfo>) => Promise<boolean>
@@ -97,6 +122,13 @@ const UserContext = createContext<UserContextType | undefined>(undefined)
 // 用户上下文提供者组件 / User Context Provider Component
 export function UserProvider({ children }: { children: ReactNode }) {
   const { address, isConnected } = useWeb3()
+  const { 
+    authState: icpAuthState, 
+    verificationState, 
+    operationLogState,
+    verifyIdentity,
+    refreshOperationLogs
+  } = useICP()
   
   // 认证状态管理 / Authentication State Management
   const [authState, setAuthState] = useState<AuthState>({
@@ -107,10 +139,55 @@ export function UserProvider({ children }: { children: ReactNode }) {
     error: null
   })
 
+  // 新增：ICP集成状态管理 / New: ICP Integration State Management
+  const [icpIntegrationState, setIcpIntegrationState] = useState<ICPIntegrationState>({
+    isICPLoggedIn: false,
+    principalId: null,
+    isVerified: false,
+    verificationData: null,
+    lastVerified: null,
+    operationLogs: [],
+    logsLastUpdated: null
+  })
+
   // 开发模式检查 / Development Mode Check
   const isDevelopmentMode = useCallback((): boolean => {
     return process.env.NODE_ENV === 'development'
   }, [])
+
+  // 新增：同步ICP状态到用户上下文 / New: Sync ICP state to user context
+  useEffect(() => {
+    if (icpAuthState.isAuthenticated && icpAuthState.principalId) {
+      setIcpIntegrationState(prev => ({
+        ...prev,
+        isICPLoggedIn: true,
+        principalId: icpAuthState.principalId,
+        isVerified: verificationState.isVerified,
+        verificationData: verificationState.verificationData,
+        lastVerified: verificationState.lastVerified ? new Date(verificationState.lastVerified).toISOString() : null
+      }))
+    } else {
+      setIcpIntegrationState(prev => ({
+        ...prev,
+        isICPLoggedIn: false,
+        principalId: null,
+        isVerified: false,
+        verificationData: null,
+        lastVerified: null
+      }))
+    }
+  }, [icpAuthState.isAuthenticated, icpAuthState.principalId, verificationState.isVerified, verificationState.verificationData, verificationState.lastVerified])
+
+  // 新增：同步ICP操作日志到用户上下文 / New: Sync ICP operation logs to user context
+  useEffect(() => {
+    if (operationLogState.operations.length > 0) {
+      setIcpIntegrationState(prev => ({
+        ...prev,
+        operationLogs: operationLogState.operations,
+        logsLastUpdated: operationLogState.lastUpdated ? new Date(operationLogState.lastUpdated).toISOString() : null
+      }))
+    }
+  }, [operationLogState.operations, operationLogState.lastUpdated])
 
   // 初始化时检查已存在的会话 / Check existing session on initialization
   useEffect(() => {
@@ -519,13 +596,53 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return authState.isAuthenticated ? getDashboardPath() : '/'
   }, [authState.isAuthenticated, getDashboardPath])
 
+  // 新增：ICP集成方法实现 / New: ICP Integration Methods Implementation
+  const refreshICPStatus = useCallback(async (): Promise<void> => {
+    try {
+      console.log('🔄 刷新ICP状态...')
+      if (icpAuthState.isAuthenticated && icpAuthState.principalId) {
+        await verifyIdentity()
+      }
+    } catch (error) {
+      console.error('❌ 刷新ICP状态失败:', error)
+    }
+  }, [icpAuthState.isAuthenticated, icpAuthState.principalId, verifyIdentity])
+
+  const verifyICPIdentity = useCallback(async (): Promise<boolean> => {
+    try {
+      console.log('🔍 验证ICP身份...')
+      if (icpAuthState.isAuthenticated && icpAuthState.principalId) {
+        return await verifyIdentity()
+      }
+      return false
+    } catch (error) {
+      console.error('❌ ICP身份验证失败:', error)
+      return false
+    }
+  }, [icpAuthState.isAuthenticated, icpAuthState.principalId, verifyIdentity])
+
+  const refreshICPLogs = useCallback(async (): Promise<void> => {
+    try {
+      console.log('📝 刷新ICP操作日志...')
+      if (icpAuthState.isAuthenticated && icpAuthState.principalId) {
+        await refreshOperationLogs()
+      }
+    } catch (error) {
+      console.error('❌ 刷新ICP操作日志失败:', error)
+    }
+  }, [icpAuthState.isAuthenticated, icpAuthState.principalId, refreshOperationLogs])
+
   // 上下文值 / Context Value
   const contextValue: UserContextType = {
     authState,
+    icpIntegrationState, // 新增：ICP集成状态 / New: ICP Integration State
     login,
     loginWithICP, // 添加ICP登录方法 / Add ICP login method
     logout,
     refreshSession,
+    refreshICPStatus, // 新增：刷新ICP状态 / New: Refresh ICP Status
+    verifyICPIdentity, // 新增：验证ICP身份 / New: Verify ICP Identity
+    refreshICPLogs, // 新增：刷新ICP日志 / New: Refresh ICP Logs
     updateUserInfo,
     uploadProfilePhoto,
     hasRole,

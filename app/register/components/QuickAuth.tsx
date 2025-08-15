@@ -26,22 +26,29 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
   const handleSocialLogin = async (provider: string) => {
     setIsLoading(provider)
     try {
-      // 模拟登录过程 / Simulate login process
-      await delay(LOADING_DELAYS.SOCIAL_LOGIN)
+      console.log(`🔐 开始${provider} OAuth登录流程`)
       
-      // 这里应该集成实际的OAuth登录逻辑 / Here should integrate actual OAuth login logic
-      console.log(`${provider} login initiated`)
+      // 构建OAuth URL / Build OAuth URL
+      const oauthUrl = `/api/auth/${provider}`
       
-      // 模拟成功登录 / Simulate successful login
-      onAuthSuccess(provider, { 
-        provider, 
-        email: `user@${provider}.com`,
-        name: `User from ${provider}`
-      })
+      console.log(`📡 重定向到OAuth端点: ${oauthUrl}`)
+      
+      // 重定向到OAuth端点 / Redirect to OAuth endpoint
+      // 这里会重定向到Express服务器进行OAuth认证 / This will redirect to Express server for OAuth authentication
+      window.location.href = oauthUrl
+      
+      // 注意：由于重定向，下面的代码不会立即执行 / Note: Due to redirect, code below won't execute immediately
+      // OAuth成功后会通过Express服务器的回调重定向回前端 / OAuth success will redirect back to frontend via Express server callback
+      
     } catch (error) {
-      console.error(`${provider} login failed:`, error)
-    } finally {
+      console.error(`❌ ${provider} OAuth登录失败:`, error)
       setIsLoading(null)
+      
+      // 显示错误提示 / Show error message
+      alert(language === 'en' 
+        ? `${provider} login failed. Please try again.` 
+        : `${provider}登录失败，请重试。`
+      )
     }
   }
 
@@ -115,6 +122,13 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
         if (authResult.success) {
           console.log('✅ 用户认证/创建成功:', authResult.user)
           
+          // 新增：显示ICP验证状态 / New: Show ICP verification status
+          console.log('🔍 ICP身份验证状态:', {
+            principalId,
+            isVerified: true, // 登录成功即表示已验证
+            verificationTime: new Date().toISOString()
+          })
+          
           // 认证成功，传递用户数据 / Authentication successful, pass user data
           onAuthSuccess(AUTH_PROVIDERS.ICP, { 
             provider: 'ICP',
@@ -124,7 +138,10 @@ export default function QuickAuth({ onAuthSuccess, onBack, isModal = false }: Qu
             userId: authResult.user.id,
             username: authResult.user.username,
             role: authResult.user.role,
-            isNewUser: authResult.isNewUser
+            isNewUser: authResult.isNewUser,
+            // 新增：ICP验证信息 / New: ICP verification info
+            icpVerified: true,
+            icpVerificationTime: new Date().toISOString()
           })
         } else {
           console.error('❌ 用户认证失败:', authResult.error)

@@ -6,6 +6,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useLanguage } from '@/app/context/LanguageContext'
 import { useToast } from '@/app/components/shared/Toast'
+import { useUser } from '@/app/context/UserContext'
 import { 
   FaUser, 
   FaEnvelope, 
@@ -13,7 +14,9 @@ import {
   FaExclamationTriangle,
   FaSave,
   FaUndo,
-  FaEdit
+  FaEdit,
+  FaShieldAlt,
+  FaNetworkWired
 } from 'react-icons/fa'
 import { PersonalInfo, RegionalSelection, FormState, ValidationErrors } from '../types'
 import { regionalLocationOptions } from '../constants'
@@ -41,6 +44,7 @@ export default function PersonalInfoCard({
 }: PersonalInfoCardProps) {
   const { language, t } = useLanguage()
   const { showToast } = useToast()
+  const { authState, icpIntegrationState } = useUser()
   
   const [regionalSelection, setRegionalSelection] = useState<RegionalSelection>({
     region: '',
@@ -578,6 +582,40 @@ export default function PersonalInfoCard({
               fieldName="regionalLocation"
             />
           )}
+        </div>
+      </div>
+
+      {/* ICP 状态显示 / ICP Status Display */}
+      <div className="mt-8">
+        <h3 className="text-lg font-bold text-white mb-4 flex items-center">
+          <FaShieldAlt className="text-fanforce-gold mr-2" /> ICP Status
+        </h3>
+        <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <FaNetworkWired className="text-fanforce-gold mr-2 text-2xl" />
+              <h4 className="text-md font-bold text-white">ICP Verification</h4>
+            </div>
+            <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+              icpIntegrationState?.isVerified ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`}>
+              {icpIntegrationState?.isVerified ? 'Verified' : 'Not Verified'}
+            </div>
+          </div>
+          <p className="text-sm text-gray-300">
+            Your ICP (Internet Computer) verification status is currently:
+            {icpIntegrationState?.isVerified ? (
+              <span className="text-green-400"> Verified</span>
+            ) : (
+              <span className="text-red-400"> Not Verified</span>
+            )}
+          </p>
+          <p className="text-sm text-gray-300 mt-2">
+            {icpIntegrationState?.isVerified 
+              ? 'Your ICP identity has been verified on the blockchain.'
+              : 'Please complete ICP authentication to verify your identity.'
+            }
+          </p>
         </div>
       </div>
     </div>
