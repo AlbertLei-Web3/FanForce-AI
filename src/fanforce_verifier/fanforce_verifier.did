@@ -70,8 +70,7 @@ service : {
   // Verify user ICP identity / 验证用户ICP身份
   verifyUserIdentity: (principalId: text) -> (UserIdentity);
   
-  // Verify invite code validity / 验证邀请码有效性
-  verifyInviteCode: (code: text) -> (InviteCodeVerification);
+
   
   // Check user operation permission / 检查用户操作权限
   checkUserPermission: (principalId: text, action: text, resource: text) -> (bool);

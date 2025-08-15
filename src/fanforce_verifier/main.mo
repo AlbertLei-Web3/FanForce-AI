@@ -13,9 +13,6 @@ import Bool "mo:base/Bool";
 import Array "mo:base/Array";
 import Iter "mo:base/Iter";
 import Time "mo:base/Time";
-import Error "mo:base/Error";
-import Result "mo:base/Result";
-import Random "mo:base/Random";
 
 // Main canister actor / 主容器actor
 actor class FanForceVerifier() = {
@@ -32,17 +29,7 @@ actor class FanForceVerifier() = {
         inviteCode: Text;
     };
     
-    // Invite code verification result / 邀请码验证结果
-    type InviteCodeVerification = {
-        code: Text;
-        isValid: Bool;
-        inviterPrincipalId: Text;
-        inviterRole: Text;
-        usageCount: Nat32;
-        maxUsage: Nat32;
-        expiresAt: Nat64;
-        isUsed: Bool;
-    };
+
     
     // Operation log entry / 操作日志条目
     type OperationLog = {
@@ -93,14 +80,12 @@ actor class FanForceVerifier() = {
     
     // Storage for various data types / 各种数据类型的存储
     private stable var userIdentities: [(Text, UserIdentity)] = [];
-    private stable var inviteCodes: [(Text, InviteCodeVerification)] = [];
     private stable var operationLogs: [(Text, OperationLog)] = [];
     private stable var invitationRelationships: [(Text, InvitationRelationship)] = [];
     private stable var achievementVerifications: [(Text, AchievementVerification)] = [];
     
     // Mutable storage / 可变存储
     private var users = HashMap.HashMap<Text, UserIdentity>(0, Text.equal, Text.hash);
-    private var codes = HashMap.HashMap<Text, InviteCodeVerification>(0, Text.equal, Text.hash);
     private var operations = HashMap.HashMap<Text, OperationLog>(0, Text.equal, Text.hash);
     private var relationships = HashMap.HashMap<Text, InvitationRelationship>(0, Text.equal, Text.hash);
     private var achievements = HashMap.HashMap<Text, AchievementVerification>(0, Text.equal, Text.hash);
@@ -127,12 +112,10 @@ actor class FanForceVerifier() = {
     // System postupgrade function / 系统升级后函数
     system func postupgrade() {
         users := HashMap.fromIter<Text, UserIdentity>(userIdentities.vals(), 0, Text.equal, Text.hash);
-        codes := HashMap.fromIter<Text, InviteCodeVerification>(inviteCodes.vals(), 0, Text.equal, Text.hash);
         operations := HashMap.fromIter<Text, OperationLog>(operationLogs.vals(), 0, Text.equal, Text.hash);
         relationships := HashMap.fromIter<Text, InvitationRelationship>(invitationRelationships.vals(), 0, Text.equal, Text.hash);
         achievements := HashMap.fromIter<Text, AchievementVerification>(achievementVerifications.vals(), 0, Text.equal, Text.hash);
         userIdentities := [];
-        inviteCodes := [];
         operationLogs := [];
         invitationRelationships := [];
         achievementVerifications := [];
@@ -164,8 +147,8 @@ actor class FanForceVerifier() = {
     };
     
     // Generate transaction hash / 生成交易哈希
-    private func generateTxHash() : Text {
-        "tx_" # Int.toText(Time.now()) # "_" # Int.toText(Principal.hash(Principal.fromText("2vxsx-fae")))
+    private func generateTxHash(caller: Principal) : Text {
+        "tx_" # Int.toText(Time.now()) # "_" # Int.toText(Principal.hash(caller))
     };
     
     // ========== Identity Verification Methods / 身份验证方法 ==========
@@ -205,55 +188,7 @@ actor class FanForceVerifier() = {
         }
     };
     
-    // Verify invite code validity / 验证邀请码有效性
-    public shared({caller}) func verifyInviteCode(code: Text) : async InviteCodeVerification {
-        switch (codes.get(code)) {
-            case (?inviteCode) {
-                // Check if code is expired / 检查代码是否过期
-                if (Time.now() > inviteCode.expiresAt) {
-                    return {
-                        code = code;
-                        isValid = false;
-                        inviterPrincipalId = "";
-                        inviterRole = "";
-                        usageCount = 0;
-                        maxUsage = 0;
-                        expiresAt = 0;
-                        isUsed = true;
-                    };
-                };
-                
-                // Check if code has reached max usage / 检查代码是否已达到最大使用次数
-                if (inviteCode.usageCount >= inviteCode.maxUsage) {
-                    return {
-                        code = code;
-                        isValid = false;
-                        inviterPrincipalId = inviteCode.inviterPrincipalId;
-                        inviterRole = inviteCode.inviterRole;
-                        usageCount = inviteCode.usageCount;
-                        maxUsage = inviteCode.maxUsage;
-                        expiresAt = inviteCode.expiresAt;
-                        isUsed = true;
-                    };
-                };
-                
-                inviteCode
-            };
-            case null {
-                // Code not found / 代码未找到
-                {
-                    code = code;
-                    isValid = false;
-                    inviterPrincipalId = "";
-                    inviterRole = "";
-                    usageCount = 0;
-                    maxUsage = 0;
-                    expiresAt = 0;
-                    isUsed = false;
-                }
-            };
-        }
-    };
+
     
     // Check user operation permission / 检查用户操作权限
     public shared({caller}) func checkUserPermission(principalId: Text, action: Text, resource: Text) : async Bool {
@@ -279,7 +214,7 @@ actor class FanForceVerifier() = {
             action = action;
             timestamp = now;
             metadata = metadata;
-            txHash = generateTxHash();
+            txHash = generateTxHash(caller);
             status = "success";
             blockHeight = now; // Simplified block height / 简化的区块高度
         };
@@ -385,7 +320,7 @@ actor class FanForceVerifier() = {
     
     // Check if caller is admin / 检查调用者是否为管理员
     public shared({caller}) func isAdmin(caller: Principal) : async Bool {
-        isAdmin(caller)
+        Principal.equal(caller, admin)
     };
     
     // Get canister statistics / 获取容器统计信息
