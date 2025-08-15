@@ -1,0 +1,130 @@
+// FanForce AI - Verifier Canister Interface / FanForce AI - 验证器容器接口
+// Candid interface definition for ICP canister / ICP容器的Candid接口定义
+// This canister serves as: Identity Verifier + Operation Logger + Relationship Validator / 此容器作为：身份验证器 + 操作日志记录器 + 关系验证器
+
+// ========== Type Definitions / 类型定义 ==========
+
+// User identity verification result / 用户身份验证结果
+type UserIdentity = record {
+  principalId: text;           // ICP Principal ID
+  isVerified: bool;            // Whether identity is verified / 身份是否已验证
+  verificationTime: nat64;     // Verification timestamp / 验证时间戳
+  lastActive: nat64;           // Last active time / 最后活跃时间
+  role: text;                  // User role (admin, ambassador, athlete, audience) / 用户角色
+  inviteCode: text;            // User's lifetime invite code / 用户的终身邀请码
+};
+
+// Invite code verification result / 邀请码验证结果
+type InviteCodeVerification = record {
+  code: text;                  // Invite code / 邀请码
+  isValid: bool;               // Whether code is valid / 代码是否有效
+  inviterPrincipalId: text;    // Inviter's Principal ID / 邀请人的Principal ID
+  inviterRole: text;           // Inviter's role / 邀请人的角色
+  usageCount: nat32;           // Current usage count / 当前使用次数
+  maxUsage: nat32;             // Maximum allowed usage / 最大允许使用次数
+  expiresAt: nat64;            // Expiration timestamp / 过期时间戳
+  isUsed: bool;                // Whether code has been used / 代码是否已被使用
+};
+
+// Operation log entry / 操作日志条目
+type OperationLog = record {
+  id: text;                    // Unique operation ID / 唯一操作ID
+  userId: text;                // User ID from Web2 database / Web2数据库中的用户ID
+  principalId: text;           // User's ICP Principal ID / 用户的ICP Principal ID
+  action: text;                // Operation action / 操作动作
+  timestamp: nat64;            // Operation timestamp / 操作时间戳
+  metadata: text;              // Additional metadata (JSON string) / 附加元数据（JSON字符串）
+  txHash: text;                // Transaction hash / 交易哈希
+  status: text;                // Operation status (pending, success, failed) / 操作状态
+  blockHeight: nat64;          // Block height when logged / 记录时的区块高度
+};
+
+// Invitation relationship record / 邀请关系记录
+type InvitationRelationship = record {
+  id: text;                    // Unique relationship ID / 唯一关系ID
+  inviterPrincipalId: text;    // Inviter's Principal ID / 邀请人的Principal ID
+  inviteePrincipalId: text;    // Invitee's Principal ID / 被邀请人的Principal ID
+  inviteCode: text;            // Used invite code / 使用的邀请码
+  invitationTime: nat64;       // Invitation timestamp / 邀请时间戳
+  relationshipType: text;      // Type of relationship / 关系类型
+  isActive: bool;              // Whether relationship is active / 关系是否活跃
+};
+
+// Achievement/badge verification record / 成就/徽章验证记录
+type AchievementVerification = record {
+  id: text;                    // Unique achievement ID / 唯一成就ID
+  userId: text;                // User ID from Web2 database / Web2数据库中的用户ID
+  principalId: text;           // User's ICP Principal ID / 用户的ICP Principal ID
+  achievementType: text;       // Type of achievement / 成就类型
+  achievementId: text;         // Achievement identifier / 成就标识符
+  verificationTime: nat64;     // Verification timestamp / 验证时间戳
+  metadata: text;              // Achievement metadata / 成就元数据
+  isVerified: bool;            // Whether achievement is verified / 成就是否已验证
+};
+
+// ========== Service Interface / 服务接口 ==========
+
+service : {
+  // ========== Identity Verification Methods / 身份验证方法 ==========
+  
+  // Verify user ICP identity / 验证用户ICP身份
+  verifyUserIdentity: (principalId: text) -> (UserIdentity);
+  
+  // Verify invite code validity / 验证邀请码有效性
+  verifyInviteCode: (code: text) -> (InviteCodeVerification);
+  
+  // Check user operation permission / 检查用户操作权限
+  checkUserPermission: (principalId: text, action: text, resource: text) -> (bool);
+  
+  // ========== Operation Logging Methods / 操作日志记录方法 ==========
+  
+  // Log user operation / 记录用户操作
+  logOperation: (userId: text, principalId: text, action: text, metadata: text) -> (text); // Returns operation ID / 返回操作ID
+  
+  // Get user operation history / 获取用户操作历史
+  getUserOperationHistory: (principalId: text, limit: nat32) -> (vec OperationLog);
+  
+  // Get operation by ID / 根据ID获取操作
+  getOperationById: (operationId: text) -> (opt OperationLog);
+  
+  // ========== Relationship Validation Methods / 关系验证方法 ==========
+  
+  // Record invitation relationship / 记录邀请关系
+  recordInvitationRelationship: (inviterPrincipalId: text, inviteePrincipalId: text, inviteCode: text, relationshipType: text) -> (text); // Returns relationship ID / 返回关系ID
+  
+  // Get user invitation relationships / 获取用户邀请关系
+  getUserInvitationRelationships: (principalId: text) -> (vec InvitationRelationship);
+  
+  // Verify invitation relationship / 验证邀请关系
+  verifyInvitationRelationship: (inviterPrincipalId: text, inviteePrincipalId: text) -> (bool);
+  
+  // ========== Achievement/Badge Methods / 成就/徽章方法 ==========
+  
+  // Verify user achievement / 验证用户成就
+  verifyAchievement: (userId: text, principalId: text, achievementType: text, achievementId: text, metadata: text) -> (text); // Returns verification ID / 返回验证ID
+  
+  // Get user achievements / 获取用户成就
+  getUserAchievements: (principalId: text) -> (vec AchievementVerification);
+  
+  // ========== Admin Methods / 管理员方法 ==========
+  
+  // Check if caller is admin / 检查调用者是否为管理员
+  isAdmin: (caller: principal) -> (bool);
+  
+  // Get canister statistics / 获取容器统计信息
+  getCanisterStats: () -> (record {
+    totalUsers: nat64;
+    totalOperations: nat64;
+    totalRelationships: nat64;
+    totalAchievements: nat64;
+    lastUpdate: nat64;
+  });
+  
+  // ========== System Methods / 系统方法 ==========
+  
+  // Get canister version / 获取容器版本
+  getVersion: () -> (text);
+  
+  // Health check / 健康检查
+  healthCheck: () -> (bool);
+};
